@@ -1,0 +1,16 @@
+<cashew title="Your first site">
+  <h1>HELLO, EUROPA</h1>
+  <p>Jupiter hosts the site. Callisto visits it. Io does the I/O. The naming committee has been left unsupervised.</p>
+  <p>This page uses Cashew markup and Pistachio events.</p>
+  <label>Your name:</label>
+  <input name="name" value="traveller" />
+  <button id="greet">Say hello</button>
+  <p>{message}</p>
+  <a href="about.cashew">About this site</a>
+  <script type="pistachio">
+    let message = "The button above works on basic computers too."
+    on greet
+      set message = "Hello, " .. name .. "!"
+    end
+  </script>
+</cashew>

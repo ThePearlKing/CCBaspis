@@ -1,0 +1,19 @@
+# The same app runs on basic and advanced computers.
+app "Pistachio / Counter"
+let count = 0
+banner heading 2 2 32 "PISTACHIO"
+label explanation 2 5 36 "A native CCSacabam application"
+button add 2 7 15 "Add one"
+button reset 19 7 15 "Reset"
+label value 2 9 35 "Count: {count}"
+if advanced
+  label device 2 11 36 "Advanced hardware detected"
+else
+  label device 2 11 36 "Basic hardware: keyboard ready"
+end
+on add
+  set count = count + 1
+end
+on reset
+  set count = 0
+end

@@ -1,0 +1,15 @@
+app "Pistachio / Hello"
+let name = "friend"
+let message = "Enter a name and press Greet."
+label title 2 2 35 "What should I call you?"
+input nameField 2 4 30 name
+button greet 2 6 14 "Greet"
+button save 19 6 14 "Save"
+label result 2 8 36 message
+on greet
+  set message = "Hello, " .. name .. "!"
+end
+on save
+  save message "/Documents/greeting.peanut"
+  notify "Greeting saved as Peanut data."
+end

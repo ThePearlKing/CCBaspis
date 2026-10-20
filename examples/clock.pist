@@ -1,0 +1,15 @@
+app "Pistachio / Timer"
+let seconds = 0
+let running = true
+label title 2 2 30 "Your session timer"
+label elapsed 2 4 30 "Seconds: {seconds}"
+checkbox runningToggle 2 6 24 running
+button reset 2 8 16 "Reset"
+every 1
+  if running
+    set seconds = seconds + 1
+  end
+end
+on reset
+  set seconds = 0
+end

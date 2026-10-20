@@ -1,0 +1,7 @@
+/.craftos/
+/vault/
+/config/
+/home/
+/ccsacabam-backups/
+__pycache__/
+*.pyc

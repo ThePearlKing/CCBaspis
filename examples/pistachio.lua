@@ -1,0 +1,3 @@
+local path = ...
+if not path then print('Usage: pistachio <file.pist>'); return end
+assert(ccsacabam,'Run this command inside CCSacabam').launch('pistachio',shell.resolve(path))
