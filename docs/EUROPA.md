@@ -9,6 +9,10 @@
 3. On another computer, open **Callisto**, press G, and enter `europa://workshop.cc/`. A computer-ID address such as `europa://123/` works too.
 4. Edit `/Sites/welcome/index.cashew` to change the site. Saved changes are served on the next request.
 
+If Callisto says **Page not found**, the server replied with a 404. On the hosting computer, check Jupiter's **Folder** and **Home** lines. For the bundled welcome site, the folder is `/Sites/welcome` and the file is `/Sites/welcome/index.cashew`. Publishing `/Sites` instead would require visiting `/welcome/`, since the homepage is inside that subfolder. Jupiter shows whether the homepage exists and the path/status of the last request. Edits and restored files are served immediately; a missing homepage does not stop other pages from being served.
+
+Computer ID **0** is supported: `europa://0` and a domain pointing to computer 0 both request `/index.cashew`. Adding that filename to the address is normal.
+
 The host must stay running and signed in. Closing Jupiter unregisters its domain. One Jupiter server is supported per Europa module instance; use one per computer. Domains are Rednet hostnames, not registrations with a permanent DNS service. Another computer can impersonate a domain or sender: there is no network authentication or encryption. Files in the published folder are intentionally sent in readable form even if the local drive is encrypted.
 
 Callisto uses Tab and Enter for links/buttons, arrows or the wheel to scroll, G or Ctrl+L for the address, H for home, Backspace for history when not editing, B to bookmark, and L to choose a bookmark. Bookmarks live on the personal drive. `file:///Sites/welcome/index.cashew` previews a local page without a modem. Remote pages cannot open `file://` links.

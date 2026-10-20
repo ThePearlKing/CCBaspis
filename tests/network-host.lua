@@ -1,5 +1,6 @@
 -- A real second emulator computer, running the normal CCSacabam scheduler.
 local physical=fs
+local domain=os.getComputerID()==0 and 'eater.com' or 'test.cc'
 local function mod(name) return assert(loadfile('/ccsacabam/'..name..'.lua'))() end
 assert(periphemu.create('left','modem',734291))
 local V=mod('system/vault'); V.iterations=10000
@@ -17,11 +18,12 @@ local Config=mod('system/config'); local caps=Config.capabilities()
 local kernel=cached('system/kernel').new({root='/ccsacabam',load=cached,configModule=Config,
   config=Config.normalize({mode='color',welcome=false},caps),caps=caps,target=term.current(),shell=shell,
   isEncrypted=vault.isEncrypted})
-local server=kernel.launch('server','test.cc','/Sites/welcome')
+local server=kernel.launch('server',domain,'/Sites/welcome')
 kernel.step({'key',keys.enter,false}); kernel.step({'key_up',keys.enter})
 local chat=kernel.launch('terminal')
 for c in ('chatplus host test-room'):gmatch('.') do kernel.step({'char',c}) end
 kernel.step({'key',keys.enter,false}); kernel.step({'key_up',keys.enter})
+if os.getComputerID()==0 then assert(periphemu.create('1','computer')); peripheral.call('1','turnOn') end
 parallel.waitForAny(function() kernel.run() end,function()
   while true do
     local sender,message,protocol=rednet.receive('ccsacabam.test.control')
@@ -30,9 +32,15 @@ parallel.waitForAny(function() kernel.run() end,function()
       local lines={}; local p=kernel.get(chat)
       for y=1,p.h-2 do lines[#lines+1]=p.win.getLine(y) end
       rednet.send(sender,{server=kernel.get(server).state,chat=kernel.get(chat).state,
+        home=kernel.get(server).win.getLine(10),request=kernel.get(server).win.getLine(11),
         terminal=table.concat(lines,'\n'),
         private=vfs.exists('/.chatplus') and not physical.exists('/.chatplus'),
         encrypted=raw:sub(1,4)=='SCV1' and not raw:find('server.cfg',1,true)},protocol)
+    elseif message=='hide-home' or message=='restore-home' then
+      local index,backup='/Sites/welcome/index.cashew','/Sites/welcome/index.saved'
+      if message=='hide-home' then vfs.move(index,backup) else vfs.move(backup,index) end
+      kernel.step({'sacabam_theme',server})
+      rednet.send(sender,{home=kernel.get(server).win.getLine(10)},protocol)
     elseif message=='close-server' then kernel.requestClose(kernel.get(server)); rednet.send(sender,'closed',protocol)
     elseif message=='stop' then return end
   end

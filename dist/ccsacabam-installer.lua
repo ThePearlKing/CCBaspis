@@ -713,16 +713,21 @@ return function(api)
   end
 end
 ]]},
-  ["apps/server.lua"]={sha256="e7e0047d68aeb137e35fe32abd2b97dcabc66eb1aef56a753f57fb0734c5291d",data=[[
+  ["apps/server.lua"]={sha256="8dd3b9df23226f1309873168c550778eaa450de9387c6a01ca3401179aab041d",data=[[
 return function(api,domain,root)
   local ui=api.ui; local E=api.load('system/europa'); local server
   domain=domain or 'computer-'..os.getComputerID()..'.cc'
   root=root or '/Sites/welcome'; local message='Offline. Choose a domain and site folder.'
+  local function hasHome()
+    local path=fs.combine(root,'index.cashew')
+    return fs.exists(path) and not fs.isDir(path)
+  end
   local function stop() if server then server.stop(); server=nil end end
   api.onExit(stop)
   local function start()
     if server then stop(); message='Server stopped.'; return end
     server=E.start(domain,root); message='Serving europa://'..domain..'/ and computer #'..os.getComputerID()
+    if not hasHome() then message='Online; save index.cashew in this folder.' end
   end
   while true do
     local t=api.theme(); local w,h=term.getSize(); ui.clear(t); ui.bar(1,' Jupiter / Europa web server',t)
@@ -730,7 +735,9 @@ return function(api,domain,root)
     ui.text(2,5,'Folder: '..root,t.text,t.bg,w-2)
     ui.text(2,7,server and '[ Stop server ]' or '[ Start server ]',t.onAccent,t.accent,18)
     ui.text(2,9,'Requests: '..(server and server.requests or 0),t.text,t.bg,w-2)
-    ui.text(2,10,'Home page: index.cashew',t.muted,t.bg,w-2)
+    local home=hasHome()
+    ui.text(2,10,home and 'Home: index.cashew / ready' or 'Home: MISSING index.cashew',home and t.muted or t.danger,t.bg,w-2)
+    ui.text(2,11,server and server.lastPath and (server.lastStatus..' '..server.lastPath) or 'No requests yet.',t.muted,t.bg,w-2)
     ui.text(1,h-1,message,t.text,t.panel,w)
     ui.text(1,h,'Enter start/stop | D domain | R folder',t.muted,t.panel,w)
     local e,a,b,c=os.pullEventRaw()
@@ -2438,7 +2445,7 @@ function C.equal(a,b)
 end
 return C
 ]]},
-  ["system/europa.lua"]={sha256="d4fc0048a19590cdb6c085e76e5ce85f5becc980c43ae93e3d9813f6ab8b3ac9",data=[[
+  ["system/europa.lua"]={sha256="8e294e0d2ab8d7b71df22105756df6aa7d7127f2ada22f9fffe79cfa7f755c17",data=[[
 -- Europa: small request/response networking over normal ComputerCraft Rednet.
 local E={protocol='ccsacabam.europa.v1',maxBody=32768}
 local hosts={}; local serial=0
@@ -2492,7 +2499,9 @@ function E.serve(root,path)
   local ok,normalized=pcall(E.path,path)
   if not ok then return {status=400,body='Invalid page path.',mime='text/plain'} end
   local file=fs.combine(root,normalized:sub(2))
-  if not fs.exists(file) or fs.isDir(file) then return {status=404,body='Page not found.',mime='text/plain'} end
+  if not fs.exists(file) or fs.isDir(file) then
+    return {status=404,body='Page not found: '..normalized..'\nThe host has no file at this path in its published folder.',mime='text/plain'}
+  end
   local mime=file:match('%.cashew$') and 'text/cashew' or file:match('%.pist$') and 'text/pistachio'
     or file:match('%.peanut$') and 'application/peanut' or file:match('%.txt$') and 'text/plain'
   if not mime then return {status=403,body='This file type is not published.',mime='text/plain'} end
@@ -2521,6 +2530,7 @@ function E.start(domain,root)
     if not client or client.time~=now then client={time=now,count=0}; host.clients[sender]=client end
     client.count=client.count+1; if client.count>10 then return end
     local reply=E.serve(root,packet.path); reply.kind='response'; reply.id=packet.id
+    host.lastPath=packet.path:gsub('[%c]','?'); host.lastStatus=reply.status
     rednet.send(sender,reply,E.protocol); host.requests=host.requests+1
     -- Bound the rate-limit cache even on a busy public network.
     for id,entry in pairs(host.clients) do if entry.time<now-5 then host.clients[id]=nil end end

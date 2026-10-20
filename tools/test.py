@@ -6,26 +6,27 @@ ROOT=Path(__file__).resolve().parents[1]
 def run(name,color=True,width=51,height=19,vanilla=True):
     directory=Path(tempfile.mkdtemp(prefix='ccsacabam-'+name+'-'))
     (directory/'config').mkdir()
-    network=name=='network'
+    network=name in ('network','network-zero')
+    host_id=0 if name=='network-zero' else 1
+    client_id=1-host_id
     (directory/'config/global.json').write_text(json.dumps({'checkUpdates':False,'standardsMode':True,'vanilla':vanilla and not network,'keepOpenOnShutdown':False}))
     (directory/'config/0.json').write_text(json.dumps({'isColor':color,'computerWidth':width,'computerHeight':height}))
-    report=directory/'computer/0/test-results.json'
+    report=directory/f'computer/{client_id if network else 0}/test-results.json'
     log=(directory/'emulator.log').open('wb')
     # The headless renderer always reports color=true. SDL's dummy video driver
     # exercises real basic/advanced terminal capabilities without a visible GUI.
     if network:
-        child=directory/'computer/1'; child.mkdir(parents=True)
-        shutil.copy(ROOT/'tests/network-host.lua',child/'startup.lua')
-        for folder in ('system','apps','sites'):
-            shutil.copytree(ROOT/folder,child/'ccsacabam'/folder)
-        shutil.copy(ROOT/'chatplus.lua',child/'ccsacabam/chatplus.lua')
+        for computer_id in (0,1):
+            computer=directory/f'computer/{computer_id}'; computer.mkdir(parents=True)
+            script_name='network-host.lua' if computer_id==host_id else 'network.lua'
+            shutil.copy(ROOT/'tests'/script_name,computer/'startup.lua')
+            for folder in ('system','apps','sites'):
+                shutil.copytree(ROOT/folder,computer/'ccsacabam'/folder)
+            shutil.copy(ROOT/'chatplus.lua',computer/'ccsacabam/chatplus.lua')
     script='network.lua' if network else 'fresh.lua' if name.startswith('fresh') else 'setup.lua' if name.startswith('setup') else 'run.lua'
     command=['craftos','--gui','-d',str(directory),'--mount-ro','/src='+str(ROOT),'--exec',f'shell.run("/src/tests/{script}", "{name}")']
     if network:
-        # --exec also applies to newly created computers. Use a startup file on
-        # computer 0 so computer 1 can run its own independent host startup.
-        parent=directory/'computer/0'; parent.mkdir(parents=True)
-        (parent/'startup.lua').write_text('shell.run("/src/tests/network.lua")\n')
+        # Each computer has its own host/client startup, including host ID 0.
         command=command[:-2]
     proc=subprocess.Popen(command,stdout=log,stderr=subprocess.STDOUT,env={**os.environ,'SDL_AUDIODRIVER':'dummy','SDL_VIDEODRIVER':'dummy'})
     result=None; deadline=time.monotonic()+240

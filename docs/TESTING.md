@@ -7,10 +7,10 @@ Build the single-file installer with `python3 tools/build.py`. It normalizes lin
 Run:
 
 ```sh
-python3 tools/test.py advanced basic pocket network fresh fresh-basic fresh-encrypted setup setup-basic
+python3 tools/test.py advanced basic pocket network network-zero fresh fresh-basic fresh-encrypted setup setup-basic
 ```
 
-Requirements: CraftOS-PC on PATH as `craftos`, Python 3, and Python `cryptography`. Each case creates an isolated `/tmp/ccsacabam-...` directory with its own emulator configuration and save. The runner reports that path so failures can be inspected. Results are written to `computer/0/test-results.json`. Nothing is installed into the user's normal CraftOS-PC save.
+Requirements: CraftOS-PC on PATH as `craftos`, Python 3, and Python `cryptography`. Each case creates an isolated `/tmp/ccsacabam-...` directory with its own emulator configuration and save. The runner reports that path so failures can be inspected. Results are written to `computer/0/test-results.json`, or `computer/1/test-results.json` when testing a host on computer 0. Nothing is installed into the user's normal CraftOS-PC save.
 
 The basic, advanced, and pocket suites use CraftOS-PC standards mode with extensions disabled. SDL's dummy video driver allows the GUI renderer to run unattended while retaining the real terminal's color capability. CraftOS-PC's headless renderer reports color support even for a configured basic computer, so it is not used to validate monochrome behavior.
 
@@ -29,7 +29,7 @@ Coverage includes:
 * Full-screen standalone setup and production 100,000-iteration encryption: passwordless default boot, enabling encryption in Settings, and installing with encryption already enabled.
 * Minimum-size 20×10 setup on both basic and advanced terminals: keyboard/mouse navigation, Left/Right between Back and Next, cancellation, failure/retry, and masked password validation.
 * Shortcut removal/restoration, preserved application right-click events, contrasting window controls, and the default-OFF Skip typing YES preference.
-* A separate two-computer modem test for domains, computer-ID addresses, pages, 404s, traversal rejection, server shutdown, and Chat+ alongside Jupiter. Only this case enables emulator peripheral extensions to create the test hardware; the OS uses normal ComputerCraft modem APIs.
+* Two-computer modem tests with host IDs 1 and 0 for domains, bare computer-ID addresses, actual Callisto rendering, pages, missing-homepage diagnostics/recovery, 404s, traversal rejection, server shutdown, and Chat+ alongside Jupiter. Only these cases enable emulator peripheral extensions to create the test hardware; the OS uses normal ComputerCraft modem APIs.
 
 Terminal snapshots are saved as `snapshot-*.json`. These retain text and foreground/background color rows for inspection. `python3 tools/preview.py snapshot.json output.png` renders them with Pillow, preserving the mosaic subpixels and substituting a host monospace font for ordinary text. Test passwords are public fixtures, never credentials for a real installation.
 

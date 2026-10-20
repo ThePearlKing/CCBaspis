@@ -51,7 +51,9 @@ function E.serve(root,path)
   local ok,normalized=pcall(E.path,path)
   if not ok then return {status=400,body='Invalid page path.',mime='text/plain'} end
   local file=fs.combine(root,normalized:sub(2))
-  if not fs.exists(file) or fs.isDir(file) then return {status=404,body='Page not found.',mime='text/plain'} end
+  if not fs.exists(file) or fs.isDir(file) then
+    return {status=404,body='Page not found: '..normalized..'\nThe host has no file at this path in its published folder.',mime='text/plain'}
+  end
   local mime=file:match('%.cashew$') and 'text/cashew' or file:match('%.pist$') and 'text/pistachio'
     or file:match('%.peanut$') and 'application/peanut' or file:match('%.txt$') and 'text/plain'
   if not mime then return {status=403,body='This file type is not published.',mime='text/plain'} end
@@ -80,6 +82,7 @@ function E.start(domain,root)
     if not client or client.time~=now then client={time=now,count=0}; host.clients[sender]=client end
     client.count=client.count+1; if client.count>10 then return end
     local reply=E.serve(root,packet.path); reply.kind='response'; reply.id=packet.id
+    host.lastPath=packet.path:gsub('[%c]','?'); host.lastStatus=reply.status
     rednet.send(sender,reply,E.protocol); host.requests=host.requests+1
     -- Bound the rate-limit cache even on a busy public network.
     for id,entry in pairs(host.clients) do if entry.time<now-5 then host.clients[id]=nil end end
