@@ -37,7 +37,7 @@ function S.line(line,language,previous)
       local j=i
       while j<=#line do
         local ch=line:sub(j,j)
-        if ch=='\\' and language~='cashew' then j=j+2
+        if ch=='\\' and lang~='cashew' then j=j+2
         elseif ch==state.quote then j=j+1; state.quote=nil; break else j=j+1 end
       end
       mark(j-1,'s')

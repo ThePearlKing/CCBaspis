@@ -440,11 +440,15 @@ return function(api,path,options)
   end
 end
 ]]},
-  ["apps/files.lua"]={sha256="48f6c74761922ef0fde604f0449f4cfe2599f1a2ba87538e9e52e168d31bfd8c",data=[[
+  ["apps/files.lua"]={sha256="4521f46fd992bb2945d47ee7cde7fc6ce6304849c996299860b9127ea5cc644e",data=[[
 return function(api,start)
   local ui=api.ui; local dir=start or api.home
   local selection,scroll=1,0; local entries={}; local clip; local showHidden=false
   local trash=fs.combine(api.home,".Trash")
+  local function edit(path)
+    local language=api.load('system/syntax').language(path)
+    api.launch(language and 'code' or 'editor',path)
+  end
   local function refresh()
     if not fs.isDir(dir) then dir=api.home end
     entries={}
@@ -477,7 +481,7 @@ return function(api,start)
     elseif item.name:match("%.sketch$") then api.launch("sketch",item.path)
     elseif item.name:match("%.pist$") then api.launch("pistachio",item.path)
     elseif item.name:match("%.lua$") then api.launch("terminal",item.path)
-    else api.launch("editor",item.path) end
+    else edit(item.path) end
   end
   local function new(folder)
     local name=ui.prompt(api,folder and "New folder name" or "New file name")
@@ -485,7 +489,7 @@ return function(api,start)
     if not api.storage.name(name) then api.notify("Use a name without slashes."); return end
     local path=fs.combine(dir,name)
     if fs.exists(path) then api.notify("That name already exists."); return end
-    if folder then fs.makeDir(path) else local ok,err=api.storage.write(path,""); if not ok then error(err) end; api.launch("editor",path) end
+    if folder then fs.makeDir(path) else local ok,err=api.storage.write(path,""); if not ok then error(err) end; edit(path) end
     refresh()
   end
   local function action(key)
@@ -521,7 +525,7 @@ return function(api,start)
       else api.notify("Only personal files can be moved to Trash.") end
     elseif key=="showtrash" then navigate(trash)
     elseif key=="run" and item and not item.folder then api.launch("terminal",item.path)
-    elseif key=="edit" and item and not item.folder then api.launch("editor",item.path)
+    elseif key=="edit" and item and not item.folder then edit(item.path)
     elseif key=="hidden" then showHidden=not showHidden; refresh() end
   end
   local toolbar={{"Up","up"},{"Home","home"},{"New","new"},{"Folder","folder"},{"Copy","copy"},{"Paste","paste"},{"Trash","showtrash"}}
@@ -3880,7 +3884,7 @@ function M.name(name)
 end
 return M
 ]]},
-  ["system/syntax.lua"]={sha256="9d81bf7abdadfb16a19f03db02413b6726809339aa79a0d5647a718c1855a163",data=[[
+  ["system/syntax.lua"]={sha256="51bd0e3e6c1033f7f08f8a69d37ef260e04a3a0552dcd88020bd52be1fe5444d",data=[[
 -- Editor lexing/completion only. Buffer contents are never executed.
 local S={}
 local function words(text)
@@ -3920,7 +3924,7 @@ function S.line(line,language,previous)
       local j=i
       while j<=#line do
         local ch=line:sub(j,j)
-        if ch=='\\' and language~='cashew' then j=j+2
+        if ch=='\\' and lang~='cashew' then j=j+2
         elseif ch==state.quote then j=j+1; state.quote=nil; break else j=j+1 end
       end
       mark(j-1,'s')
@@ -4709,6 +4713,8 @@ function S.run(package,installer)
       elseif e=='key_up' and (a==keys.leftShift or a==keys.rightShift) then shift=false
       elseif e=='key' then
         if a==keys.leftShift or a==keys.rightShift then shift=true
+        elseif a==keys.left or a==keys.right then
+          focus=(a==keys.left and page~='done') and 'back' or 'next'; ensure=true
         elseif a==keys.tab or a==keys.up or a==keys.down then
           local index=1; for i,id in ipairs(controls) do if id==focus then index=i end end
           local direction=(a==keys.up or (a==keys.tab and shift)) and -1 or 1

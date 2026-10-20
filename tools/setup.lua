@@ -201,6 +201,8 @@ function S.run(package,installer)
       elseif e=='key_up' and (a==keys.leftShift or a==keys.rightShift) then shift=false
       elseif e=='key' then
         if a==keys.leftShift or a==keys.rightShift then shift=true
+        elseif a==keys.left or a==keys.right then
+          focus=(a==keys.left and page~='done') and 'back' or 'next'; ensure=true
         elseif a==keys.tab or a==keys.up or a==keys.down then
           local index=1; for i,id in ipairs(controls) do if id==focus then index=i end end
           local direction=(a==keys.up or (a==keys.tab and shift)) and -1 or 1

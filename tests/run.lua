@@ -180,6 +180,36 @@ test('Peanut rejects malformed, duplicate and executable input',function()
   local cyc={}; cyc.self=cyc; rejects(function() Peanut.encode(cyc) end)
 end)
 local P=module('system/pistachio')
+local Syntax=module('system/syntax')
+test('Code lexer handles four languages, multiline comments/strings and embedded scripts',function()
+  local samples={lua={'local n = 42 -- comment','--[=[ long','comment ]=] return "ok"','local s = [[long','string]]'},
+    peanut={'{name = "value", enabled = true, n = 42} // note'},
+    pistachio={'button go 2 3 12 "Go" # comment'},
+    cashew={'<!-- comment','end --> <input name="test" />','<script type="pistachio">','let n = 42','</script>'}}
+  for lang,lines in pairs(samples) do
+    local doc=Syntax.document(lines,lang)
+    for i,line in ipairs(lines) do eq(#doc.styles[i],#line) end
+  end
+  local doc=Syntax.document(samples.lua,'lua')
+  eq(doc.styles[1]:sub(1,5),'kkkkk'); eq(doc.styles[3]:sub(1,11),string.rep('c',11))
+  assert(doc.styles[3]:find('kkkkkk',1,true)); eq(doc.styles[5]:sub(1,8),string.rep('s',8))
+  eq(Syntax.document(samples.cashew,'cashew').styles[4]:sub(1,3),'kkk')
+  eq(Syntax.language('HELLO.PIST'),'pistachio'); eq(Syntax.language('config.peanut'),'peanut')
+end)
+test('Code completion knows APIs, variables and tags and skips strings/comments',function()
+  local function offers(lang,source,choice)
+    local lines={source}; local result=Syntax.complete(lines,lang,#source+1,1,Syntax.document(lines,lang))
+    for _,word in ipairs(result) do if word==choice then return end end
+    error('Missing '..choice..' for '..source)
+  end
+  offers('lua','term.setCur','term.setCursorPos'); offers('peanut','{"ok": tru','true')
+  offers('pistachio','but','button'); offers('cashew','<bu','button'); offers('cashew','<a hr','href')
+  local lines={'local customCount = 1','custom'}
+  local result=Syntax.complete(lines,'lua',7,2,Syntax.document(lines,'lua')); eq(result[1],'customCount')
+  for _,source in ipairs({'-- prin','"prin','--[[prin'}) do
+    eq(#Syntax.complete({source},'lua',#source+1,1,Syntax.document({source},'lua')),0)
+  end
+end)
 local Seal=module('system/seal'); Seal.iterations=10000
 test('Pistachio seal/unseal authenticate, reject tampering and work without drive encryption',function()
   assert(vault.setEncryption(false))
@@ -251,6 +281,7 @@ local function assertRunning(id)
 end
 local function key(k) kernel.step({'key',k,false}); kernel.step({'key_up',k}) end
 local function text(value) for c in value:gmatch('.') do kernel.step({'char',c}) end end
+local function ctrl(k) kernel.step({'key',keys.leftCtrl}); key(k); kernel.step({'key_up',keys.leftCtrl}) end
 local function dump(name)
   local lines={}
   for y=1,kernel.height do local a,b,c=kernel.frame.getLine(y); lines[y]={text=a,fg=b,bg=c} end
@@ -268,6 +299,33 @@ test('Editor saves encrypted content and supports undo',function()
   text('Z'); kernel.step({'key',keys.leftCtrl}); key(keys.z); key(keys.s); kernel.step({'key_up',keys.leftCtrl})
   eq(cached('system/storage').read('/Documents/editor-secret.txt'),secret)
   kernel.requestClose(kernel.get(id)); assert(not kernel.get(id))
+end)
+test('Code Editor completes and highlights Lua, Peanut, Pistachio and Cashew in real windows',function()
+  local cases={
+    {'lua','local message = "hello"\n','pri','(message)','local message = "hello"\nprint(message)'},
+    {'peanut','{ enabled = ','tru',', count = 42 }','{ enabled = true, count = 42 }'},
+    {'pist','','but',' add 2 3 12 "Go"','button add 2 3 12 "Go"'},
+    {'cashew','<','bu',' id="go">Go</button>','<button id="go">Go</button>'},
+  }
+  for _,sample in ipairs(cases) do
+    local path='/Programs/code-editor-test.'..sample[1]
+    local id=kernel.launch('code',path); local p=assertRunning(id)
+    kernel.step({'paste',sample[2]}); text(sample[3]); key(keys.tab); kernel.step({'paste',sample[4]}); ctrl(keys.s)
+    eq(cached('system/storage').read(path),sample[5]); assertRunning(id)
+    local _,fg,bg=p.win.getLine(2)
+    local gutter=(p.w-2)>24 and 5 or 0
+    local marked=(caps.color and fg or bg):sub(gutter+1,gutter+math.min(#sample[5],p.w-2-gutter))
+    assert(marked:find('[^'..marked:sub(1,1)..']'),'Syntax highlighting is missing for '..sample[1])
+    kernel.notice=nil; kernel.render(); dump('code-'..sample[1]); kernel.remove(id)
+  end
+end)
+test('Code Editor member completion, undo/redo and manual language selection',function()
+  local id=kernel.launch('code','/Programs/completion.lua'); local p=assertRunning(id)
+  text('term.setCur'); key(keys.down); key(keys.tab); ctrl(keys.z); ctrl(keys.y); ctrl(keys.s)
+  eq(cached('system/storage').read('/Programs/completion.lua'),'term.setCursorPos')
+  ctrl(keys.l); local _,h=p.win.getSize(); assert(p.win.getLine(h):find('peanut',1,true))
+  ctrl(keys.l); assert(p.win.getLine(h):find('pistachio',1,true))
+  ctrl(keys.space); key(keys.f5); assertRunning(id); kernel.remove(id)
 end)
 test('Settings encryption toggle requires explicit confirmation',function()
   local id=kernel.launch('settings'); assertRunning(id)
@@ -349,6 +407,20 @@ assert(peanut.write('/normal.peanut',{value=library.value}))
   assert(not physical.exists('/normal-relative.dat')); assert(not physical.exists('/normal-io.dat'))
   eq(cached('system/peanut').read('/normal.peanut').value,73); kernel.remove(id)
 end)
+test('Files double-click runs a root-relative Lua path with spaces',function()
+  local storage=cached('system/storage')
+  assert(storage.write('/Programs/launch-test/normal program.lua',[[
+local f=assert(fs.open('/Documents/launched-from-files.txt','w')); f.write('ran normally'); f.close()
+print('Lua program ran normally')
+]]))
+  local id=kernel.launch('files','ccsacabam/home/Programs/launch-test'); local p=assertRunning(id)
+  kernel.step({'mouse_click',1,p.x+3,p.y+3}); kernel.step({'mouse_click',1,p.x+3,p.y+3})
+  eq(storage.read('/Documents/launched-from-files.txt'),'ran normally')
+  local program=assertRunning(kernel.focus); eq(program.app,'terminal')
+  for y=1,program.h-2 do assert(not program.win.getLine(y):find('No such program',1,true)) end
+  kernel.remove(program.id); kernel.focusTask(id); text('e')
+  local editor=assertRunning(kernel.focus); eq(editor.app,'code'); kernel.remove(editor.id); kernel.remove(id)
+end)
 test('Background programs receive timers without receiving another window keyboard input',function()
   local storage=cached('system/storage')
   assert(storage.write('/Programs/background.lua',[[
@@ -405,6 +477,7 @@ test('Desktop shortcut menus remove only shortcuts and persist the choice',funct
     assert(not line:find('Your computer',1,true) and not line:find('F1 Apps',1,true))
   end
   local hit=kernel.desktopHits[1]; eq(hit.id,'files')
+  for _,item in ipairs(kernel.desktopHits) do assert(item.id~='code' and item.id~='chatplus','App was pinned automatically') end
   kernel.step({'mouse_click',2,hit.x,hit.y}); assert(kernel.context and #kernel.tasks==0)
   key(keys.down); key(keys.enter); assert(ctx.config.hiddenShortcuts.files)
   assert(cached('system/storage').load('/.system/settings.tbl').hiddenShortcuts.files)
@@ -414,6 +487,8 @@ test('Desktop shortcut menus remove only shortcuts and persist the choice',funct
   kernel.step({'mouse_click',2,kernel.width,kernel.height-1}); assert(kernel.context)
   key(keys.down); key(keys.down); key(keys.enter); assert(not ctx.config.hiddenShortcuts.files)
   eq(kernel.desktopHits[1].id,'files'); dump('desktop')
+  key(keys.f1); text('Code Editor'); key(keys.enter)
+  local code=assertRunning(kernel.focus); eq(code.app,'code'); kernel.remove(code.id)
 end)
 test('Window buttons have distinct colors; right click preserves app coordinates',function()
   local id=kernel.launch('terminal'); local p=assertRunning(id); kernel.render()

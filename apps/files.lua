@@ -2,6 +2,10 @@ return function(api,start)
   local ui=api.ui; local dir=start or api.home
   local selection,scroll=1,0; local entries={}; local clip; local showHidden=false
   local trash=fs.combine(api.home,".Trash")
+  local function edit(path)
+    local language=api.load('system/syntax').language(path)
+    api.launch(language and 'code' or 'editor',path)
+  end
   local function refresh()
     if not fs.isDir(dir) then dir=api.home end
     entries={}
@@ -34,7 +38,7 @@ return function(api,start)
     elseif item.name:match("%.sketch$") then api.launch("sketch",item.path)
     elseif item.name:match("%.pist$") then api.launch("pistachio",item.path)
     elseif item.name:match("%.lua$") then api.launch("terminal",item.path)
-    else api.launch("editor",item.path) end
+    else edit(item.path) end
   end
   local function new(folder)
     local name=ui.prompt(api,folder and "New folder name" or "New file name")
@@ -42,7 +46,7 @@ return function(api,start)
     if not api.storage.name(name) then api.notify("Use a name without slashes."); return end
     local path=fs.combine(dir,name)
     if fs.exists(path) then api.notify("That name already exists."); return end
-    if folder then fs.makeDir(path) else local ok,err=api.storage.write(path,""); if not ok then error(err) end; api.launch("editor",path) end
+    if folder then fs.makeDir(path) else local ok,err=api.storage.write(path,""); if not ok then error(err) end; edit(path) end
     refresh()
   end
   local function action(key)
@@ -78,7 +82,7 @@ return function(api,start)
       else api.notify("Only personal files can be moved to Trash.") end
     elseif key=="showtrash" then navigate(trash)
     elseif key=="run" and item and not item.folder then api.launch("terminal",item.path)
-    elseif key=="edit" and item and not item.folder then api.launch("editor",item.path)
+    elseif key=="edit" and item and not item.folder then edit(item.path)
     elseif key=="hidden" then showHidden=not showHidden; refresh() end
   end
   local toolbar={{"Up","up"},{"Home","home"},{"New","new"},{"Folder","folder"},{"Copy","copy"},{"Paste","paste"},{"Trash","showtrash"}}
