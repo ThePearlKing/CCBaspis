@@ -5,6 +5,9 @@ local function persist()
 end
 local function test(name,fn)
   term.redirect(rawTerm)
+  -- Each case is a separate emulator interaction; do not accumulate the
+  -- watchdog budget across synchronous synthetic keyboard/mouse sequences.
+  os.queueEvent('ccsacabam_test_tick'); os.pullEvent('ccsacabam_test_tick')
   local ok,err=pcall(fn)
   if not ok then failures=failures+1 end
   results[#results+1]={name=name,ok=ok,error=not ok and tostring(err) or nil}
@@ -18,7 +21,7 @@ local function rejects(fn) local ok=pcall(fn); assert(not ok,'Expected an error'
 local function scan(dir)
   for _,name in ipairs(physical.list(dir)) do
     local path=physical.combine(dir,name)
-    if physical.isDir(path) and name~='dist' then scan(path)
+    if physical.isDir(path) and name~='dist' and name:sub(1,1)~='.' then scan(path)
     elseif name:match('%.lua$') then test('Lua syntax: '..path,function() assert(loadfile(path)) end) end
   end
 end
@@ -109,12 +112,13 @@ end)
 test('Safe writer refuses to overwrite a directory',function()
   local ok=S.write('/ccsacabam','bad'); assert(not ok); assert(physical.isDir('/ccsacabam'))
 end)
-test('Encryption can be disabled and re-enabled without losing files or login',function()
+test('Encryption OFF removes login and keys; enabling creates a password',function()
   assert(vault.setEncryption(false)); assert(not vault.isEncrypted())
-  local raw=readFile(vault.path); eq(raw:sub(1,4),'SCP1'); assert(raw:find(secret,1,true))
-  vault.lock(); assert(not vault.unlock('incorrect password',Login.progress))
-  assert(vault.unlock(password,Login.progress)); assert(not vault.isEncrypted())
-  assert(vault.setEncryption(true)); assert(vault.isEncrypted())
+  local raw=readFile(vault.path); eq(raw:sub(1,4),'SCP2'); assert(raw:find(secret,1,true))
+  assert(vault.key==nil and vault.salt==nil)
+  vault.lock(); assert(vault.unlock()); assert(not vault.isEncrypted())
+  assert(not vault.setEncryption(true)); assert(not vault.isEncrypted())
+  assert(vault.setEncryption(true,password,'test fixture',Login.progress)); assert(vault.isEncrypted())
   assert(not readFile(vault.path):find(secret,1,true))
   local h=assert(vfs.open('/secret-file.txt','r')); eq(h.readAll(),secret); h.close()
 end)
@@ -123,6 +127,20 @@ test('Failed encryption conversion preserves the previous mode and disk image',f
   S.write=function() return nil,'disk full' end
   local ok=vault.setEncryption(false); S.write=writer
   assert(not ok); assert(vault.isEncrypted()); eq(readFile(vault.path),raw)
+end)
+test('Legacy plaintext drives open without a password and migrate on save',function()
+  local body='SCP1'..vault.salt..C.be(vault.iterations)..string.rep('\0',12)..textutils.serialize(vault.files)
+  writeFile(vault.path,body..C.hmac(C.hmac(vault.key,'CCSacabam v1 authentication'),body))
+  vault.lock(); assert(Login.unlock(vault,{encrypt=true})); assert(not vault.isEncrypted())
+  eq(vault.files['secret-file.txt'],secret); assert(vault.persist())
+  eq(readFile(vault.path):sub(1,4),'SCP2')
+  local raw=readFile(vault.path); vault.lock()
+  writeFile(vault.path,raw:sub(1,-2)..string.char(bit32.bxor(raw:byte(-1),1)))
+  assert(not vault.unlock()); writeFile(vault.path,raw); assert(vault.unlock())
+  local writer=S.write; S.write=function() return nil,'disk full' end
+  local ok=vault.setEncryption(true,password,'failure fixture',Login.progress); S.write=writer
+  assert(not ok and not vault.isEncrypted() and vault.key==nil); eq(readFile(vault.path),raw)
+  assert(vault.setEncryption(true,password,'restored fixture',Login.progress))
 end)
 test('Password change invalidates the old password and preserves files',function()
   assert(vault.changePassword('a different long passphrase','test',Login.progress)); vault.lock()
@@ -177,7 +195,7 @@ test('Pistachio seal/unseal authenticate, reject tampering and work without driv
   rejects(function() box.unseal(message:sub(1,-2)..last,'separate long password') end)
   eq(box.unseal(box.seal('',password),password),'')
   writeFile('/seal-oracle.json',textutils.serializeJSON({envelope=message,password='separate long password',plain='private message'}))
-  assert(vault.setEncryption(true))
+  assert(vault.setEncryption(true,password,'test fixture',Login.progress))
 end)
 local fake={caps={color=true},config=function() return {mode='render'} end,notify=function() end}
 test('Pistachio expressions, handlers, conditionals and loops',function()
@@ -224,8 +242,8 @@ local cache={}
 local function cached(name) if not cache[name] then cache[name]=loadSession(name) end; return cache[name] end
 local w,h=rawTerm.getSize(); local target=window.create(rawTerm,1,1,w,h,false)
 local caps=Config.capabilities(target)
-local ctx={root='/ccsacabam',load=cached,configModule=Config,config=Config.normalize({mode='render',welcome=false},caps),caps=caps,target=target,shell=oldShell,password=function() return nil end,
-  isEncrypted=vault.isEncrypted,setEncryption=vault.setEncryption,cryptoProgress=Login.progress}
+local ctx={root='/ccsacabam',load=cached,configModule=Config,config=Config.normalize({mode='render',welcome=false},caps),caps=caps,target=target,shell=oldShell,password=Login.password,
+  isEncrypted=vault.isEncrypted,setEncryption=function(enabled,pw,entropy) return vault.setEncryption(enabled,pw,entropy,Login.progress) end,cryptoProgress=Login.progress}
 local kernel=cached('system/kernel').new(ctx)
 env.ccsacabam={launch=kernel.launch}
 local function assertRunning(id)
@@ -253,10 +271,29 @@ test('Editor saves encrypted content and supports undo',function()
 end)
 test('Settings encryption toggle requires explicit confirmation',function()
   local id=kernel.launch('settings'); assertRunning(id)
+  text('7'); key(keys.enter); assert(vault.isEncrypted())
   text('7'); key(keys.f5); assert(vault.isEncrypted())
   text('7'); text('YES'); key(keys.enter); assertRunning(id); assert(not vault.isEncrypted())
-  text('7'); text('YES'); key(keys.enter); assertRunning(id); assert(vault.isEncrypted())
+  text('7'); text('YES'); key(keys.enter); text(password); key(keys.enter); text(password); key(keys.enter)
+  while kernel.get(id).filter=='ccsacabam_crypto_yield' do kernel.step({os.pullEventRaw()}); assertRunning(id) end
+  assert(vault.isEncrypted())
   kernel.remove(id)
+end)
+test('Skip typing YES defaults OFF, persists, and enables Enter/click confirmation',function()
+  eq(Config.normalize({},caps).skipTypedConfirmation,false)
+  local settings=kernel.launch('settings'); text('8'); assert(ctx.config.skipTypedConfirmation)
+  assert(cached('system/storage').load('/.system/settings.tbl').skipTypedConfirmation)
+  kernel.remove(settings)
+  local id=kernel.launch('editor'); local p=assertRunning(id); text('unsaved')
+  key(keys.f4); key(keys.f5); assertRunning(id)
+  key(keys.f4); key(keys.enter); assert(not kernel.get(id))
+  id=kernel.launch('editor'); p=assertRunning(id); text('unsaved again')
+  key(keys.f4)
+  kernel.step({'mouse_click',1,p.x+math.floor((p.w-2)/2)+1,p.y+p.h-3}); assertRunning(id)
+  key(keys.f4); kernel.step({'mouse_click',1,p.x+1,p.y+p.h-3}); assert(not kernel.get(id))
+  settings=kernel.launch('settings'); text('8'); assert(not ctx.config.skipTypedConfirmation); kernel.remove(settings)
+  id=kernel.launch('editor'); text('still requires YES'); key(keys.f4); key(keys.enter); assertRunning(id)
+  key(keys.f4); text('YES'); key(keys.enter); assert(not kernel.get(id))
 end)
 test('Sealed-note visual program masks passwords and saves only ciphertext on a plain drive',function()
   local seal=cached('system/seal'); local iterations=seal.iterations; seal.iterations=10000
@@ -272,12 +309,12 @@ test('Sealed-note visual program masks passwords and saves only ciphertext on a 
   local envelope=cached('system/peanut').read('/Documents/sealed-note.peanut')
   assert(type(envelope)=='string' and envelope:sub(1,11)=='pistachio1:')
   local raw=readFile(vault.path)
-  assert(raw:sub(1,4)=='SCP1' and not raw:find(message,1,true) and not raw:find(passphrase,1,true))
+  assert(raw:sub(1,4)=='SCP2' and not raw:find(message,1,true) and not raw:find(passphrase,1,true))
   kernel.step({'key',keys.leftShift}); key(keys.tab); kernel.step({'key_up',keys.leftShift})
   text(passphrase); key(keys.tab); key(keys.tab); key(keys.enter); finishCrypto()
   assert(p.win.getLine(3):find(message,1,true),'Decrypted note was not shown')
   assert(not readFile(vault.path):find(message,1,true))
-  kernel.remove(id); assert(vault.setEncryption(true)); seal.iterations=iterations
+  kernel.remove(id); assert(vault.setEncryption(true,password,'test fixture',Login.progress)); seal.iterations=iterations
 end)
 test('Two terminals have isolated shell working directories',function()
   local storage=cached('system/storage')
@@ -347,12 +384,54 @@ test('Pistachio keyboard and window manager controls',function()
   kernel.render(); dump(caps.color and 'render' or 'basic'); kernel.remove(id)
 end)
 test('Window mouse coordinates, dragging and resizing',function()
+  kernel.notice=nil
   local id=kernel.launch('editor'); local p=assertRunning(id)
   if p.maximized then kernel.maximize(p) end
+  kernel.render()
+  local grip,_,gripBG=kernel.frame.getLine(p.y+p.h-1)
+  eq(grip:sub(p.x+p.w-3,p.x+p.w-1),caps.color and '  /' or '../')
+  if caps.color then assert(gripBG:sub(p.x+p.w-1,p.x+p.w-1)~=colors.toBlit(kernel.theme().frame)) end
   local x,y=p.x,p.y
   kernel.step({'mouse_click',1,x+2,y}); kernel.step({'mouse_drag',1,x+3,y+1}); kernel.step({'mouse_up',1,x+3,y+1})
   assert(p.x>=x); kernel.step({'mouse_click',1,p.x+p.w-2,p.y+p.h-1})
   kernel.step({'mouse_drag',1,p.x+p.w-4,p.y+p.h-2}); kernel.step({'mouse_up',1,1,1}); assertRunning(id)
+  dump('resize-corner')
+  kernel.remove(id)
+end)
+test('Desktop shortcut menus remove only shortcuts and persist the choice',function()
+  kernel.notice=nil; kernel.render()
+  for y=1,kernel.height do
+    local line=kernel.frame.getLine(y)
+    assert(not line:find('Your computer',1,true) and not line:find('F1 Apps',1,true))
+  end
+  local hit=kernel.desktopHits[1]; eq(hit.id,'files')
+  kernel.step({'mouse_click',2,hit.x,hit.y}); assert(kernel.context and #kernel.tasks==0)
+  key(keys.down); key(keys.enter); assert(ctx.config.hiddenShortcuts.files)
+  assert(cached('system/storage').load('/.system/settings.tbl').hiddenShortcuts.files)
+  for _,item in ipairs(kernel.desktopHits) do assert(item.id~='files') end
+  key(keys.f1); text('Files'); key(keys.enter)
+  local p=kernel.get(kernel.focus); eq(p.app,'files'); kernel.remove(p.id); kernel.render()
+  kernel.step({'mouse_click',2,kernel.width,kernel.height-1}); assert(kernel.context)
+  key(keys.down); key(keys.down); key(keys.enter); assert(not ctx.config.hiddenShortcuts.files)
+  eq(kernel.desktopHits[1].id,'files'); dump('desktop')
+end)
+test('Window buttons have distinct colors; right click preserves app coordinates',function()
+  local id=kernel.launch('terminal'); local p=assertRunning(id); kernel.render()
+  local _,_,bg=kernel.frame.getLine(p.y); local left=p.x+p.w-10
+  if caps.color then
+    eq(bg:sub(left,left+8),string.rep(colors.toBlit(colors.yellow),3)..string.rep(colors.toBlit(colors.lime),3)..string.rep(colors.toBlit(colors.red),3))
+    assert(kernel.theme().frame~=kernel.theme().desktop and kernel.theme().frame~=kernel.theme().accent)
+  else
+    local row=kernel.frame.getLine(p.y+1); eq(row:sub(p.x,p.x),'|')
+  end
+  local event
+  p.co=coroutine.create(function() event={os.pullEventRaw('mouse_click')}; os.pullEventRaw() end); p.filter=nil; kernel.resume(p,{})
+  kernel.step({'mouse_click',2,p.x+3,p.y+2}); eq(event[2],2); eq(event[3],3); eq(event[4],2); assert(not kernel.context)
+  kernel.step({'mouse_click',2,left+7,p.y}); assert(kernel.context); assertRunning(id)
+  key(keys.enter); assert(p.minimized); kernel.focusTask(id)
+  kernel.step({'mouse_click',1,p.x+p.w-9,p.y}); assert(p.minimized); kernel.focusTask(id)
+  local maximized=p.maximized
+  kernel.step({'mouse_click',1,p.x+p.w-6,p.y}); eq(p.maximized,not maximized)
   kernel.remove(id)
 end)
 test('Desktop works at pocket and minimum display sizes',function()
@@ -393,9 +472,9 @@ test('Real boot login, lock, wrong password and logout',function()
     os.queueEvent('paste',value); os.queueEvent('key',keys.enter,false); os.queueEvent('key_up',keys.enter)
   end
   parallel.waitForAll(function() bootOK=shell.run('/ccsacabam/boot.lua'); finished=true end,function()
-    untilText('Unlock your personal'); enter(password); untilText('F1 Apps')
+    untilText('Unlock your personal'); enter(password); untilText(' Apps    ')
     os.queueEvent('key',keys.f9,false); sleep(.1); enter(''); untilText('Unlock your personal')
-    enter('wrong passphrase'); untilText('Wrong password'); enter(password); untilText('F1 Apps')
+    enter('wrong passphrase'); untilText('Wrong password'); enter(password); untilText(' Apps    ')
     os.queueEvent('key',keys.f10,false); sleep(.1); enter('')
   end)
   term.redirect(rawTerm); assert(finished and bootOK)

@@ -1,14 +1,15 @@
 return function(api)
   local ui=api.ui; local scroll=0
   local content={
-    "Welcome to CCSacabam", "Your workspace, on any computer.", "",
+    "CCSacabam controls", "",
     "WINDOWS", "F1: app launcher (type to search)","F2: cycle running apps", "F3: minimize current window", "F4: close current window",
     "F6: maximize / restore", "F7: move window with arrow keys", "F8: resize window with arrow keys", "Enter finishes; F5 cancels move/resize.",
-    "F9: lock the session", "F10: exit to CraftOS", "",
-    "Advanced: drag title bars to move. Drag the bottom-right corner to resize. Click _ / + / X to minimize, maximize or close.", "",
+    "F9: lock (when encryption is on)", "F10: exit to CraftOS", "",
+    "Advanced: drag title bars to move. Drag the bottom-right corner to resize. Click - / + / X to minimize, maximize or close.", "",
+    "Right-click a desktop shortcut to open or remove it. Right-click empty desktop to restore shortcuts. Programs remain in Apps.", "Settings: Skip typing YES is OFF by default. Turn it on to confirm prompts with Enter or a click.", "",
     "FILES & PROGRAMS", "Double-click or Enter opens a file. Lua and Pistachio programs run in windows. E edits the selected file. N creates a file, D a folder. C/X/V copy, cut, paste. Delete moves to Trash; T opens Trash. Enter restores a trashed item.","",
     "EDITOR", "Ctrl+S save, Ctrl+Shift+S save as.","Ctrl+O open, Ctrl+N new, Ctrl+F find.","Ctrl+Z undo, Ctrl+Y redo.","",
-    "PERSONAL DRIVE", "Encryption starts OFF. Fine to leave off on a private computer. On a shared server, try encryption: it is CCSacabam's main security feature for saved files. Without encryption, login still works, but files are readable outside the OS.",
+    "PERSONAL DRIVE", "Encryption starts OFF. Fine to leave off on a private computer. On a shared server, try encryption: it is CCSacabam's main security feature for saved files. With encryption off, there is no password or login screen. Files are readable outside the OS.",
     "Enable or disable encryption in Settings. When ON, names, content, temporary files and Trash are encrypted on disk. Normal filesystem paths in apps use this drive. /rom and the installed OS are read-only; /host shows existing physical files for importing.",
     "Save before locking or exiting. Unsaved app buffers are discarded. There is no password reset. Back up vault/data.scv while signed out. Enabling encryption does not erase older plaintext copies or backups.","",
     "PISTACHIO SCRIPT", "Open Pistachio from the launcher for a sample visual app. Examples are in Programs. Edit a .pist file with E in Files, then open it to run. Tab selects controls; Enter activates buttons. The same program works with monochrome and color displays.","",

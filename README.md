@@ -1,6 +1,6 @@
 # CCSacabam
 
-A windowed workspace for ComputerCraft, with optional drive encryption, ordinary Lua terminals, and native visual apps written in **Pistachio Script**.
+An operating system for ComputerCraft, with optional drive encryption, ordinary Lua terminals, and native visual apps written in **Pistachio Script**.
 
 **Basic computers** get monochrome windows and complete keyboard navigation. **Advanced computers** get color, mouse controls, and an optional render mode with 2×3 subpixel graphics and a small custom banner font. Render mode uses normal terminal APIs, so it does not require CraftOS-PC graphics extensions.
 
@@ -18,9 +18,9 @@ From this folder on your real computer:
 ./run.sh
 ```
 
-Use `./run.sh --basic` for a separate basic-computer save. These launchers use `.craftos/advanced` and `.craftos/basic` here, leaving your usual CraftOS-PC save alone. On the first run, choose a display mode and encryption setting, install, and create a passphrase of at least 12 characters. Later runs boot the installed copy. Set `CCSACABAM_DATA_DIR` to choose another save directory.
+Use `./run.sh --basic` for a separate basic-computer save. These launchers use `.craftos/advanced` and `.craftos/basic` here, leaving your usual CraftOS-PC save alone. The first run opens a full-screen setup wizard. Choose the display mode and encryption setting, then install. A password is only needed when encryption is on (at least 12 characters). Later runs boot the installed copy. Set `CCSACABAM_DATA_DIR` to choose another save directory.
 
-**Encryption starts off.** Fine to leave off on a private computer. On a shared server, try encryption: it is CCSacabam's main security feature for protecting saved files. Turn it on during installation or later in Settings. Login still works with encryption off, but the files are readable outside the OS. Existing drives keep their setting during upgrades.
+**Encryption starts off.** Fine to leave off on a private computer. On a shared server, try encryption: it is CCSacabam's main security feature for protecting saved files. Turn it on during installation or later in Settings. With encryption off, there is no password or login screen; files are readable outside the OS. Turning encryption on in Settings asks you to create a password. Existing drives keep their setting during upgrades.
 
 ## Install in ComputerCraft
 
@@ -33,6 +33,8 @@ wget https://raw.githubusercontent.com/ThePearlKing/CCBaspis/main/dist/ccsacabam
 install
 /ccsacabam/boot.lua
 ```
+
+Setup supports arrows, Tab, Enter, F5 to cancel, and mouse input on advanced computers. Password fields only appear for a new encrypted drive.
 
 HTTP must be enabled on the Minecraft server for `wget`. The installer stages and checks the package, preserves unrelated files, and backs up existing startup programs under `/ccsacabam-backups`. It installs to `/ccsacabam` and enables startup on reboot. Re-run the installer to upgrade while preserving the personal drive. `/ccsacabam/uninstall.lua` restores the previous startup and keeps your data.
 
@@ -48,10 +50,12 @@ The target is modern **CC: Tweaked**, with `bit32`, `window`, `term.blit`, and `
 | F5 | Cancel a dialog or operation; leave login |
 | F6 | Maximize or restore |
 | F7 / F8 | Move / resize with arrows; Enter accepts, F5 cancels |
-| F9 / F10 | Lock / exit to CraftOS |
+| F9 / F10 | Lock (encrypted drives) / exit to CraftOS |
 | Tab / Shift+Tab / Enter | Select and activate native app controls |
 
-Advanced computers also support clicking, scrolling, dragging title bars, and resizing from the bottom-right corner. Save your work before locking or exiting; unsaved app buffers are discarded.
+Advanced computers also support clicking, scrolling, dragging title bars, and resizing from the bottom-right corner. Right-click a shortcut to remove it from the desktop; the program stays in Apps. Right-click empty desktop to restore shortcuts, or a title bar for window actions. App content keeps its normal right-click events. Basic mode uses a dotted wallpaper and thin character borders. Save your work before locking or exiting; unsaved app buffers are discarded.
+
+**Settings → Skip typing YES** starts **OFF**. Turn it on to confirm dialogs with Enter or a click; leave it off to keep typing YES.
 
 Included apps: Files with Trash, Editor with undo and search, Terminal, Sketch with a rotating 3D demo, Pistachio, your original Chat+, Callisto, Jupiter, Settings, Tasks, Devices, and Guide. Chat+ is copied into `Programs` and runs as a normal Lua program.
 
@@ -81,7 +85,7 @@ The welcome site is installed at `/Sites/welcome`. Open Jupiter, choose a domain
 
 ```sh
 python3 tools/build.py
-python3 tools/test.py advanced basic network fresh fresh-basic pocket
+python3 tools/test.py advanced basic pocket network fresh fresh-basic fresh-encrypted setup setup-basic
 ```
 
 The build creates a deterministic installer and SHA-256 checksum. Tests use disposable emulator saves in `/tmp`; they do not touch your ordinary computers. The test runner needs Python's `cryptography` package for independent verification. See [testing](docs/TESTING.md) for coverage and limits.

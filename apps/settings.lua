@@ -3,8 +3,10 @@ return function(api)
   local function options()
     local c=api.config()
     return {"Display: "..c.mode,"Theme: "..c.theme,"Wallpaper: "..tostring(c.wallpaper),
-      "Welcome guide: "..tostring(c.welcome),"Lock personal drive","Change passphrase",
+      "Welcome guide: "..tostring(c.welcome),api.isEncrypted() and "Lock personal drive" or "Lock: no password set",
+      api.isEncrypted() and "Change passphrase" or "Password: not needed",
       "Encryption: "..(api.isEncrypted() and "ON" or "OFF"),
+      "Skip typing YES: "..(c.skipTypedConfirmation and "ON" or "OFF"),
       "Exit to CraftOS","Restart computer","Shut down computer"}
   end
   local function choose(n)
@@ -15,8 +17,10 @@ return function(api)
     elseif n==2 then c.theme=c.theme=="dark" and "light" or "dark"
     elseif n==3 then c.wallpaper=not c.wallpaper
     elseif n==4 then c.welcome=not c.welcome
-    elseif n==5 then api.requestExit("lock")
+    elseif n==5 then
+      if api.isEncrypted() then api.requestExit("lock") else api.notify("Encryption is off. No password or lock is needed.") end
     elseif n==6 then
+      if not api.isEncrypted() then api.notify("Enable encryption to set a password."); return end
       local password,entropy=api.password("New passphrase",{"At least 12 characters. No password reset."})
       if password then
         local again=api.password("Confirm new passphrase")
@@ -28,11 +32,19 @@ return function(api)
       local prompt=enabled and "Encrypt? Old backups stay plain."
         or "Decrypt? Files become readable."
       if ui.confirm(api,prompt) then
-        local ok,err=api.setEncryption(enabled)
+        local password,entropy
+        if enabled then
+          password,entropy=api.password("Create encryption password",{"Use at least 12 characters. Keep it safe."})
+          if not password then return end
+          local again=api.password("Confirm encryption password")
+          if again~=password then api.notify("Passwords did not match."); return end
+        end
+        local ok,err=api.setEncryption(enabled,password,entropy)
         api.notify(ok and (enabled and "Encryption enabled." or "Encryption disabled.") or err)
       end
-    elseif n==8 then api.requestExit("exit") elseif n==9 then api.requestExit("reboot") elseif n==10 then api.requestExit("shutdown") end
-    if n<=4 then api.saveConfig() end
+    elseif n==8 then c.skipTypedConfirmation=not c.skipTypedConfirmation
+    elseif n==9 then api.requestExit("exit") elseif n==10 then api.requestExit("reboot") elseif n==11 then api.requestExit("shutdown") end
+    if n<=4 or n==8 then api.saveConfig() end
   end
   while true do
     local t=api.theme(); local w,h=term.getSize(); ui.clear(t)

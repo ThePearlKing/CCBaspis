@@ -35,12 +35,18 @@ function L.progress(n,total)
 end
 function L.unlock(vault,options)
   local encrypted=options and options.encrypt==true
+  if (vault.exists() and not vault.isEncrypted()) or (not vault.exists() and not encrypted) then
+    local ok,err
+    if vault.exists() then ok,err=vault.unlock()
+    else ok,err=vault.create(nil,nil,nil,false) end
+    assert(ok,err); return true
+  end
   local message
   while true do
     if not vault.exists() then
       local password,entropy=L.password("Create your personal drive",{
         "Use a passphrase of 12+ characters.",
-        encrypted and "Encryption ON: saved files are protected." or "Encryption OFF: login only; files are readable.",
+        "Encryption ON: saved files are protected.",
         message or "There is no password reset. Keep it safe."})
       if not password then return false end
       if #password<12 then message="Passphrase must have at least 12 characters."
@@ -56,7 +62,7 @@ function L.unlock(vault,options)
         end
       end
     else
-      local password=L.password("Unlock your personal drive",{message or (vault.isEncrypted() and "Your files are encrypted while locked." or "Encryption OFF. Files are readable outside the OS.")})
+      local password=L.password("Unlock your personal drive",{message or "Your files are encrypted while locked."})
       if not password then return false end
       local ok,err=vault.unlock(password,L.progress)
       password=nil

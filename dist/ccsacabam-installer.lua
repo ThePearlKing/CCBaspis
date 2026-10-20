@@ -192,6 +192,11 @@ return function(api)
   return api.load("apps/terminal")(api)
 end
 ]]},
+  ["apps/code.lua"]={sha256="15aaf9b91fe79dd5e72d2e7eb718a027929430a965e00d78977317af413f6a84",data=[[
+return function(api,path)
+  return api.load('apps/editor')(api,path,{code=true})
+end
+]]},
   ["apps/devices.lua"]={sha256="99d30d1e6b8fa008e87f34f946ad676eea300a6ca090c460b79a1aaab53d6ef3",data=[[
 return function(api)
   local ui=api.ui; local scroll=0; local timer=os.startTimer(2)
@@ -225,13 +230,29 @@ return function(api)
   end
 end
 ]]},
-  ["apps/editor.lua"]={sha256="7797dc4962ad70df50debeef870ef874f851d8db91478ab4b721c37a4ccc80c5",data=[[
-return function(api,path)
+  ["apps/editor.lua"]={sha256="ef4745494aac6c69c74d535c130eee54be033043bb27dc6c1fa7dfd4ec85e4e4",data=[[
+return function(api,path,options)
   local ui=api.ui
+  local code=options and options.code
+  local syntax=code and api.load('system/syntax')
+  local language=code and (syntax.language(path) or 'lua')
+  local cachedText,cachedLanguage,document,popup
   local lines={""}; local x,y,top,left=1,1,1,0
   local saved=""; local undo={}; local redo={}; local query=""
   local function contents() return table.concat(lines,"\n") end
   local function dirty() return contents()~=saved end
+  local function syntaxDocument()
+    local raw=contents()
+    if raw~=cachedText or language~=cachedLanguage then
+      document=syntax.document(lines,language); cachedText,cachedLanguage=raw,language
+    end
+    return document
+  end
+  local function complete(force)
+    if not code then return end
+    local items,prefix=syntax.complete(lines,language,x,y,syntaxDocument())
+    popup=(#items>0 and (force or #prefix>=2)) and {items=items,prefix=prefix,index=1} or nil
+  end
   local function split(raw)
     lines={}; for line in (raw:gsub("\r\n","\n").."\n"):gmatch("(.-)\n") do lines[#lines+1]=line end
     if #lines==0 then lines={""} end
@@ -249,15 +270,22 @@ return function(api,path)
       if not raw then api.notify(err); return end
     end
     path=file; split(raw); saved=contents(); x,y,top,left=1,1,1,0; undo={}; redo={}
+    if code then language=syntax.language(path) or language; popup=nil end
   end
   if path then open(path) end
   local function save(as)
     local target=path
-    if not target or as then target=ui.prompt(api,"Save path",target or fs.combine(api.home,"Documents/untitled.txt")) end
+    if not target or as then
+      local extension=code and ({lua='lua',peanut='peanut',pistachio='pist',cashew='cashew'})[language] or 'txt'
+      target=ui.prompt(api,"Save path",target or fs.combine(api.home,(code and "Programs/untitled." or "Documents/untitled.")..extension))
+    end
     if not target or target=="" then return false end
     if target~=path and fs.exists(target) and not ui.confirm(api,"Replace "..fs.getName(target).."?") then return false end
     local ok,err=api.storage.write(target,contents())
-    if ok then path=target; saved=contents(); api.notify(api.isEncrypted() and "Saved in encrypted drive." or "Saved in personal drive.") else api.notify(err) end
+    if ok then
+      path=target; saved=contents(); if code then language=syntax.language(path) or language end
+      api.notify(api.isEncrypted() and "Saved in encrypted drive." or "Saved in personal drive.")
+    else api.notify(err) end
     return ok
   end
   local function insert(value)
@@ -283,6 +311,10 @@ return function(api,path)
     end
     api.notify("Text not found.")
   end
+  local function acceptCompletion(index)
+    local choice=popup and popup.items[index or popup.index]
+    if choice then local suffix=choice:sub(#popup.prefix+1); popup=nil; insert(suffix) end
+  end
   local function draw()
     local t=api.theme(); local w,h=term.getSize(); local gutter=w>24 and 5 or 0
     x=math.max(1,math.min(x,#lines[y]+1))
@@ -290,16 +322,47 @@ return function(api,path)
     if x<=left then left=x-1 elseif x>left+w-gutter then left=x-w+gutter end
     ui.clear(t)
     ui.bar(1," Save  Open  Find  Undo  Redo",t)
+    local tokens=code and syntaxDocument().styles
+    local mono=api.config().mode=='basic'
+    local light=api.config().theme=='light'
+    local tokenColors={k=light and colors.purple or colors.magenta,s=light and colors.green or colors.lime,
+      n=light and colors.brown or colors.orange,c=colors.gray,b=light and colors.blue or colors.cyan,o=t.muted,t=t.text}
     for row=2,h-1 do
       local index=top+row-2
       if lines[index] then
         if gutter>0 then ui.text(1,row,string.format("%4d ",index),t.muted,t.panel,gutter) end
-        local fg=lines[index]:match("^%s*%-%-") and t.muted or t.text
-        ui.text(gutter+1,row,lines[index]:sub(left+1),fg,t.bg,w-gutter)
+        if code then
+          local text=lines[index]:sub(left+1,left+w-gutter); local fg,bg={},{}
+          for n=1,#text do
+            local kind=tokens[index]:sub(left+n,left+n)
+            local inverse=mono and (kind=='k' or kind=='b')
+            fg[n]=colors.toBlit(inverse and colors.black or mono and t.text or tokenColors[kind] or t.text)
+            bg[n]=colors.toBlit(inverse and colors.white or t.bg)
+          end
+          term.setCursorPos(gutter+1,row); term.blit(text,table.concat(fg),table.concat(bg))
+        else
+          local fg=lines[index]:match("^%s*%-%-") and t.muted or t.text
+          ui.text(gutter+1,row,lines[index]:sub(left+1),fg,t.bg,w-gutter)
+        end
       end
     end
-    ui.text(1,h,(dirty() and "* " or "  ")..(path and fs.getName(path) or "Untitled").."  "..y..":"..x.."  Ctrl+S save",t.text,t.panel,w)
-    api.setTitle("Editor - "..(path and fs.getName(path) or "Untitled")..(dirty() and " *" or ""))
+    ui.text(1,h,(dirty() and "* " or "  ")..(code and language.." " or "")..y..":"..x..(popup and " Tab accept / F5 hide" or code and " C-S save C-Space hints C-L lang" or "  Ctrl+S save"),t.text,t.panel,w)
+    api.setTitle((code and "Code - " or "Editor - ")..(path and fs.getName(path) or "Untitled")..(dirty() and " *" or ""))
+    if popup then
+      local count=math.min(5,#popup.items,h-2); local width=1
+      for _,item in ipairs(popup.items) do width=math.max(width,#item+2) end
+      popup.w=math.min(w,width); popup.h=count
+      popup.x=math.max(1,math.min(gutter+x-left,w-popup.w+1))
+      local cy=2+y-top
+      popup.y=cy+count<h and cy+1 or math.max(2,cy-count)
+      popup.first=math.max(1,popup.index-count+1)
+      for row=1,count do
+        local index=popup.first+row-1
+        ui.text(popup.x,popup.y+row-1,(index==popup.index and '> ' or '  ')..popup.items[index],
+          index==popup.index and t.onAccent or t.text,index==popup.index and t.accent or t.panel,popup.w)
+      end
+    end
+    term.setTextColor(t.text)
     term.setCursorPos(gutter+x-left,2+y-top); term.setCursorBlink(true)
   end
   local function history(from,to)
@@ -307,6 +370,7 @@ return function(api,path)
     if item then to[#to+1]={text=contents(),x=x,y=y}; split(item.text); x,y=item.x,item.y end
   end
   local function action(name)
+    popup=nil
     if name=="save" then save(api.keyDown(keys.leftShift) or api.keyDown(keys.rightShift))
     elseif name=="open" then
       if discard() then local file=ui.prompt(api,"Open path",api.home.."/Documents/"); if file and file~="" then open(file) end end
@@ -319,39 +383,57 @@ return function(api,path)
     local e,a,b,c=os.pullEventRaw()
     local ctrl=api.keyDown(keys.leftCtrl) or api.keyDown(keys.rightCtrl)
     if e=="sacabam_close" or e=="terminate" then if discard() then return end
-    elseif e=="char" and not ctrl then insert(a)
-    elseif e=="paste" then insert(a)
+    elseif e=="char" and not ctrl then insert(a); complete(false)
+    elseif e=="paste" then popup=nil; insert(a)
     elseif e=="key" then
-      if ctrl then
+      if code and ctrl and a==keys.space then complete(true)
+      elseif code and ctrl and a==keys.l then
+        local order={'lua','peanut','pistachio','cashew'}
+        for i,value in ipairs(order) do if value==language then language=order[i%#order+1]; break end end
+        popup=nil
+      elseif popup and not ctrl and (a==keys.up or a==keys.down or a==keys.tab or a==keys.enter or a==keys.f5) then
+        if a==keys.up then popup.index=math.max(1,popup.index-1)
+        elseif a==keys.down then popup.index=math.min(#popup.items,popup.index+1)
+        elseif a==keys.f5 then popup=nil else acceptCompletion() end
+      elseif ctrl then
         local actions={[keys.s]="save",[keys.o]="open",[keys.f]="find",[keys.z]="undo",[keys.y]="redo"}
         if actions[a] then action(actions[a])
-        elseif a==keys.n and discard() then path=nil; lines={""}; saved=""; x,y,top,left=1,1,1,0; undo={}; redo={} end
+        elseif a==keys.n and discard() then path=nil; lines={""}; saved=""; x,y,top,left=1,1,1,0; undo={}; redo={}; popup=nil end
       elseif a==keys.left then
+        popup=nil
         if x>1 then x=x-1 elseif y>1 then y=y-1; x=#lines[y]+1 end
       elseif a==keys.right then
+        popup=nil
         if x<=#lines[y] then x=x+1 elseif y<#lines then y=y+1; x=1 end
-      elseif a==keys.up then y=math.max(1,y-1)
-      elseif a==keys.down then y=math.min(#lines,y+1)
-      elseif a==keys.home then x=1
-      elseif a==keys["end"] then x=#lines[y]+1
-      elseif a==keys.pageUp then local _,h=term.getSize(); y=math.max(1,y-h+2)
-      elseif a==keys.pageDown then local _,h=term.getSize(); y=math.min(#lines,y+h-2)
-      elseif a==keys.enter then insert("\n")
+      elseif a==keys.up then popup=nil; y=math.max(1,y-1)
+      elseif a==keys.down then popup=nil; y=math.min(#lines,y+1)
+      elseif a==keys.home then popup=nil; x=1
+      elseif a==keys["end"] then popup=nil; x=#lines[y]+1
+      elseif a==keys.pageUp then popup=nil; local _,h=term.getSize(); y=math.max(1,y-h+2)
+      elseif a==keys.pageDown then popup=nil; local _,h=term.getSize(); y=math.min(#lines,y+h-2)
+      elseif a==keys.enter then
+        local indent=code and lines[y]:match('^%s*') or ''
+        insert("\n"..indent)
       elseif a==keys.tab then insert("  ")
       elseif a==keys.backspace then
         if x>1 then snapshot(); lines[y]=lines[y]:sub(1,x-2)..lines[y]:sub(x); x=x-1
         elseif y>1 then snapshot(); x=#lines[y-1]+1; lines[y-1]=lines[y-1]..lines[y]; table.remove(lines,y); y=y-1 end
+        complete(false)
       elseif a==keys.delete then
+        popup=nil
         if x<=#lines[y] then snapshot(); lines[y]=lines[y]:sub(1,x-1)..lines[y]:sub(x+1)
         elseif y<#lines then snapshot(); lines[y]=lines[y]..lines[y+1]; table.remove(lines,y+1) end
       end
-    elseif e=="mouse_click" then
+    elseif e=="mouse_click" and a==1 then
       local w,h=term.getSize(); local gutter=w>24 and 5 or 0
-      if c==1 then
+      if popup and b>=popup.x and b<popup.x+popup.w and c>=popup.y and c<popup.y+popup.h then
+        acceptCompletion(popup.first+c-popup.y)
+      elseif c==1 then
         if b<=6 then action("save") elseif b<=12 then action("open") elseif b<=18 then action("find")
         elseif b<=24 then action("undo") else action("redo") end
-      elseif c<h then y=math.max(1,math.min(#lines,top+c-2)); x=math.max(1,math.min(#lines[y]+1,b-gutter+left)) end
+      elseif c<h then popup=nil; y=math.max(1,math.min(#lines,top+c-2)); x=math.max(1,math.min(#lines[y]+1,b-gutter+left)) end
     elseif e=="mouse_scroll" then
+      popup=nil
       local _,h=term.getSize(); top=math.max(1,math.min(math.max(1,#lines-h+3),top+a*3))
       y=math.max(top,math.min(y,top+h-3))
     end
@@ -498,18 +580,19 @@ return function(api,start)
   end
 end
 ]]},
-  ["apps/help.lua"]={sha256="ee9c13536e3200088e5ee6288e2f7d58161442a357e23ca7ad4f5466ace44770",data=[[
+  ["apps/help.lua"]={sha256="5413f88d2426d6ad6cacdd43187112a18c1db6e6db6de32b5aec40644263e0fa",data=[[
 return function(api)
   local ui=api.ui; local scroll=0
   local content={
-    "Welcome to CCSacabam", "Your workspace, on any computer.", "",
+    "CCSacabam controls", "",
     "WINDOWS", "F1: app launcher (type to search)","F2: cycle running apps", "F3: minimize current window", "F4: close current window",
     "F6: maximize / restore", "F7: move window with arrow keys", "F8: resize window with arrow keys", "Enter finishes; F5 cancels move/resize.",
-    "F9: lock the session", "F10: exit to CraftOS", "",
-    "Advanced: drag title bars to move. Drag the bottom-right corner to resize. Click _ / + / X to minimize, maximize or close.", "",
+    "F9: lock (when encryption is on)", "F10: exit to CraftOS", "",
+    "Advanced: drag title bars to move. Drag the bottom-right corner to resize. Click - / + / X to minimize, maximize or close.", "",
+    "Right-click a desktop shortcut to open or remove it. Right-click empty desktop to restore shortcuts. Programs remain in Apps.", "Settings: Skip typing YES is OFF by default. Turn it on to confirm prompts with Enter or a click.", "",
     "FILES & PROGRAMS", "Double-click or Enter opens a file. Lua and Pistachio programs run in windows. E edits the selected file. N creates a file, D a folder. C/X/V copy, cut, paste. Delete moves to Trash; T opens Trash. Enter restores a trashed item.","",
     "EDITOR", "Ctrl+S save, Ctrl+Shift+S save as.","Ctrl+O open, Ctrl+N new, Ctrl+F find.","Ctrl+Z undo, Ctrl+Y redo.","",
-    "PERSONAL DRIVE", "Encryption starts OFF. Fine to leave off on a private computer. On a shared server, try encryption: it is CCSacabam's main security feature for saved files. Without encryption, login still works, but files are readable outside the OS.",
+    "PERSONAL DRIVE", "Encryption starts OFF. Fine to leave off on a private computer. On a shared server, try encryption: it is CCSacabam's main security feature for saved files. With encryption off, there is no password or login screen. Files are readable outside the OS.",
     "Enable or disable encryption in Settings. When ON, names, content, temporary files and Trash are encrypted on disk. Normal filesystem paths in apps use this drive. /rom and the installed OS are read-only; /host shows existing physical files for importing.",
     "Save before locking or exiting. Unsaved app buffers are discarded. There is no password reset. Back up vault/data.scv while signed out. Enabling encryption does not erase older plaintext copies or backups.","",
     "PISTACHIO SCRIPT", "Open Pistachio from the launcher for a sample visual app. Examples are in Programs. Edit a .pist file with E in Files, then open it to run. Tab selects controls; Enter activates buttons. The same program works with monochrome and color displays.","",
@@ -664,14 +747,16 @@ return function(api,domain,root)
   end
 end
 ]]},
-  ["apps/settings.lua"]={sha256="7b4fa51fc732f91a2dc1719a66b77b3aeef25606af148a72d4fda12e38c857d7",data=[[
+  ["apps/settings.lua"]={sha256="c05c4c33763dfab2fd42cd59928b0ea6d98eeed5603003eb48b1adbe8928d6cf",data=[[
 return function(api)
   local ui=api.ui; local selected=1; local offset=0
   local function options()
     local c=api.config()
     return {"Display: "..c.mode,"Theme: "..c.theme,"Wallpaper: "..tostring(c.wallpaper),
-      "Welcome guide: "..tostring(c.welcome),"Lock personal drive","Change passphrase",
+      "Welcome guide: "..tostring(c.welcome),api.isEncrypted() and "Lock personal drive" or "Lock: no password set",
+      api.isEncrypted() and "Change passphrase" or "Password: not needed",
       "Encryption: "..(api.isEncrypted() and "ON" or "OFF"),
+      "Skip typing YES: "..(c.skipTypedConfirmation and "ON" or "OFF"),
       "Exit to CraftOS","Restart computer","Shut down computer"}
   end
   local function choose(n)
@@ -682,8 +767,10 @@ return function(api)
     elseif n==2 then c.theme=c.theme=="dark" and "light" or "dark"
     elseif n==3 then c.wallpaper=not c.wallpaper
     elseif n==4 then c.welcome=not c.welcome
-    elseif n==5 then api.requestExit("lock")
+    elseif n==5 then
+      if api.isEncrypted() then api.requestExit("lock") else api.notify("Encryption is off. No password or lock is needed.") end
     elseif n==6 then
+      if not api.isEncrypted() then api.notify("Enable encryption to set a password."); return end
       local password,entropy=api.password("New passphrase",{"At least 12 characters. No password reset."})
       if password then
         local again=api.password("Confirm new passphrase")
@@ -695,11 +782,19 @@ return function(api)
       local prompt=enabled and "Encrypt? Old backups stay plain."
         or "Decrypt? Files become readable."
       if ui.confirm(api,prompt) then
-        local ok,err=api.setEncryption(enabled)
+        local password,entropy
+        if enabled then
+          password,entropy=api.password("Create encryption password",{"Use at least 12 characters. Keep it safe."})
+          if not password then return end
+          local again=api.password("Confirm encryption password")
+          if again~=password then api.notify("Passwords did not match."); return end
+        end
+        local ok,err=api.setEncryption(enabled,password,entropy)
         api.notify(ok and (enabled and "Encryption enabled." or "Encryption disabled.") or err)
       end
-    elseif n==8 then api.requestExit("exit") elseif n==9 then api.requestExit("reboot") elseif n==10 then api.requestExit("shutdown") end
-    if n<=4 then api.saveConfig() end
+    elseif n==8 then c.skipTypedConfirmation=not c.skipTypedConfirmation
+    elseif n==9 then api.requestExit("exit") elseif n==10 then api.requestExit("reboot") elseif n==11 then api.requestExit("shutdown") end
+    if n<=4 or n==8 then api.saveConfig() end
   end
   while true do
     local t=api.theme(); local w,h=term.getSize(); ui.clear(t)
@@ -832,7 +927,7 @@ return function(api,path)
   end
 end
 ]=]},
-  ["apps/terminal.lua"]={sha256="ff397b396f38531881e47ca4b814bbd39eae62eb1601fdcce4fdaf4f17ab4607",data=[[
+  ["apps/terminal.lua"]={sha256="a1ad5a976b0d1023c12cea7a48f62607cc2e7a1fe736f2a4fc198de4777e2b3b",data=[[
 return function(api,program)
   local parent={}; for k,v in pairs(api.shell) do parent[k]=v end
   parent.dir=function() return api.home end
@@ -843,7 +938,10 @@ return function(api,program)
   print("F1 apps | F2 switch | F4 close")
   local function shellTask()
     if program then
-      os.run({shell=parent,multishell=false},"/rom/programs/shell.lua",'"'..program..'"')
+      -- fs.combine returns a root-relative path without a leading slash.
+      -- Files already resolved it: do not resolve it again against shell.dir().
+      local absolute="/"..fs.combine("/",program)
+      os.run({shell=parent,multishell=false},"/rom/programs/shell.lua",'"'..absolute..'"')
       print("Program finished. Press any key."); os.pullEvent("key")
     else os.run({shell=parent,multishell=false},"/rom/programs/shell.lua") end
   end
@@ -855,7 +953,7 @@ return function(api,program)
   end)
 end
 ]]},
-  ["boot.lua"]={sha256="ca94e7bd49cad4dcc16d9238822c5947cf423c7d24905d2ee57ab6291b1c5ed2",data=[[
+  ["boot.lua"]={sha256="f9a30ab0f647beefa6c97849117416fb4fe524d54fe8f92fb50e150a929a385c",data=[[
 -- Entry point: login, encrypted personal drive, then the desktop session.
 local args={...}
 local root=fs.getDir(shell.getRunningProgram())
@@ -899,7 +997,8 @@ local function main()
         assert(module("system/storage").write(fs.combine(root,"home/.examples-installed"),"1"))
       end
       local ctx={root=root,load=module,config=config,configModule=configModule,caps=caps,target=original,shell=shell,
-        password=login.password,isEncrypted=vault.isEncrypted,setEncryption=vault.setEncryption,
+        password=login.password,isEncrypted=vault.isEncrypted,
+        setEncryption=function(enabled,password,entropy) return vault.setEncryption(enabled,password,entropy,login.progress) end,
         cryptoProgress=login.progress,
         changePassword=function(password,entropy) return vault.changePassword(password,entropy,login.progress) end}
       local kernel=module("system/kernel").new(ctx)
@@ -2176,7 +2275,7 @@ function C.safeScript(ast)
 end
 return C
 ]]},
-  ["system/config.lua"]={sha256="8c80b3498acf68980912bda01d17fc53b1bc631f28970a964b15d90a1e2a90af",data=[[
+  ["system/config.lua"]={sha256="11854c189d6ec37fb1aa47faaf42221dd7ad278e290296c2c030816d15cfeaba",data=[[
 local M = {}
 M.version = "1.0.0"
 function M.capabilities(target)
@@ -2192,24 +2291,32 @@ function M.normalize(c, caps)
   if not caps.color then mode = "basic"
   elseif mode ~= "basic" and mode ~= "color" and mode ~= "render" then mode = "color" end
   if mode == "render" and not caps.blit then mode = "color" end
+  local hidden={}
+  if type(c.hiddenShortcuts)=="table" then
+    for id,value in pairs(c.hiddenShortcuts) do if type(id)=="string" and value==true then hidden[id]=true end end
+  end
   return { mode = mode, theme = c.theme == "light" and "light" or "dark",
     wallpaper = c.wallpaper ~= false, clock24 = c.clock24 ~= false,
-    welcome = c.welcome ~= false, version = M.version }
+    welcome = c.welcome ~= false, version = M.version, hiddenShortcuts=hidden,
+    skipTypedConfirmation = c.skipTypedConfirmation == true }
 end
 function M.theme(config)
   if config.mode == "basic" then
     return { bg = colors.black, panel = colors.black, text = colors.white,
       muted = colors.white, accent = colors.white, onAccent = colors.black,
-      border = colors.white, desktop = colors.black, danger = colors.white }
+      border = colors.white, desktop = colors.black, danger = colors.white,
+      frame=colors.black,frameText=colors.white,inactiveFrame=colors.black,inactiveFrameText=colors.white }
   end
   if config.theme == "light" then
     return { bg = colors.white, panel = colors.lightGray, text = colors.black,
       muted = colors.gray, accent = colors.blue, onAccent = colors.white,
-      border = colors.gray, desktop = colors.cyan, danger = colors.red }
+      border = colors.gray, desktop = colors.cyan, danger = colors.red,
+      frame=colors.gray,frameText=colors.white,inactiveFrame=colors.lightGray,inactiveFrameText=colors.black }
   end
   return { bg = colors.black, panel = colors.gray, text = colors.white,
     muted = colors.lightGray, accent = colors.cyan, onAccent = colors.black,
-    border = colors.gray, desktop = colors.blue, danger = colors.red }
+    border = colors.gray, desktop = colors.blue, danger = colors.red,
+    frame=colors.lightGray,frameText=colors.black,inactiveFrame=colors.gray,inactiveFrameText=colors.white }
 end
 return M
 ]]},
@@ -2546,7 +2653,7 @@ function G.form(title)
 end
 return G
 ]]},
-  ["system/kernel.lua"]={sha256="c00a8d6e185b6a76aa91406af90d971eeccd3802298923fb514e7baabe109246",data=[=[
+  ["system/kernel.lua"]={sha256="ae5dc7418426854d96806d28ce106eb8c22062203d16b85641c5d83c5bfa0253",data=[=[
 local K = {}
 local unpack = table.unpack or unpack
 local input = { char=true, key=true, key_up=true, paste=true, mouse_click=true,
@@ -2555,6 +2662,7 @@ K.catalog = {
   {id="files", name="Files", detail="Browse, copy, move and recover files", icon="folder"},
   {id="terminal", name="Terminal", detail="Run ComputerCraft commands and Lua", icon="terminal"},
   {id="editor", name="Editor", detail="Write notes and Lua programs", icon="editor"},
+  {id="code", name="Code Editor", detail="Lua, Peanut, Pistachio and Cashew", icon="editor"},
   {id="sketch", name="Sketch", detail="Draw and explore a rendered 3D scene", icon="sketch"},
   {id="pistachio", name="Pistachio", detail="Visual, event-driven programs", icon="editor"},
   {id="chatplus", name="Chat+", detail="Chat over a ComputerCraft modem", icon="terminal"},
@@ -2565,6 +2673,9 @@ K.catalog = {
   {id="devices", name="Devices", detail="Computer, disks and peripherals", icon="devices"},
   {id="help", name="Guide", detail="Shortcuts, recovery and app development", icon="help"},
 }
+-- Keep the original desktop layout. Registering an app only adds it to Apps.
+K.desktop={files=true,terminal=true,editor=true,sketch=true,pistachio=true,
+  browser=true,server=true,settings=true,processes=true,devices=true,help=true}
 function K.new(ctx)
   local self = { tasks={}, nextID=0, focus=nil, keys={}, launcher=nil, notice=nil,
     running=true, ctx=ctx, clockTimer=nil, drag=nil }
@@ -2678,6 +2789,30 @@ function K.new(ctx)
     self.wallpaper=nil
     return true
   end
+  function self.openContext(x,y,items)
+    self.context={x=x,y=y,items=items,index=1}
+  end
+  function self.desktopContext(x,y)
+    for _,hit in ipairs(self.desktopHits or {}) do
+      if x>=hit.x and x<hit.x+9 and y>=hit.y and y<=hit.y+3 then
+        self.openContext(x,y,{
+          {label="Open",run=function() self.launch(hit.id) end},
+          {label="Remove shortcut",run=function()
+            local previous=ctx.config.hiddenShortcuts[hit.id]
+            ctx.config.hiddenShortcuts[hit.id]=true
+            if not self.saveConfig() then ctx.config.hiddenShortcuts[hit.id]=previous end
+          end}})
+        return
+      end
+    end
+    self.openContext(x,y,{
+      {label="Open Terminal",run=function() self.launch('terminal') end},
+      {label="Applications",run=function() self.launcher={query='',index=1} end},
+      {label="Restore shortcuts",run=function()
+        local previous=ctx.config.hiddenShortcuts; ctx.config.hiddenShortcuts={}
+        if not self.saveConfig() then ctx.config.hiddenShortcuts=previous end
+      end}})
+  end
   function self.launch(id,...)
     local item
     for _,v in ipairs(K.catalog) do if v.id == id then item=v end end
@@ -2742,6 +2877,12 @@ function K.new(ctx)
     local previous=term.current(); term.redirect(self.frame)
     local t=self.theme(); UI.clear(t)
     UI.fill(1,2,self.width,self.height-2,t.desktop)
+    if ctx.config.mode=="basic" and ctx.config.wallpaper then
+      -- Sparse stippling gives the desktop its own texture on monochrome screens.
+      for y=2,self.height-1,2 do
+        for x=2+(math.floor(y/2)%2)*2,self.width,4 do UI.text(x,y,".",t.muted,t.desktop) end
+      end
+    end
     if ctx.config.mode=="render" and ctx.config.wallpaper then
       if not self.wallpaper then
         local b=Pixels.new(self.width*2,(self.height-2)*3,t.desktop)
@@ -2755,38 +2896,60 @@ function K.new(ctx)
       end
       Pixels.draw(self.wallpaper,term,1,2)
     end
-    UI.text(1,1," CCSacabam | F1 Apps",t.onAccent,t.accent,self.width)
+    local mono=ctx.config.mode=="basic"
+    local barBG,barFG=mono and t.bg or t.accent,mono and t.text or t.onAccent
+    UI.text(1,1," CCSacabam",barFG,barBG,self.width)
     local clock=textutils.formatTime(os.time(),ctx.config.clock24)
-    UI.text(self.width-#clock,1,clock,t.onAccent,t.accent)
+    UI.text(self.width-#clock,1,clock,barFG,barBG)
     self.desktopHits={}
     local cols=math.max(1,math.floor((self.width-2)/11))
-    for i,item in ipairs(K.catalog) do
-      local x,y=2+((i-1)%cols)*11,3+math.floor((i-1)/cols)*5
-      if y+3 < self.height-1 then
-        self.icon(item,x,y,false)
-        self.desktopHits[#self.desktopHits+1]={x=x,y=y,id=item.id}
+    local index=0
+    for _,item in ipairs(K.catalog) do
+      if K.desktop[item.id] and not ctx.config.hiddenShortcuts[item.id] then
+        local x,y=2+(index%cols)*11,3+math.floor(index/cols)*5
+        if y+3 < self.height-1 then
+          self.icon(item,x,y,false)
+          self.desktopHits[#self.desktopHits+1]={x=x,y=y,id=item.id}
+        end
+        index=index+1
       end
     end
-    if #self.tasks==0 and self.height>=17 then
-      UI.text(3,self.height-3,"Your computer. Your workspace.",t.text,t.desktop,self.width-4)
-      UI.text(3,self.height-2,"F1 apps  |  F2 switch  |  F10 exit",t.text,t.desktop,self.width-4)
-    end
     for _,p in ipairs(self.tasks) do if not p.minimized then
-      local border=p.id==self.focus and t.accent or t.border
+      local border=p.id==self.focus and t.frame or t.inactiveFrame
+      local frameText=p.id==self.focus and t.frameText or t.inactiveFrameText
       UI.fill(p.x,p.y,p.w,p.h,border)
-      UI.text(p.x+1,p.y,p.title,t.onAccent,border,p.w-9)
-      UI.text(p.x+p.w-8,p.y," _ + X ",t.onAccent,border,7)
+      local mono=ctx.config.mode=="basic"
+      local titleBG=mono and p.id==self.focus and t.accent or border
+      local titleFG=mono and p.id==self.focus and t.onAccent or frameText
+      if mono then
+        for y=p.y+1,p.y+p.h-2 do
+          UI.text(p.x,y,"|",frameText,border); UI.text(p.x+p.w-1,y,"|",frameText,border)
+        end
+        UI.text(p.x,p.y,"+"..string.rep("-",p.w-2).."+",frameText,border)
+        UI.text(p.x,p.y+p.h-1,"+"..string.rep("-",p.w-2).."+",frameText,border)
+      end
+      UI.text(p.x+1,p.y,p.title,titleFG,titleBG,p.w-12)
+      local colorful=ctx.caps.color and ctx.config.mode~="basic"
+      local left=p.x+p.w-10
+      UI.text(left,p.y,mono and "[-]" or " - ",colorful and colors.black or titleFG,colorful and colors.yellow or titleBG,3)
+      UI.text(left+3,p.y,mono and "[+]" or " + ",colorful and colors.black or titleFG,colorful and colors.lime or titleBG,3)
+      UI.text(left+6,p.y,mono and "[X]" or " X ",colorful and colors.white or titleFG,colorful and colors.red or titleBG,3)
       p.win.setVisible(true); p.win.setVisible(false)
-      UI.text(p.x+1,p.y+p.h-1,"F3 hide  F4 close  F6 size",t.onAccent,border,p.w-2)
+      if not mono then UI.text(p.x+1,p.y+p.h-1,"F3 hide  F4 close  F6 size",frameText,border,p.w-2) end
+      if not p.maximized then
+        local gripBG=mono and t.bg or border==colors.gray and colors.black or colors.gray
+        UI.text(p.x+p.w-3,p.y+p.h-1,mono and "../" or "  /",colors.white,gripBG,3)
+      end
     end end
-    UI.text(1,self.height," F1 Apps ",t.onAccent,t.accent,self.width)
+    UI.text(1,self.height,"",barFG,barBG,self.width)
+    UI.text(1,self.height," Apps    ",t.onAccent,t.accent,9)
     self.taskHits={}
     local tx=10
     local tabWidth=math.max(4,math.min(13,math.floor((self.width-10)/math.max(1,#self.tasks))))
     for _,p in ipairs(self.tasks) do
       if tx+tabWidth-1<=self.width then
-        UI.text(tx,self.height,(p.minimized and "_" or " ")..p.title,p.id==self.focus and t.text or t.onAccent,
-          p.id==self.focus and t.bg or t.accent,tabWidth)
+        UI.text(tx,self.height,(p.minimized and "_" or " ")..p.title,p.id==self.focus and (mono and t.onAccent or t.text) or barFG,
+          p.id==self.focus and (mono and t.accent or t.bg) or barBG,tabWidth)
         self.taskHits[#self.taskHits+1]={x=tx,w=tabWidth,id=p.id}; tx=tx+tabWidth
       end
     end
@@ -2820,6 +2983,25 @@ function K.new(ctx)
     if self.transform then
       UI.text(1,self.height-1," "..self.transform.mode..": arrows | Enter done | F5 cancel",t.text,t.panel,self.width)
     end
+    if self.context then
+      local menu=self.context; local mw=0
+      for _,item in ipairs(menu.items) do mw=math.max(mw,#item.label+4) end
+      menu.w=math.min(self.width,mw); menu.h=#menu.items+2
+      menu.x=math.max(1,math.min(menu.x,self.width-menu.w+1))
+      menu.y=math.max(2,math.min(menu.y,self.height-menu.h))
+      UI.fill(menu.x,menu.y,menu.w,menu.h,t.frame)
+      if mono then
+        UI.text(menu.x,menu.y,"+"..string.rep("-",menu.w-2).."+",t.text,t.bg)
+        UI.text(menu.x,menu.y+menu.h-1,"+"..string.rep("-",menu.w-2).."+",t.text,t.bg)
+        for y=menu.y+1,menu.y+menu.h-2 do
+          UI.text(menu.x,y,"|",t.text,t.bg); UI.text(menu.x+menu.w-1,y,"|",t.text,t.bg)
+        end
+      end
+      for i,item in ipairs(menu.items) do
+        UI.text(menu.x+1,menu.y+i,(i==menu.index and '> ' or '  ')..item.label,
+          i==menu.index and t.onAccent or t.text,i==menu.index and t.accent or t.bg,menu.w-2)
+      end
+    end
     if self.power then
       UI.fill(2,math.max(2,math.floor(self.height/2)-1),self.width-2,4,t.panel)
       UI.text(3,math.max(2,math.floor(self.height/2)-1),"Close apps? Unsaved work may be lost.",t.text,t.panel,self.width-4)
@@ -2828,7 +3010,7 @@ function K.new(ctx)
     self.frame.setVisible(true); self.frame.setVisible(false)
     local p=self.get(self.focus)
     base.setCursorBlink(false)
-    if p and not self.launcher and not self.power and not p.minimized and p.win.getCursorBlink() then
+    if p and not self.launcher and not self.context and not self.power and not p.minimized and p.win.getCursorBlink() then
       local x,y=p.win.getCursorPos()
       if x>=1 and x<=p.w-2 and y>=1 and y<=p.h-2 then
         base.setCursorPos(p.x+x,p.y+y); base.setTextColor(p.win.getTextColor()); base.setCursorBlink(true)
@@ -2846,7 +3028,23 @@ function K.new(ctx)
       for _,p in ipairs(list) do self.geometry(p); self.deliver(p,{"term_resize"},true) end
       self.render(); return
     end
-    if self.transform and input[name] then
+    if self.context and input[name] then
+      local menu=self.context
+      local function choose(index)
+        local item=menu.items[index]; self.context=nil
+        if item then item.run() end
+      end
+      if name=='key' then
+        if e[2]==keys.f5 then self.context=nil
+        elseif e[2]==keys.up then menu.index=math.max(1,menu.index-1)
+        elseif e[2]==keys.down then menu.index=math.min(#menu.items,menu.index+1)
+        elseif e[2]==keys.enter then choose(menu.index) end
+      elseif name=='mouse_click' then
+        local row=e[4]-menu.y
+        if e[2]==1 and e[3]>menu.x and e[3]<menu.x+menu.w-1 and row>=1 and row<=#menu.items then choose(row)
+        else self.context=nil end
+      elseif name=='mouse_scroll' then menu.index=math.max(1,math.min(#menu.items,menu.index+e[2])) end
+    elseif self.transform and input[name] then
       local move=self.transform; local p=self.get(move.id)
       if not p then self.transform=nil
       elseif name=="key" then
@@ -2891,7 +3089,9 @@ function K.new(ctx)
         if p.maximized then self.maximize(p) end
         self.transform={id=p.id,mode=e[2]==keys.f7 and "Move" or "Resize",before={p.x,p.y,p.w,p.h}}
       end
-    elseif name=="key" and e[2]==keys.f9 then self.power="lock"
+    elseif name=="key" and e[2]==keys.f9 then
+      if not ctx.isEncrypted or ctx.isEncrypted() then self.power="lock"
+      else self.notify("Encryption is off. No password or lock is needed.") end
     elseif name=="key" and e[2]==keys.f10 then self.power="exit"
     elseif name=="mouse_up" and self.drag then self.drag=nil
     elseif name=="mouse_drag" and self.drag then
@@ -2901,6 +3101,22 @@ function K.new(ctx)
           p.w,p.h=e[3]-p.x+1,e[4]-p.y+1; self.geometry(p); self.deliver(p,{"term_resize"},true)
         else p.x,p.y=e[3]-self.drag.dx,e[4]-self.drag.dy; self.geometry(p) end
       end
+    elseif name=="mouse_click" and e[2]~=1 then
+      local x,y=e[3],e[4]; local hit
+      for i=#self.tasks,1,-1 do local p=self.tasks[i]
+        if not p.minimized and x>=p.x and x<p.x+p.w and y>=p.y and y<p.y+p.h then hit=p; break end
+      end
+      if hit then
+        self.focusTask(hit.id)
+        if y==hit.y and e[2]==2 then
+          self.openContext(x,y,{
+            {label='Minimize',run=function() self.minimize(hit) end},
+            {label=hit.maximized and 'Restore' or 'Maximize',run=function() self.maximize(hit) end},
+            {label='Close',run=function() self.requestClose(hit) end}})
+        elseif x>hit.x and x<hit.x+hit.w-1 and y>hit.y and y<hit.y+hit.h-1 then
+          self.deliver(hit,{name,e[2],x-hit.x,y-hit.y})
+        end
+      elseif e[2]==2 and y>1 and y<self.height then self.desktopContext(x,y) end
     elseif name=="mouse_click" then
       local x,y=e[3],e[4]
       if y==1 or (y==self.height and x<10) then self.launcher={query="",index=1}
@@ -2914,9 +3130,10 @@ function K.new(ctx)
         if hit then
           self.focusTask(hit.id)
           if y==hit.y then
-            if x>=hit.x+hit.w-3 then self.requestClose(hit)
-            elseif x>=hit.x+hit.w-5 then self.maximize(hit)
-            elseif x>=hit.x+hit.w-8 then self.minimize(hit)
+            local button=x-(hit.x+hit.w-10)
+            if button>=6 and button<9 then self.requestClose(hit)
+            elseif button>=3 and button<6 then self.maximize(hit)
+            elseif button>=0 and button<3 then self.minimize(hit)
             elseif not hit.maximized then self.drag={id=hit.id,dx=x-hit.x,dy=y-hit.y} end
           elseif not hit.maximized and y==hit.y+hit.h-1 and x>=hit.x+hit.w-3 then
             self.drag={id=hit.id,resize=true}
@@ -2964,7 +3181,7 @@ function K.new(ctx)
 end
 return K
 ]=]},
-  ["system/login.lua"]={sha256="2f7cedb5c3c0a6912664446035a57b5c6e21697faef74564766d40895c9ae752",data=[[
+  ["system/login.lua"]={sha256="00650632d0e8c0c19b8647e4d9d13321d84c7fef9e1fc47be6bd6ce9795641c6",data=[[
 local L={}
 function L.password(label,subtitle)
   local value,entropy="",{}
@@ -3002,12 +3219,18 @@ function L.progress(n,total)
 end
 function L.unlock(vault,options)
   local encrypted=options and options.encrypt==true
+  if (vault.exists() and not vault.isEncrypted()) or (not vault.exists() and not encrypted) then
+    local ok,err
+    if vault.exists() then ok,err=vault.unlock()
+    else ok,err=vault.create(nil,nil,nil,false) end
+    assert(ok,err); return true
+  end
   local message
   while true do
     if not vault.exists() then
       local password,entropy=L.password("Create your personal drive",{
         "Use a passphrase of 12+ characters.",
-        encrypted and "Encryption ON: saved files are protected." or "Encryption OFF: login only; files are readable.",
+        "Encryption ON: saved files are protected.",
         message or "There is no password reset. Keep it safe."})
       if not password then return false end
       if #password<12 then message="Passphrase must have at least 12 characters."
@@ -3023,7 +3246,7 @@ function L.unlock(vault,options)
         end
       end
     else
-      local password=L.password("Unlock your personal drive",{message or (vault.isEncrypted() and "Your files are encrypted while locked." or "Encryption OFF. Files are readable outside the OS.")})
+      local password=L.password("Unlock your personal drive",{message or "Your files are encrypted while locked."})
       if not password then return false end
       local ok,err=vault.unlock(password,L.progress)
       password=nil
@@ -3657,7 +3880,145 @@ function M.name(name)
 end
 return M
 ]]},
-  ["system/ui.lua"]={sha256="786afd22a25b740a87715852f3c088d6709e819d629643e8e368f04836c0ab94",data=[[
+  ["system/syntax.lua"]={sha256="9d81bf7abdadfb16a19f03db02413b6726809339aa79a0d5647a718c1855a163",data=[[
+-- Editor lexing/completion only. Buffer contents are never executed.
+local S={}
+local function words(text)
+  local out={}; for word in text:gmatch('%S+') do out[word]=true end; return out
+end
+local keywords={
+  lua=words('and break do else elseif end false for function goto if in local nil not or repeat return then true until while'),
+  peanut=words('true false null'),
+  pistachio=words('app let set if else end repeat on every function call quit notify load save label banner button input password checkbox progress panel and or not true false null'),
+  cashew=words('cashew html head body main div title h1 h2 p pre a button input label br hr script'),
+}
+local builtins={
+  lua=words('assert error ipairs next pairs pcall print printError read require select tonumber tostring type unpack write xpcall'),
+  peanut={},
+  pistachio=words('advanced color render width height index str num len min max abs floor round upper lower peanut encode seal unseal'),
+  cashew=words('title href id name value type'),
+}
+local modules=words('fs term os math string table textutils shell colors colours keys http rednet peripheral paintutils window turtle pocket vector settings parallel bit32')
+local libraries={peanut='decode parse encode stringify read write array null',ganymede='form',europa='address relative path serve'}
+function S.language(path)
+  local ext=tostring(path or ''):lower():match('%.([%w]+)$')
+  return ({lua='lua',peanut='peanut',json='peanut',pist='pistachio',pistachio='pistachio',cashew='cashew'})[ext]
+end
+function S.line(line,language,previous)
+  local state={}; for k,v in pairs(previous or {}) do state[k]=v end
+  local out={}; local i=1
+  local function mark(last,kind)
+    last=math.min(last,#line)
+    for n=i,last do out[n]=kind end; i=last+1
+  end
+  while i<=#line do
+    local c=line:sub(i,i); local rest=line:sub(i); local lang=state.script and 'pistachio' or language
+    if state.block then
+      local a,b=line:find(state.block,i,true)
+      mark(b or #line,state.blockKind); if a then state.block,state.blockKind=nil,nil end
+    elseif state.quote then
+      local j=i
+      while j<=#line do
+        local ch=line:sub(j,j)
+        if ch=='\\' and language~='cashew' then j=j+2
+        elseif ch==state.quote then j=j+1; state.quote=nil; break else j=j+1 end
+      end
+      mark(j-1,'s')
+    elseif language=='cashew' and rest:sub(1,9)=='</script>' then
+      state.script=nil; state.tag=true; state.closing=true; state.tagName=true; mark(i+1,'o')
+    elseif language=='cashew' and not state.script and rest:sub(1,4)=='<!--' then
+      state.block='-->'; state.blockKind='c'; mark(i+3,'c')
+    elseif language=='cashew' and not state.script and c=='<' then
+      state.tag=true; state.closing=rest:sub(1,2)=='</'; state.tagName=true
+      mark(i+(state.closing and 1 or 0),'o')
+    elseif language=='cashew' and state.tag then
+      if c=='>' then
+        state.tag=nil; if state.nextScript then state.script=true end
+        state.nextScript=nil; mark(i,'o')
+      elseif c=='"' or c=="'" then state.quote=c; mark(i,'s')
+      elseif c:match('[%a_]') then
+        local word=rest:match('^[%w_-]+')
+        if state.tagName then
+          state.nextScript=word:lower()=='script' and not state.closing; state.tagName=nil
+          mark(i+#word-1,'k')
+        else mark(i+#word-1,'b') end
+      else mark(i,c:match('%s') and 't' or 'o') end
+    elseif language=='cashew' and not state.script then
+      local entity=rest:match('^&[%w#]+;'); local variable=rest:match('^{[%w_]+}')
+      if entity or variable then mark(i+#(entity or variable)-1,'b') else mark(i,'t') end
+    elseif lang=='lua' and rest:sub(1,2)=='--' then
+      local equal=rest:match('^%-%-%[(=*)%[')
+      if equal then state.block=']'..equal..']'; state.blockKind='c'; mark(i+#equal+3,'c')
+      else mark(#line,'c') end
+    elseif (lang=='pistachio' or lang=='peanut') and (c=='#' or (lang=='peanut' and rest:sub(1,2)=='//')) then mark(#line,'c')
+    elseif lang=='lua' and rest:match('^%[=*%[') then
+      local equal=rest:match('^%[(=*)%['); state.block=']'..equal..']'; state.blockKind='s'; mark(i+#equal+1,'s')
+    elseif c=='"' or (lang=='lua' and c=="'") then state.quote=c; mark(i,'s')
+    elseif c:match('%d') or (c=='.' and rest:sub(2,2):match('%d')) then
+      local number=rest:match('^0[xX][%x]+') or rest:match('^%d*%.?%d+[eE][+-]?%d+') or rest:match('^%d*%.?%d+')
+      mark(i+#number-1,'n')
+    elseif c:match('[%a_]') then
+      local word=rest:match('^[%a_][%w_]*')
+      local kind=keywords[lang][word] and 'k' or builtins[lang][word] and 'b' or 't'
+      if lang=='lua' and (modules[word] or libraries[word]) then kind='b' end
+      if lang=='peanut' and line:sub(i+#word):match('^%s*[:=]') then kind='b' end
+      mark(i+#word-1,kind)
+    else mark(i,c:match('[%s]') and 't' or 'o') end
+  end
+  return table.concat(out),state
+end
+function S.document(lines,language)
+  local result={styles={},before={}}; local state={}
+  for i,line in ipairs(lines) do
+    result.before[i]=state; result.styles[i],state=S.line(line,language,state)
+  end
+  return result
+end
+function S.complete(lines,language,x,y,document)
+  local before=lines[y]:sub(1,x-1)
+  local _,state=S.line(before,language,document.before[y])
+  if state.quote or state.block then return {},'' end
+  local styles=document.styles[y]
+  if styles:sub(x-1,x-1)=='c' then return {},'' end
+  local prefix=before:match('([%a_][%w_%.]*)$') or ''
+  local active=state.script and 'pistachio' or language
+  if language=='cashew' and not state.script and not state.tag then return {},'' end
+  local pool={}
+  if active=='lua' then
+    local module=prefix:match('^([%a_][%w_]*)%.')
+    if module then
+      if modules[module] then
+        local value=_ENV[module]
+        if type(value)=='table' then
+          for key in pairs(value) do if type(key)=='string' and key:match('^[%a_][%w_]*$') then pool[module..'.'..key]=true end end
+        end
+      elseif libraries[module] then for key in libraries[module]:gmatch('%S+') do pool[module..'.'..key]=true end end
+    else
+      for key in pairs(modules) do pool[key]=true end
+      for key in pairs(libraries) do pool[key]=true end
+    end
+  end
+  for key in pairs(keywords[active]) do pool[key]=true end
+  for key in pairs(builtins[active]) do pool[key]=true end
+  if active~='cashew' then
+    for row,line in ipairs(lines) do
+      local pos=1
+      while true do
+        local a,b,word=line:find('([%a_][%w_]*)',pos); if not a then break end
+        local kind=document.styles[row]:sub(a,a)
+        if kind~='c' and kind~='s' then pool[word]=true end
+        pos=b+1
+      end
+    end
+  end
+  local out={}
+  for word in pairs(pool) do if word~=prefix and word:sub(1,#prefix)==prefix then out[#out+1]=word end end
+  table.sort(out); while #out>32 do table.remove(out) end
+  return out,prefix
+end
+return S
+]]},
+  ["system/ui.lua"]={sha256="fa9a752940ddd7470d7f3f914f0bd04ba9721019e06b2a7a756ba05825388b6c",data=[[
 local M = {}
 function M.text(x, y, value, fg, bg, width)
   local w, h = term.getSize()
@@ -3715,6 +4076,26 @@ function M.prompt(api, label, initial)
   end
 end
 function M.confirm(api, label)
+  if api.config and api.config().skipTypedConfirmation then
+    local selected=1
+    while true do
+      local t,w,h=api.theme(),term.getSize()
+      local lines=M.wrap(label,math.max(1,w-2)); local count=math.min(#lines,h-2)
+      M.fill(1,h-count-1,w,count+2,t.panel)
+      for i=1,count do M.text(2,h-count-2+i,lines[i],t.text,t.panel,w-2) end
+      local split=math.floor(w/2)
+      M.text(1,h-1,selected==1 and '> Confirm' or '  Confirm',selected==1 and t.onAccent or t.text,selected==1 and t.accent or t.panel,split)
+      M.text(split+1,h-1,selected==2 and '> Cancel' or '  Cancel',selected==2 and t.onAccent or t.text,selected==2 and t.accent or t.panel,w-split)
+      M.text(1,h,'Enter: select / F5: cancel',t.muted,t.panel,w)
+      local e,a,b,c=os.pullEventRaw()
+      if e=='key' then
+        if a==keys.enter then return selected==1
+        elseif a==keys.f5 then return false
+        elseif a==keys.tab or a==keys.left or a==keys.right then selected=3-selected end
+      elseif e=='mouse_click' and a==1 and c==h-1 then return b<=split
+      elseif e=='sacabam_close' or e=='terminate' then return false end
+    end
+  end
   return (M.prompt(api, label .. " (type YES)") or ""):upper() == "YES"
 end
 function M.message(api, value)
@@ -3722,8 +4103,8 @@ function M.message(api, value)
 end
 return M
 ]]},
-  ["system/vault.lua"]={sha256="8a10ebf9305531143e42edee6929febd72578d848e3e3f9df414cd04c49e24e3",data=[[
--- Personal drive: authenticated envelopes, with optional encryption at rest.
+  ["system/vault.lua"]={sha256="24fddc6c5d10ecc2548fadc6a7273f0fd29ebfdd1bc02b7d7f7d994ae18a18cc",data=[[
+-- Personal drive: passwordless plain storage or authenticated encryption.
 local V={ iterations=100000, limit=196608 }
 local physical=fs
 function V.new(crypto,storage,path)
@@ -3736,6 +4117,16 @@ function V.new(crypto,storage,path)
     return raw:sub(5,36),iterations,raw:sub(41,52),raw:sub(53,-33),raw:sub(-32),raw:sub(1,4)=="SCV1"
   end
   function self.exists() return physical.exists(path) end
+  local function decode(plain)
+    local decoded=textutils.unserialize(plain)
+    if type(decoded)~="table" or decoded[""]~=true then return nil,"Invalid personal filesystem" end
+    for name,value in pairs(decoded) do
+      if type(name)~="string" or physical.combine("",name)~=name or (type(value)~="string" and value~=true) then
+        return nil,"Invalid personal drive entry"
+      end
+    end
+    return decoded
+  end
   function self.isEncrypted()
     if self.open then return self.encrypted end
     local h=physical.open(path,"rb"); if not h then return false end
@@ -3759,6 +4150,23 @@ function V.new(crypto,storage,path)
   end
   function self.unlock(password,progress)
     local raw,err=storage.read(path); if not raw then return nil,err end
+    if raw:sub(1,4)=="SCP2" or raw:sub(1,4)=="SCP1" then
+      local plain
+      if raw:sub(1,4)=="SCP2" then
+        if #raw<36 or not crypto.equal(crypto.sha256(raw:sub(1,-33)),raw:sub(-32)) then return nil,"Damaged personal drive." end
+        plain=raw:sub(5,-33)
+      else
+        -- Legacy unencrypted drives already contain readable data. Open them
+        -- without the old login-only password and migrate on the next save.
+        local ok,salt,iterations,nonce,body=pcall(header,raw)
+        if not ok then return nil,"Invalid legacy personal drive" end
+        plain=body
+      end
+      local decoded,why=decode(plain); if not decoded then return nil,why end
+      self.files,self.open,self.encrypted=decoded,true,false
+      self.key,self.salt,self.iterations=nil,nil,nil
+      return true
+    end
     local ok,salt,iterations,nonce,cipher,tag,encrypted=pcall(header,raw)
     if not ok then return nil,tostring(salt) end
     local master=crypto.pbkdf2(password,salt,iterations,progress)
@@ -3767,13 +4175,7 @@ function V.new(crypto,storage,path)
       return nil,"Wrong password or damaged vault."
     end
     local plain=encrypted and crypto.chacha20(crypto.hmac(master,"CCSacabam v1 encryption"),nonce,cipher) or cipher
-    local decoded=storage and textutils.unserialize(plain)
-    if type(decoded)~="table" or decoded[""]~=true then return nil,"Invalid vault filesystem" end
-    for name,value in pairs(decoded) do
-      if type(name)~="string" or physical.combine("",name)~=name or (type(value)~="string" and value~=true) then
-        return nil,"Invalid vault entry"
-      end
-    end
+    local decoded,why=decode(plain); if not decoded then return nil,why end
     self.key,self.salt,self.iterations,self.files,self.open=master,salt,iterations,decoded,true
     self.encrypted=encrypted
     return true
@@ -3782,38 +4184,54 @@ function V.new(crypto,storage,path)
     assert(self.open,"Personal drive is locked")
     local plain=textutils.serialize(self.files)
     if #plain>V.limit then return nil,"Personal drive full (192 KiB serialized limit)." end
+    if not self.encrypted then
+      local body="SCP2"..plain
+      return storage.write(path,body..crypto.sha256(body))
+    end
     self.serial=self.serial+1
     -- CC has no OS CSPRNG. A keyed nonce includes the entire content digest,
     -- time and a counter, so different contents remain distinct after rollback.
     local timing=tostring(os.epoch and os.epoch("utc") or os.time())..":"..os.clock()..":"..self.serial
     local nonce=crypto.hmac(keyFor("nonce"),crypto.sha256(plain)..timing):sub(1,12)
-    local cipher=self.encrypted and crypto.chacha20(keyFor("encryption"),nonce,plain) or plain
-    local body=(self.encrypted and "SCV1" or "SCP1")..self.salt..crypto.be(self.iterations)..nonce..cipher
+    local cipher=crypto.chacha20(keyFor("encryption"),nonce,plain)
+    local body="SCV1"..self.salt..crypto.be(self.iterations)..nonce..cipher
     return storage.write(path,body..crypto.hmac(keyFor("authentication"),body))
   end
   function self.create(password,entropy,progress,encrypted)
     if self.exists() then return nil,"A vault already exists. Unlock it instead." end
-    assert(type(password)=="string" and #password>=12,"Use a passphrase of at least 12 characters")
-    self.salt=crypto.sha256("CCSacabam salt:"..tostring(entropy)..":"..tostring(os.getComputerID())..":"..tostring(os.epoch and os.epoch("utc") or os.time())..":"..os.clock())
-    self.iterations=V.iterations
     self.encrypted=encrypted~=false
-    self.key=crypto.pbkdf2(password,self.salt,self.iterations,progress)
+    if self.encrypted then
+      assert(type(password)=="string" and #password>=12,"Use a passphrase of at least 12 characters")
+      self.salt=crypto.sha256("CCSacabam salt:"..tostring(entropy)..":"..tostring(os.getComputerID())..":"..tostring(os.epoch and os.epoch("utc") or os.time())..":"..os.clock())
+      self.iterations=V.iterations
+      self.key=crypto.pbkdf2(password,self.salt,self.iterations,progress)
+    end
     self.files={[""]=true,Documents=true,Pictures=true,Programs=true,[".Trash"]=true,[".system"]=true}
     self.open=true
     local ok,err=self.persist()
     if not ok then self.lock(); return nil,err end
     return true
   end
-  function self.setEncryption(enabled)
+  function self.setEncryption(enabled,password,entropy,progress)
     assert(self.open,"Personal drive is locked")
     assert(type(enabled)=="boolean","Encryption must be on or off")
-    local previous=self.encrypted; self.encrypted=enabled
+    if enabled==self.encrypted then return true end
+    local previous,oldKey,oldSalt,oldIterations=self.encrypted,self.key,self.salt,self.iterations
+    if enabled then
+      if type(password)~="string" or #password<12 then return nil,"Choose a passphrase of at least 12 characters." end
+      local salt=crypto.sha256("CCSacabam enable:"..tostring(entropy)..":"..tostring(os.epoch and os.epoch('utc') or os.time())..":"..os.clock())
+      local key=crypto.pbkdf2(password,salt,V.iterations,progress)
+      self.key,self.salt,self.iterations=key,salt,V.iterations
+    end
+    self.encrypted=enabled
     local ok,err=self.persist()
-    if not ok then self.encrypted=previous end
+    if not ok then self.encrypted,self.key,self.salt,self.iterations=previous,oldKey,oldSalt,oldIterations
+    elseif not enabled then self.key,self.salt,self.iterations=nil,nil,nil end
     return ok,err
   end
   function self.changePassword(password,entropy,progress)
     assert(self.open,"Drive is locked")
+    if not self.encrypted then return nil,"No password is needed while encryption is off." end
     if #password<12 then return nil,"Use at least 12 characters." end
     local oldKey,oldSalt,oldIterations=self.key,self.salt,self.iterations
     local newSalt=crypto.sha256(self.salt..tostring(entropy)..tostring(os.clock())..keyFor("password change"))
@@ -4087,6 +4505,244 @@ print('Autostart disabled. The encrypted drive and CCSacabam files are preserved
 print('Run '..fs.combine(root,'boot.lua')..' to open CCSacabam manually.')
 ]]},
 }}
+local setup=(function()
+-- Full-screen setup wizard. Embedded in the offline installer; no downloads.
+local S={}
+function S.run(package,installer)
+  local native=term.current(); local color=native.isColor()
+  local oldFG,oldBG=native.getTextColor(),native.getBackgroundColor()
+  local page,focus,scroll='welcome','next',0
+  local options={mode=color and 'color' or 'basic',encrypt=false,initialize=true}
+  local password,confirmation,entropy='','',{}
+  local problem,progress,result,controls,hits,rows
+  local ensure=true; local shift=false; local finished=false; local cancelled=false
+  local existing=fs.exists(installer.target..'/vault/data.scv')
+  if existing then
+    local file=fs.open(installer.target..'/vault/data.scv','rb')
+    if file then options.encrypt=file.read(4)=='SCV1'; file.close() end
+  end
+  local bytes,count=0,0
+  for _,file in pairs(package.files) do bytes=bytes+#file.data; count=count+1 end
+  local names={welcome='Welcome',display='Display',privacy='Privacy',password='Password',review='Ready to install',
+    installing='Installing',done='Installation complete',error='Installation stopped'}
+  local descriptions={basic='Monochrome windows and keyboard navigation.',color='Color windows with mouse and keyboard controls.',
+    render='Color, subpixel graphics and custom banner fonts.'}
+  local function palette()
+    return color and {bg=colors.black,panel=colors.gray,text=colors.white,muted=colors.lightGray,
+      accent=colors.cyan,onAccent=colors.black,button=colors.lime,onButton=colors.black,danger=colors.red}
+      or {bg=colors.black,panel=colors.black,text=colors.white,muted=colors.white,
+      accent=colors.white,onAccent=colors.black,button=colors.white,onButton=colors.black,danger=colors.white}
+  end
+  local function pages()
+    local list={'welcome','display','privacy'}
+    if options.encrypt and not existing then list[#list+1]='password' end
+    list[#list+1]='review'; return list
+  end
+  local function position()
+    for i,id in ipairs(pages()) do if id==page then return i end end
+    return #pages()
+  end
+  local function change(id)
+    page=id; scroll=0; problem=nil; ensure=true
+    focus=id=='display' and options.mode or id=='privacy' and not existing and (options.encrypt and 'on' or 'off')
+      or id=='password' and 'password' or 'next'
+  end
+  local function draw()
+    term.redirect(native)
+    local w,h=native.getSize(); local t=palette()
+    native.setBackgroundColor(t.bg); native.setTextColor(t.text); native.clear(); native.setCursorBlink(false)
+    local function text(x,y,value,fg,bg,width)
+      if y<1 or y>h or x>w then return end
+      value=tostring(value or ''); width=math.max(0,math.min(width or #value,w-x+1))
+      native.setCursorPos(math.max(1,x),y); native.setTextColor(fg or t.text); native.setBackgroundColor(bg or t.bg)
+      native.write(value:sub(1,width)..string.rep(' ',math.max(0,width-#value)))
+    end
+    text(1,1,' CCSacabam / Setup',t.onAccent,t.accent,w)
+    if page~='installing' then text(w-2,1,' X ',color and colors.white or t.onAccent,t.danger,3) end
+    text(2,3,names[page],t.text,t.bg,w-2)
+    if w>=40 and page~='installing' and page~='done' and page~='error' then
+      text(w-12,3,'Step '..position()..' of '..#pages(),t.muted,t.bg,12)
+    end
+    if h>=14 then text(2,4,string.rep('-',w-2),t.panel,t.bg,w-2) end
+    local start=h>=14 and 6 or 4; local finish=h-4; local visible=math.max(1,finish-start+1)
+    rows,controls,hits={},{},{}
+    local width=math.max(1,w-4)
+    local function line(value,muted)
+      value=tostring(value or '')
+      if value=='' then rows[#rows+1]={text=''} end
+      for part in (value..'\n'):gmatch('(.-)\n') do
+        while #part>0 do
+          local n=math.min(#part,width)
+          if #part>width then local cut=part:sub(1,width):match('^.*() '); if cut and cut>width/2 then n=cut end end
+          rows[#rows+1]={text=part:sub(1,n),muted=muted}; part=part:sub(n+1)
+        end
+      end
+    end
+    local function option(id,label,selected)
+      rows[#rows+1]={id=id,text=(selected and '(*) ' or '( ) ')..label,selected=selected}
+      controls[#controls+1]=id
+    end
+    if page=='welcome' then
+      line('Windows, Lua programs and a desktop made for ComputerCraft.')
+      line(''); line('We will set up your display and personal drive.')
+      line('Your files stay in place. Existing startup programs are backed up.',true)
+    elseif page=='display' then
+      line(color and 'Advanced computer detected' or 'Basic computer detected',true); line('')
+      option('basic','Basic / monochrome',options.mode=='basic')
+      if color then option('color','Color desktop',options.mode=='color'); option('render','Render / subpixels',options.mode=='render') end
+      line(''); line(descriptions[options.mode],true)
+      if not color then line('This computer uses keyboard controls. All core apps are available.',true) end
+    elseif page=='privacy' then
+      if existing then
+        line('Your personal drive is already set up.'); line('')
+        line(options.encrypt and 'Encryption: ON / password protected' or 'Encryption: OFF / no password')
+        line('The upgrade keeps your files and encryption setting. Change it later in Settings.',true)
+      else
+        option('off','Off / no password',not options.encrypt)
+        option('on','On / encrypted files',options.encrypt)
+        line(''); line('Fine to leave off on a private computer.')
+        line('On a shared server, try encryption: it is the main security feature for saved files.',true)
+        line(options.encrypt and 'You will create a password next.' or 'Boot straight into your desktop. Files remain readable outside the OS.',true)
+      end
+    elseif page=='password' then
+      line('Protect your encrypted drive.'); line('Use 12+ characters. Keep it safe.',true); line('')
+      line('Password',true); rows[#rows+1]={id='password',field=true,text=string.rep('*',math.min(#password,width-2))}; controls[#controls+1]='password'
+      line('Confirm password',true); rows[#rows+1]={id='confirmation',field=true,text=string.rep('*',math.min(#confirmation,width-2))}; controls[#controls+1]='confirmation'
+      line('There is no password reset.',true)
+    elseif page=='review' then
+      line('Display: '..options.mode)
+      line('Encryption: '..(options.encrypt and 'ON' or 'OFF'))
+      line(options.encrypt and 'Login: password protected' or 'Login: none / straight to desktop')
+      line(''); line('Install: '..installer.target,true)
+      line(count..' files / '..math.ceil(bytes/1024)..' KiB',true)
+      local free=fs.getFreeSpace('/'); line('Free disk: '..(type(free)=='number' and math.floor(free/1024)..' KiB' or tostring(free)),true)
+      line('Startup will be backed up. '..(existing and 'Your personal drive will be kept.' or 'Your existing files will be kept.'),true)
+    elseif page=='installing' then
+      line(progress.phase); line('')
+      local bar=math.max(2,width-7); local n=math.floor(bar*progress.percent/100)
+      line('['..string.rep('=',n)..string.rep(' ',bar-n)..'] '..progress.percent..'%')
+      line(''); line(progress.detail,true); line('Please leave the computer running.',true)
+    elseif page=='done' then
+      line('CCSacabam is ready.'); line('')
+      line(options.encrypt and 'Your drive is encrypted.' or 'No password. Straight to the desktop.')
+      line('Run /ccsacabam/boot.lua or reboot.',true)
+      line(''); line('Startup backup:',true); line(result.backup,true)
+    elseif page=='error' then
+      line('Setup could not finish.'); line(''); line(tostring(problem)); line('')
+      line('Your existing drive was not intentionally erased. Review the error before retrying.',true)
+    end
+    if page~='installing' then
+      if page~='done' then controls[#controls+1]='back' end
+      controls[#controls+1]='next'
+    end
+    if ensure then
+      for i,row in ipairs(rows) do if row.id==focus then
+        if i<=scroll then scroll=i-1 elseif i>scroll+visible then scroll=i-visible end
+      end end
+      ensure=false
+    end
+    scroll=math.max(0,math.min(scroll,math.max(0,#rows-visible)))
+    local cursor
+    for i=1,visible do
+      local row=rows[scroll+i]
+      if row then
+        local active=row.id==focus
+        local bg=active and t.accent or row.field and t.panel or t.bg
+        text(3,start+i-1,row.field and (' '..row.text) or row.text,active and t.onAccent or row.muted and t.muted or t.text,bg,width)
+        if row.id then hits[#hits+1]={id=row.id,x=3,y=start+i-1,w=width} end
+        if active and row.field then cursor={math.min(w-1,4+#row.text),start+i-1} end
+      end
+    end
+    if #rows>visible then text(w,finish,scroll+visible<#rows and 'v' or '^',t.muted) end
+    if problem and page~='error' then text(2,h-3,problem,t.text,t.danger,w-2) end
+    if page~='installing' then
+      local back=page=='welcome' and 'Exit' or page=='error' and 'Exit' or 'Back'
+      local next=page=='review' and (existing and 'Upgrade' or 'Install') or page=='done' and 'Finish' or page=='error' and 'Retry' or page=='welcome' and 'Begin' or 'Next'
+      local function button(id,label,x,bw,primary)
+        local value=(focus==id and '>' or '[')..' '..label..' '..(focus==id and '<' or ']')
+        text(x,h-2,value,primary and t.onButton or t.text,primary and t.button or t.panel,bw)
+        hits[#hits+1]={id=id,x=x,y=h-2,w=bw}
+      end
+      if page~='done' then button('back',back,2,math.min(10,w-12),false) end
+      button('next',next,w-math.min(13,w-10),math.min(12,w-10),true)
+    end
+    text(1,h,page=='installing' and ' Installing - please wait' or (w>=40 and ' Arrows select | Enter next | Tab | F5 exit' or 'Enter next / F5 exit'),t.muted,t.panel,w)
+    if cursor then native.setCursorPos(cursor[1],cursor[2]); native.setCursorBlink(true) end
+  end
+  local function update(phase,done,total,detail)
+    local ranges={['Checking package']={0,20},['Preparing installation']={20,5},['Installing files']={25,50},
+      ['Preparing personal drive']={75,20},['Finishing installation']={95,5}}
+    local range=ranges[phase] or {0,100}
+    local nextProgress={phase=phase,detail=detail or '',percent=math.floor(range[1]+range[2]*(total>0 and done/total or 0))}
+    local changed=not progress or progress.phase~=phase or progress.detail~=nextProgress.detail or progress.percent~=nextProgress.percent
+    progress=nextProgress; if changed then draw() end
+    os.queueEvent('ccsacabam_setup_tick')
+    while true do local e=os.pullEventRaw(); if e=='ccsacabam_setup_tick' then break elseif e=='term_resize' then draw() end end
+  end
+  local function activate(id)
+    if id=='basic' or id=='color' or id=='render' then options.mode=id; focus=id; ensure=true; return end
+    if id=='off' or id=='on' then options.encrypt=id=='on'; focus=id; ensure=true; return end
+    if id=='password' or id=='confirmation' then focus=id; ensure=true; return end
+    if id=='back' then
+      if page=='welcome' or page=='error' then cancelled=true; finished=true
+      else change(pages()[math.max(1,position()-1)]) end
+    elseif id=='next' then
+      if page=='done' then finished=true; return end
+      if page=='error' then change(options.encrypt and not existing and 'password' or 'review'); return end
+      if page=='password' then
+        if #password<12 then problem='Use at least 12 characters.'; return end
+        if password~=confirmation then problem='Passwords do not match.'; return end
+      end
+      if page=='review' then
+        page='installing'; options.password=password; options.entropy=table.concat(entropy,':'); options.progress=update
+        progress={phase='Starting setup',percent=0,detail='Preparing your computer'}; draw()
+        local ok,value=pcall(installer.install,package,options)
+        options.password,options.entropy,options.progress=nil,nil,nil; password,confirmation,entropy='','',{}
+        if ok then result=value; change('done') else change('error'); problem=tostring(value) end
+      else change(pages()[position()+1]) end
+    end
+  end
+  local ok,err=pcall(function()
+    while not finished do
+      draw(); local e,a,b,c=os.pullEventRaw()
+      if e=='terminate' or (e=='key' and a==keys.f5) then cancelled=page~='done'; finished=true
+      elseif e=='key_up' and (a==keys.leftShift or a==keys.rightShift) then shift=false
+      elseif e=='key' then
+        if a==keys.leftShift or a==keys.rightShift then shift=true
+        elseif a==keys.tab or a==keys.up or a==keys.down then
+          local index=1; for i,id in ipairs(controls) do if id==focus then index=i end end
+          local direction=(a==keys.up or (a==keys.tab and shift)) and -1 or 1
+          focus=controls[(index-1+direction)%#controls+1]; ensure=true
+          if a~=keys.tab and (page=='display' or page=='privacy') and focus~='back' and focus~='next' then activate(focus) end
+        elseif a==keys.enter then
+          if focus=='basic' or focus=='color' or focus=='render' or focus=='off' or focus=='on' then activate(focus) end
+          activate(focus=='back' and 'back' or focus=='password' and 'confirmation' or 'next')
+        elseif a==keys.space and page~='password' then activate(focus)
+        elseif a==keys.backspace then
+          if focus=='password' then password=password:sub(1,-2)
+          elseif focus=='confirmation' then confirmation=confirmation:sub(1,-2)
+          elseif page~='password' then activate('back') end
+        elseif a==keys.pageDown then scroll=scroll+5 elseif a==keys.pageUp then scroll=scroll-5 end
+      elseif (e=='char' or e=='paste') and page=='password' and (focus=='password' or focus=='confirmation') then
+        a=a:gsub('[%c]',''); entropy[#entropy+1]=tostring(os.epoch and os.epoch('utc') or os.clock())
+        if focus=='password' then password=(password..a):sub(1,256) else confirmation=(confirmation..a):sub(1,256) end
+        problem=nil
+      elseif e=='mouse_click' and color and a==1 then
+        if c==1 and b>=select(1,native.getSize())-2 then cancelled=page~='done'; finished=true
+        else for _,hit in ipairs(hits) do if c==hit.y and b>=hit.x and b<hit.x+hit.w then activate(hit.id); break end end end
+      elseif e=='mouse_scroll' then scroll=scroll+a*2 end
+    end
+  end)
+  password,confirmation,options.password='','',nil
+  native.setCursorBlink(false); native.setTextColor(oldFG); native.setBackgroundColor(oldBG)
+  native.clear(); native.setCursorPos(1,1)
+  if not ok then error(err,0) end
+  if cancelled then print('Setup cancelled.'); return false end
+  print('CCSacabam installed. Run /ccsacabam/boot.lua or reboot.'); return true
+end
+return S
+
+end)()
 local installer=(function()
 -- Shared installer engine, embedded verbatim in the standalone distribution.
 local I={target='/ccsacabam',stage='/ccsacabam-install-stage'}
@@ -4103,16 +4759,18 @@ local function size(path)
   if not fs.isDir(path) then return fs.getSize(path) end
   local n=0; for _,name in ipairs(fs.list(path)) do n=n+size(fs.combine(path,name)) end; return n
 end
-function I.validate(package)
+function I.validate(package,progress)
   assert(type(package)=='table' and type(package.files)=='table','Invalid package')
   local cryptoFile=assert(package.files['system/crypto.lua'],'Missing crypto module')
   local crypto=assert(load(cryptoFile.data,'@crypto','t',_ENV))()
-  local total=0
+  local total,count,index=0,0,0
+  for _ in pairs(package.files) do count=count+1 end
   for path,file in pairs(package.files) do
     assert(type(path)=='string' and path~='' and fs.combine('',path)==path and path:sub(1,1)~='/' and not path:find('%.%.'),'Invalid package path')
     assert(type(file.data)=='string' and crypto.hex(crypto.sha256(file.data))==file.sha256,'Package checksum mismatch: '..path)
     if path:match('%.lua$') then assert(load(file.data,'@'..path,'t',_ENV)) end
     total=total+#file.data
+    index=index+1; if progress then progress('Checking package',index,count,path) end
   end
   for _,name in ipairs({'boot.lua','system/kernel.lua','system/vault.lua','system/session.lua','apps/terminal.lua','uninstall.lua','chatplus.lua'}) do
     assert(package.files[name],'Incomplete package: '..name)
@@ -4120,7 +4778,9 @@ function I.validate(package)
   return total
 end
 function I.install(package,options)
-  options=options or {}; local total=I.validate(package)
+  options=options or {}
+  local function report(phase,done,total,detail) if options.progress then options.progress(phase,done,total,detail) end end
+  local total=I.validate(package,report)
   local target,stage=I.target,I.stage
   assert(not fs.isReadOnly('/'),'Root filesystem is read-only')
   assert(not fs.exists(stage),'An interrupted install exists at '..stage..'. Inspect it before trying again.')
@@ -4135,27 +4795,41 @@ function I.install(package,options)
   local movedStartup={}; local movedOld,movedNew,wroteStartup=false,false,false
   local loader='-- CCSacabam managed startup\nif not shell.run("/ccsacabam/boot.lua") then print("CCSacabam failed; CraftOS remains available.") end\n'
   local ok,err=pcall(function()
+    report('Preparing installation',0,1,'Preserving existing files')
     fs.makeDir(backup)
     if exists then fs.copy(target,stage) else fs.makeDir(stage) end
     for _,dir in ipairs({'system','apps','examples','sites'}) do
       if fs.exists(stage..'/'..dir) then fs.delete(stage..'/'..dir) end
     end
-    for path,file in pairs(package.files) do
+    local names={}; for path in pairs(package.files) do names[#names+1]=path end; table.sort(names)
+    for i,path in ipairs(names) do
+      local file=package.files[path]
       local dest=fs.combine(stage,path)
       if fs.exists(dest) then fs.delete(dest) end
       writeFile(dest,file.data)
+      report('Installing files',i,#names,path)
     end
     writeFile(stage..'/.ccsacabam',package.version or '1.0.0')
     local mode=options.mode or (term.isColor() and 'color' or 'basic')
     if not term.isColor() then mode='basic' end
     assert(mode=='basic' or mode=='color' or mode=='render','Unknown display mode')
     writeFile(stage..'/config/display.tbl',textutils.serialize({mode=mode,welcome=true,encrypt=options.encrypt==true}))
+    if options.initialize and not fs.exists(stage..'/vault/data.scv') then
+      report('Preparing personal drive',0,1,options.encrypt and 'Creating encryption keys' or 'Passwordless desktop')
+      local function module(name) return assert(loadfile(stage..'/system/'..name..'.lua'))() end
+      local vault=module('vault').new(module('crypto'),module('storage'),stage..'/vault/data.scv')
+      local good,why=vault.create(options.password,options.entropy,function(n,total)
+        report('Preparing personal drive',n,total,'Creating encryption keys')
+      end,options.encrypt==true)
+      assert(good,why); vault.lock()
+    end
     for _,path in ipairs({'/startup.lua','/startup'}) do
       if fs.exists(path) and not startupRestore[path] and not (path=='/startup.lua' and not fs.isDir(path) and readFile(path):find('CCSacabam managed startup',1,true)) then
         startupRestore[path]=backup..'/'..fs.getName(path)
       end
     end
     writeFile(stage..'/config/install.tbl',textutils.serialize({version=package.version,backup=backup,startupRestore=startupRestore}))
+    report('Finishing installation',0,1,'Backing up startup and activating CCSacabam')
     if exists then fs.move(target,backup..'/previous'); movedOld=true end
     fs.move(stage,target); movedNew=true
     for _,path in ipairs({'/startup.lua','/startup'}) do
@@ -4179,36 +4853,12 @@ function I.install(package,options)
   end
   return {target=target,backup=backup,bytes=total}
 end
-function I.run(package,args)
+function I.run(package,args,setup)
   assert(bit32 and window and term.blit and fs.exists('/rom/modules/main/cc/require.lua'),'CCSacabam needs modern CC: Tweaked with cc.require.')
   local w,h=term.getSize(); assert(w>=20 and h>=10,'Display must be at least 20x10.')
   local mode=term.isColor() and 'color' or 'basic'; local encrypt=false
   if args and args[1]=='--yes' then mode=args[2] or mode; encrypt=args[3]=='--encrypt'
-  else
-    term.setBackgroundColor(colors.black); term.setTextColor(colors.white); term.clear(); term.setCursorPos(1,1)
-    print('CCSacabam installer\n')
-    print('Installs to /ccsacabam. Existing files are preserved.')
-    print('Existing startup programs are backed up.')
-    print('Create your personal drive and passphrase at first boot.\n')
-    if term.isColor() then
-      print('Display mode:')
-      print('1 Basic: monochrome, keyboard controls')
-      print('2 Color: mouse and keyboard (default)')
-      print('3 Render: color + portable subpixel graphics')
-      write('Choose 1, 2, or 3: '); local choice=read()
-      mode=choice=='1' and 'basic' or choice=='3' and 'render' or 'color'
-    else print('Basic computer detected: monochrome mode.') end
-    if not fs.exists(I.target..'/vault/data.scv') then
-      print('\nEncryption is OFF by default.')
-      print('Fine to leave off on a private computer.')
-      print('On a shared server, try encryption: it is the main security feature for saved files.')
-      print('Without it, login still works, but files are readable outside CCSacabam.')
-      write('Enable encryption? [y/N]: '); local choice=read():lower()
-      encrypt=choice=='y' or choice=='yes'
-    else print('The existing drive keeps its encryption setting.') end
-    write('\nPress Enter to install, or type cancel: ')
-    if read()~='' then print('Cancelled.'); return false end
-  end
+  else return assert(setup,'Setup interface is missing').run(package,I) end
   print('Checking package and staging files...')
   local ok,result=pcall(I.install,package,{mode=mode,encrypt=encrypt})
   if not ok then printError(result); return false end
@@ -4219,4 +4869,4 @@ end
 return I
 
 end)()
-return installer.run(package,{...})
+return installer.run(package,{...},setup)

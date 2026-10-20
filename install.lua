@@ -7,4 +7,5 @@ for path,hash in pairs(manifest.files) do
   package.files[path]={sha256=hash,data=file.readAll():gsub('\r\n','\n'):gsub('\r','\n')}; file.close()
 end
 local installer=assert(loadfile(fs.combine(dir,'tools/installer.lua')))()
-return installer.run(package,args)
+local setup=assert(loadfile(fs.combine(dir,'tools/setup.lua')))()
+return installer.run(package,args,setup)

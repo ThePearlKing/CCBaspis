@@ -6,6 +6,7 @@ K.catalog = {
   {id="files", name="Files", detail="Browse, copy, move and recover files", icon="folder"},
   {id="terminal", name="Terminal", detail="Run ComputerCraft commands and Lua", icon="terminal"},
   {id="editor", name="Editor", detail="Write notes and Lua programs", icon="editor"},
+  {id="code", name="Code Editor", detail="Lua, Peanut, Pistachio and Cashew", icon="editor"},
   {id="sketch", name="Sketch", detail="Draw and explore a rendered 3D scene", icon="sketch"},
   {id="pistachio", name="Pistachio", detail="Visual, event-driven programs", icon="editor"},
   {id="chatplus", name="Chat+", detail="Chat over a ComputerCraft modem", icon="terminal"},
@@ -16,6 +17,9 @@ K.catalog = {
   {id="devices", name="Devices", detail="Computer, disks and peripherals", icon="devices"},
   {id="help", name="Guide", detail="Shortcuts, recovery and app development", icon="help"},
 }
+-- Keep the original desktop layout. Registering an app only adds it to Apps.
+K.desktop={files=true,terminal=true,editor=true,sketch=true,pistachio=true,
+  browser=true,server=true,settings=true,processes=true,devices=true,help=true}
 function K.new(ctx)
   local self = { tasks={}, nextID=0, focus=nil, keys={}, launcher=nil, notice=nil,
     running=true, ctx=ctx, clockTimer=nil, drag=nil }
@@ -129,6 +133,30 @@ function K.new(ctx)
     self.wallpaper=nil
     return true
   end
+  function self.openContext(x,y,items)
+    self.context={x=x,y=y,items=items,index=1}
+  end
+  function self.desktopContext(x,y)
+    for _,hit in ipairs(self.desktopHits or {}) do
+      if x>=hit.x and x<hit.x+9 and y>=hit.y and y<=hit.y+3 then
+        self.openContext(x,y,{
+          {label="Open",run=function() self.launch(hit.id) end},
+          {label="Remove shortcut",run=function()
+            local previous=ctx.config.hiddenShortcuts[hit.id]
+            ctx.config.hiddenShortcuts[hit.id]=true
+            if not self.saveConfig() then ctx.config.hiddenShortcuts[hit.id]=previous end
+          end}})
+        return
+      end
+    end
+    self.openContext(x,y,{
+      {label="Open Terminal",run=function() self.launch('terminal') end},
+      {label="Applications",run=function() self.launcher={query='',index=1} end},
+      {label="Restore shortcuts",run=function()
+        local previous=ctx.config.hiddenShortcuts; ctx.config.hiddenShortcuts={}
+        if not self.saveConfig() then ctx.config.hiddenShortcuts=previous end
+      end}})
+  end
   function self.launch(id,...)
     local item
     for _,v in ipairs(K.catalog) do if v.id == id then item=v end end
@@ -193,6 +221,12 @@ function K.new(ctx)
     local previous=term.current(); term.redirect(self.frame)
     local t=self.theme(); UI.clear(t)
     UI.fill(1,2,self.width,self.height-2,t.desktop)
+    if ctx.config.mode=="basic" and ctx.config.wallpaper then
+      -- Sparse stippling gives the desktop its own texture on monochrome screens.
+      for y=2,self.height-1,2 do
+        for x=2+(math.floor(y/2)%2)*2,self.width,4 do UI.text(x,y,".",t.muted,t.desktop) end
+      end
+    end
     if ctx.config.mode=="render" and ctx.config.wallpaper then
       if not self.wallpaper then
         local b=Pixels.new(self.width*2,(self.height-2)*3,t.desktop)
@@ -206,38 +240,60 @@ function K.new(ctx)
       end
       Pixels.draw(self.wallpaper,term,1,2)
     end
-    UI.text(1,1," CCSacabam | F1 Apps",t.onAccent,t.accent,self.width)
+    local mono=ctx.config.mode=="basic"
+    local barBG,barFG=mono and t.bg or t.accent,mono and t.text or t.onAccent
+    UI.text(1,1," CCSacabam",barFG,barBG,self.width)
     local clock=textutils.formatTime(os.time(),ctx.config.clock24)
-    UI.text(self.width-#clock,1,clock,t.onAccent,t.accent)
+    UI.text(self.width-#clock,1,clock,barFG,barBG)
     self.desktopHits={}
     local cols=math.max(1,math.floor((self.width-2)/11))
-    for i,item in ipairs(K.catalog) do
-      local x,y=2+((i-1)%cols)*11,3+math.floor((i-1)/cols)*5
-      if y+3 < self.height-1 then
-        self.icon(item,x,y,false)
-        self.desktopHits[#self.desktopHits+1]={x=x,y=y,id=item.id}
+    local index=0
+    for _,item in ipairs(K.catalog) do
+      if K.desktop[item.id] and not ctx.config.hiddenShortcuts[item.id] then
+        local x,y=2+(index%cols)*11,3+math.floor(index/cols)*5
+        if y+3 < self.height-1 then
+          self.icon(item,x,y,false)
+          self.desktopHits[#self.desktopHits+1]={x=x,y=y,id=item.id}
+        end
+        index=index+1
       end
     end
-    if #self.tasks==0 and self.height>=17 then
-      UI.text(3,self.height-3,"Your computer. Your workspace.",t.text,t.desktop,self.width-4)
-      UI.text(3,self.height-2,"F1 apps  |  F2 switch  |  F10 exit",t.text,t.desktop,self.width-4)
-    end
     for _,p in ipairs(self.tasks) do if not p.minimized then
-      local border=p.id==self.focus and t.accent or t.border
+      local border=p.id==self.focus and t.frame or t.inactiveFrame
+      local frameText=p.id==self.focus and t.frameText or t.inactiveFrameText
       UI.fill(p.x,p.y,p.w,p.h,border)
-      UI.text(p.x+1,p.y,p.title,t.onAccent,border,p.w-9)
-      UI.text(p.x+p.w-8,p.y," _ + X ",t.onAccent,border,7)
+      local mono=ctx.config.mode=="basic"
+      local titleBG=mono and p.id==self.focus and t.accent or border
+      local titleFG=mono and p.id==self.focus and t.onAccent or frameText
+      if mono then
+        for y=p.y+1,p.y+p.h-2 do
+          UI.text(p.x,y,"|",frameText,border); UI.text(p.x+p.w-1,y,"|",frameText,border)
+        end
+        UI.text(p.x,p.y,"+"..string.rep("-",p.w-2).."+",frameText,border)
+        UI.text(p.x,p.y+p.h-1,"+"..string.rep("-",p.w-2).."+",frameText,border)
+      end
+      UI.text(p.x+1,p.y,p.title,titleFG,titleBG,p.w-12)
+      local colorful=ctx.caps.color and ctx.config.mode~="basic"
+      local left=p.x+p.w-10
+      UI.text(left,p.y,mono and "[-]" or " - ",colorful and colors.black or titleFG,colorful and colors.yellow or titleBG,3)
+      UI.text(left+3,p.y,mono and "[+]" or " + ",colorful and colors.black or titleFG,colorful and colors.lime or titleBG,3)
+      UI.text(left+6,p.y,mono and "[X]" or " X ",colorful and colors.white or titleFG,colorful and colors.red or titleBG,3)
       p.win.setVisible(true); p.win.setVisible(false)
-      UI.text(p.x+1,p.y+p.h-1,"F3 hide  F4 close  F6 size",t.onAccent,border,p.w-2)
+      if not mono then UI.text(p.x+1,p.y+p.h-1,"F3 hide  F4 close  F6 size",frameText,border,p.w-2) end
+      if not p.maximized then
+        local gripBG=mono and t.bg or border==colors.gray and colors.black or colors.gray
+        UI.text(p.x+p.w-3,p.y+p.h-1,mono and "../" or "  /",colors.white,gripBG,3)
+      end
     end end
-    UI.text(1,self.height," F1 Apps ",t.onAccent,t.accent,self.width)
+    UI.text(1,self.height,"",barFG,barBG,self.width)
+    UI.text(1,self.height," Apps    ",t.onAccent,t.accent,9)
     self.taskHits={}
     local tx=10
     local tabWidth=math.max(4,math.min(13,math.floor((self.width-10)/math.max(1,#self.tasks))))
     for _,p in ipairs(self.tasks) do
       if tx+tabWidth-1<=self.width then
-        UI.text(tx,self.height,(p.minimized and "_" or " ")..p.title,p.id==self.focus and t.text or t.onAccent,
-          p.id==self.focus and t.bg or t.accent,tabWidth)
+        UI.text(tx,self.height,(p.minimized and "_" or " ")..p.title,p.id==self.focus and (mono and t.onAccent or t.text) or barFG,
+          p.id==self.focus and (mono and t.accent or t.bg) or barBG,tabWidth)
         self.taskHits[#self.taskHits+1]={x=tx,w=tabWidth,id=p.id}; tx=tx+tabWidth
       end
     end
@@ -271,6 +327,25 @@ function K.new(ctx)
     if self.transform then
       UI.text(1,self.height-1," "..self.transform.mode..": arrows | Enter done | F5 cancel",t.text,t.panel,self.width)
     end
+    if self.context then
+      local menu=self.context; local mw=0
+      for _,item in ipairs(menu.items) do mw=math.max(mw,#item.label+4) end
+      menu.w=math.min(self.width,mw); menu.h=#menu.items+2
+      menu.x=math.max(1,math.min(menu.x,self.width-menu.w+1))
+      menu.y=math.max(2,math.min(menu.y,self.height-menu.h))
+      UI.fill(menu.x,menu.y,menu.w,menu.h,t.frame)
+      if mono then
+        UI.text(menu.x,menu.y,"+"..string.rep("-",menu.w-2).."+",t.text,t.bg)
+        UI.text(menu.x,menu.y+menu.h-1,"+"..string.rep("-",menu.w-2).."+",t.text,t.bg)
+        for y=menu.y+1,menu.y+menu.h-2 do
+          UI.text(menu.x,y,"|",t.text,t.bg); UI.text(menu.x+menu.w-1,y,"|",t.text,t.bg)
+        end
+      end
+      for i,item in ipairs(menu.items) do
+        UI.text(menu.x+1,menu.y+i,(i==menu.index and '> ' or '  ')..item.label,
+          i==menu.index and t.onAccent or t.text,i==menu.index and t.accent or t.bg,menu.w-2)
+      end
+    end
     if self.power then
       UI.fill(2,math.max(2,math.floor(self.height/2)-1),self.width-2,4,t.panel)
       UI.text(3,math.max(2,math.floor(self.height/2)-1),"Close apps? Unsaved work may be lost.",t.text,t.panel,self.width-4)
@@ -279,7 +354,7 @@ function K.new(ctx)
     self.frame.setVisible(true); self.frame.setVisible(false)
     local p=self.get(self.focus)
     base.setCursorBlink(false)
-    if p and not self.launcher and not self.power and not p.minimized and p.win.getCursorBlink() then
+    if p and not self.launcher and not self.context and not self.power and not p.minimized and p.win.getCursorBlink() then
       local x,y=p.win.getCursorPos()
       if x>=1 and x<=p.w-2 and y>=1 and y<=p.h-2 then
         base.setCursorPos(p.x+x,p.y+y); base.setTextColor(p.win.getTextColor()); base.setCursorBlink(true)
@@ -297,7 +372,23 @@ function K.new(ctx)
       for _,p in ipairs(list) do self.geometry(p); self.deliver(p,{"term_resize"},true) end
       self.render(); return
     end
-    if self.transform and input[name] then
+    if self.context and input[name] then
+      local menu=self.context
+      local function choose(index)
+        local item=menu.items[index]; self.context=nil
+        if item then item.run() end
+      end
+      if name=='key' then
+        if e[2]==keys.f5 then self.context=nil
+        elseif e[2]==keys.up then menu.index=math.max(1,menu.index-1)
+        elseif e[2]==keys.down then menu.index=math.min(#menu.items,menu.index+1)
+        elseif e[2]==keys.enter then choose(menu.index) end
+      elseif name=='mouse_click' then
+        local row=e[4]-menu.y
+        if e[2]==1 and e[3]>menu.x and e[3]<menu.x+menu.w-1 and row>=1 and row<=#menu.items then choose(row)
+        else self.context=nil end
+      elseif name=='mouse_scroll' then menu.index=math.max(1,math.min(#menu.items,menu.index+e[2])) end
+    elseif self.transform and input[name] then
       local move=self.transform; local p=self.get(move.id)
       if not p then self.transform=nil
       elseif name=="key" then
@@ -342,7 +433,9 @@ function K.new(ctx)
         if p.maximized then self.maximize(p) end
         self.transform={id=p.id,mode=e[2]==keys.f7 and "Move" or "Resize",before={p.x,p.y,p.w,p.h}}
       end
-    elseif name=="key" and e[2]==keys.f9 then self.power="lock"
+    elseif name=="key" and e[2]==keys.f9 then
+      if not ctx.isEncrypted or ctx.isEncrypted() then self.power="lock"
+      else self.notify("Encryption is off. No password or lock is needed.") end
     elseif name=="key" and e[2]==keys.f10 then self.power="exit"
     elseif name=="mouse_up" and self.drag then self.drag=nil
     elseif name=="mouse_drag" and self.drag then
@@ -352,6 +445,22 @@ function K.new(ctx)
           p.w,p.h=e[3]-p.x+1,e[4]-p.y+1; self.geometry(p); self.deliver(p,{"term_resize"},true)
         else p.x,p.y=e[3]-self.drag.dx,e[4]-self.drag.dy; self.geometry(p) end
       end
+    elseif name=="mouse_click" and e[2]~=1 then
+      local x,y=e[3],e[4]; local hit
+      for i=#self.tasks,1,-1 do local p=self.tasks[i]
+        if not p.minimized and x>=p.x and x<p.x+p.w and y>=p.y and y<p.y+p.h then hit=p; break end
+      end
+      if hit then
+        self.focusTask(hit.id)
+        if y==hit.y and e[2]==2 then
+          self.openContext(x,y,{
+            {label='Minimize',run=function() self.minimize(hit) end},
+            {label=hit.maximized and 'Restore' or 'Maximize',run=function() self.maximize(hit) end},
+            {label='Close',run=function() self.requestClose(hit) end}})
+        elseif x>hit.x and x<hit.x+hit.w-1 and y>hit.y and y<hit.y+hit.h-1 then
+          self.deliver(hit,{name,e[2],x-hit.x,y-hit.y})
+        end
+      elseif e[2]==2 and y>1 and y<self.height then self.desktopContext(x,y) end
     elseif name=="mouse_click" then
       local x,y=e[3],e[4]
       if y==1 or (y==self.height and x<10) then self.launcher={query="",index=1}
@@ -365,9 +474,10 @@ function K.new(ctx)
         if hit then
           self.focusTask(hit.id)
           if y==hit.y then
-            if x>=hit.x+hit.w-3 then self.requestClose(hit)
-            elseif x>=hit.x+hit.w-5 then self.maximize(hit)
-            elseif x>=hit.x+hit.w-8 then self.minimize(hit)
+            local button=x-(hit.x+hit.w-10)
+            if button>=6 and button<9 then self.requestClose(hit)
+            elseif button>=3 and button<6 then self.maximize(hit)
+            elseif button>=0 and button<3 then self.minimize(hit)
             elseif not hit.maximized then self.drag={id=hit.id,dx=x-hit.x,dy=y-hit.y} end
           elseif not hit.maximized and y==hit.y+hit.h-1 and x>=hit.x+hit.w-3 then
             self.drag={id=hit.id,resize=true}

@@ -29,7 +29,8 @@ def main():
         manifest += f'  [{json.dumps(name)}]={json.dumps(sha)},\n'
         bundle += f'  [{json.dumps(name)}]={{sha256={json.dumps(sha)},data={lua_string(data)}}},\n'
     manifest += '}}\n'
-    bundle += '}}\nlocal installer=(function()\n' + (ROOT/'tools/installer.lua').read_text() + '\nend)()\nreturn installer.run(package,{...})\n'
+    bundle += '}}\nlocal setup=(function()\n' + (ROOT/'tools/setup.lua').read_text() + '\nend)()\n'
+    bundle += 'local installer=(function()\n' + (ROOT/'tools/installer.lua').read_text() + '\nend)()\nreturn installer.run(package,{...},setup)\n'
     (ROOT/'manifest.lua').write_text(manifest)
     dist=ROOT/'dist'; dist.mkdir(exist_ok=True)
     destination=dist/'ccsacabam-installer.lua'; destination.write_text(bundle)

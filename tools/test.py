@@ -19,8 +19,8 @@ def run(name,color=True,width=51,height=19,vanilla=True):
         for folder in ('system','apps','sites'):
             shutil.copytree(ROOT/folder,child/'ccsacabam'/folder)
         shutil.copy(ROOT/'chatplus.lua',child/'ccsacabam/chatplus.lua')
-    script='network.lua' if network else 'fresh.lua' if name.startswith('fresh') else 'run.lua'
-    command=['craftos','--gui','-d',str(directory),'--mount-ro','/src='+str(ROOT),'--exec',f'shell.run("/src/tests/{script}")']
+    script='network.lua' if network else 'fresh.lua' if name.startswith('fresh') else 'setup.lua' if name.startswith('setup') else 'run.lua'
+    command=['craftos','--gui','-d',str(directory),'--mount-ro','/src='+str(ROOT),'--exec',f'shell.run("/src/tests/{script}", "{name}")']
     if network:
         # --exec also applies to newly created computers. Use a startup file on
         # computer 0 so computer 1 can run its own independent host startup.
@@ -59,7 +59,7 @@ def run(name,color=True,width=51,height=19,vanilla=True):
     for test in result['tests']:
         if not test['ok']: print(' FAIL',test['name'],test.get('error'),flush=True)
     success=result['failures']==0
-    if success and not network:
+    if success and not network and not name.startswith('setup'):
         try:
             if name.startswith('fresh'): fresh_oracle(directory/'computer/0')
             else: oracle(directory/'computer/0')
@@ -109,6 +109,6 @@ if __name__=='__main__':
     cases=sys.argv[1:] or ['advanced','basic']
     success=True
     for case in cases:
-        ok,path=run(case,color=case not in ('basic','fresh-basic'),width=26 if case=='pocket' else 51,height=20 if case=='pocket' else 19)
+        ok,path=run(case,color=case not in ('basic','fresh-basic','setup-basic'),width=20 if case.startswith('setup') else 26 if case=='pocket' else 51,height=10 if case.startswith('setup') else 20 if case=='pocket' else 19)
         success=success and ok
     raise SystemExit(0 if success else 1)

@@ -1,10 +1,10 @@
 # Encrypted personal drive
 
-**Encryption is optional and starts OFF.** Fine to leave off on a private computer. On a shared server, try it: this is CCSacabam's main security feature for saved files. A login password alone does not conceal stored files. The installer offers encryption, and Settings can enable or disable it later with explicit confirmation. Upgrades preserve an existing drive's mode.
+**Encryption is optional and starts OFF.** Fine to leave off on a private computer. On a shared server, try it: this is CCSacabam's main security feature for saved files. With encryption off, there is no password or login screen. The installer offers encryption, and Settings can enable or disable it later with explicit confirmation. Upgrades preserve an existing drive's mode.
 
 When encryption is ON, CCSacabam encrypts the complete virtual filesystem before writing it to disk. Directory names, file contents, settings, Trash, and the system log are inside the encrypted envelope. There is no plaintext `/ccsacabam/home` directory to discover after leaving the desktop. Ordinary program writes through the session's `fs`, `io`, and settings APIs go to this drive.
 
-When encryption is OFF, the drive uses an `SCP1` envelope containing **readable serialized data** in `/ccsacabam/vault/data.scv`. Password derivation and a MAC still check login and data integrity, but there is no confidentiality. The file extension does not imply encryption. Enabling encryption replaces the current image with ciphertext; it cannot erase plaintext from old backups, host filesystem snapshots, or previously copied files.
+When encryption is OFF, the drive uses an `SCP2` envelope containing **readable serialized data** in `/ccsacabam/vault/data.scv`. Its SHA-256 checksum detects accidental corruption; it provides no authentication or confidentiality. There is no password, key derivation, or login prompt. Older unencrypted `SCP1` drives also open without their former login-only password and migrate to `SCP2` on the next save. The file extension does not imply encryption. Enabling encryption asks for a new password and replaces the current image with ciphertext; it cannot erase plaintext from old backups, host filesystem snapshots, or previously copied files.
 
 This does not encrypt files that were already on the computer, public OS sources, the installer, or physical startup backups. Importing an existing file copies it into the vault; its original is still present under `/host`. Remove the original yourself if you no longer need it, accounting for any backups outside the computer.
 
@@ -38,6 +38,6 @@ The safe writer stages a new image before replacing the previous one. Failed wri
 
 To back up, **lock or exit first**, then copy `/ccsacabam/vault/data.scv` somewhere safe. Preserve the corresponding passphrase separately. To restore, keep a copy of the damaged/current file, replace `data.scv` while CCSacabam is closed, and boot again. Never overwrite your only backup while troubleshooting.
 
-Changing the password rewrites the current drive with new keys and preserves its encryption setting. It does not change old backups: those still use the old password. Installer upgrade backups can contain older encrypted vaults. There is no recovery password, reset mechanism, or back door.
+On an encrypted drive, changing the password rewrites the current drive with new keys. Disabling encryption clears the active key and removes the password requirement; turning it back on creates a new password. It does not change old backups: those still use the old password. Installer upgrade backups can contain older encrypted vaults. There is no recovery password, reset mechanism, or back door.
 
 Installation stages files under `/ccsacabam-install-stage` and stores previous installs/startup files under `/ccsacabam-backups`. Ordinary install failures roll back. After a power cut during installation, inspect these locations from CraftOS before retrying; a remaining stage directory is deliberately not deleted automatically. The uninstaller restores original startup programs and keeps the OS folder and encrypted data.

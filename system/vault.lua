@@ -1,4 +1,4 @@
--- Personal drive: authenticated envelopes, with optional encryption at rest.
+-- Personal drive: passwordless plain storage or authenticated encryption.
 local V={ iterations=100000, limit=196608 }
 local physical=fs
 function V.new(crypto,storage,path)
@@ -11,6 +11,16 @@ function V.new(crypto,storage,path)
     return raw:sub(5,36),iterations,raw:sub(41,52),raw:sub(53,-33),raw:sub(-32),raw:sub(1,4)=="SCV1"
   end
   function self.exists() return physical.exists(path) end
+  local function decode(plain)
+    local decoded=textutils.unserialize(plain)
+    if type(decoded)~="table" or decoded[""]~=true then return nil,"Invalid personal filesystem" end
+    for name,value in pairs(decoded) do
+      if type(name)~="string" or physical.combine("",name)~=name or (type(value)~="string" and value~=true) then
+        return nil,"Invalid personal drive entry"
+      end
+    end
+    return decoded
+  end
   function self.isEncrypted()
     if self.open then return self.encrypted end
     local h=physical.open(path,"rb"); if not h then return false end
@@ -34,6 +44,23 @@ function V.new(crypto,storage,path)
   end
   function self.unlock(password,progress)
     local raw,err=storage.read(path); if not raw then return nil,err end
+    if raw:sub(1,4)=="SCP2" or raw:sub(1,4)=="SCP1" then
+      local plain
+      if raw:sub(1,4)=="SCP2" then
+        if #raw<36 or not crypto.equal(crypto.sha256(raw:sub(1,-33)),raw:sub(-32)) then return nil,"Damaged personal drive." end
+        plain=raw:sub(5,-33)
+      else
+        -- Legacy unencrypted drives already contain readable data. Open them
+        -- without the old login-only password and migrate on the next save.
+        local ok,salt,iterations,nonce,body=pcall(header,raw)
+        if not ok then return nil,"Invalid legacy personal drive" end
+        plain=body
+      end
+      local decoded,why=decode(plain); if not decoded then return nil,why end
+      self.files,self.open,self.encrypted=decoded,true,false
+      self.key,self.salt,self.iterations=nil,nil,nil
+      return true
+    end
     local ok,salt,iterations,nonce,cipher,tag,encrypted=pcall(header,raw)
     if not ok then return nil,tostring(salt) end
     local master=crypto.pbkdf2(password,salt,iterations,progress)
@@ -42,13 +69,7 @@ function V.new(crypto,storage,path)
       return nil,"Wrong password or damaged vault."
     end
     local plain=encrypted and crypto.chacha20(crypto.hmac(master,"CCSacabam v1 encryption"),nonce,cipher) or cipher
-    local decoded=storage and textutils.unserialize(plain)
-    if type(decoded)~="table" or decoded[""]~=true then return nil,"Invalid vault filesystem" end
-    for name,value in pairs(decoded) do
-      if type(name)~="string" or physical.combine("",name)~=name or (type(value)~="string" and value~=true) then
-        return nil,"Invalid vault entry"
-      end
-    end
+    local decoded,why=decode(plain); if not decoded then return nil,why end
     self.key,self.salt,self.iterations,self.files,self.open=master,salt,iterations,decoded,true
     self.encrypted=encrypted
     return true
@@ -57,38 +78,54 @@ function V.new(crypto,storage,path)
     assert(self.open,"Personal drive is locked")
     local plain=textutils.serialize(self.files)
     if #plain>V.limit then return nil,"Personal drive full (192 KiB serialized limit)." end
+    if not self.encrypted then
+      local body="SCP2"..plain
+      return storage.write(path,body..crypto.sha256(body))
+    end
     self.serial=self.serial+1
     -- CC has no OS CSPRNG. A keyed nonce includes the entire content digest,
     -- time and a counter, so different contents remain distinct after rollback.
     local timing=tostring(os.epoch and os.epoch("utc") or os.time())..":"..os.clock()..":"..self.serial
     local nonce=crypto.hmac(keyFor("nonce"),crypto.sha256(plain)..timing):sub(1,12)
-    local cipher=self.encrypted and crypto.chacha20(keyFor("encryption"),nonce,plain) or plain
-    local body=(self.encrypted and "SCV1" or "SCP1")..self.salt..crypto.be(self.iterations)..nonce..cipher
+    local cipher=crypto.chacha20(keyFor("encryption"),nonce,plain)
+    local body="SCV1"..self.salt..crypto.be(self.iterations)..nonce..cipher
     return storage.write(path,body..crypto.hmac(keyFor("authentication"),body))
   end
   function self.create(password,entropy,progress,encrypted)
     if self.exists() then return nil,"A vault already exists. Unlock it instead." end
-    assert(type(password)=="string" and #password>=12,"Use a passphrase of at least 12 characters")
-    self.salt=crypto.sha256("CCSacabam salt:"..tostring(entropy)..":"..tostring(os.getComputerID())..":"..tostring(os.epoch and os.epoch("utc") or os.time())..":"..os.clock())
-    self.iterations=V.iterations
     self.encrypted=encrypted~=false
-    self.key=crypto.pbkdf2(password,self.salt,self.iterations,progress)
+    if self.encrypted then
+      assert(type(password)=="string" and #password>=12,"Use a passphrase of at least 12 characters")
+      self.salt=crypto.sha256("CCSacabam salt:"..tostring(entropy)..":"..tostring(os.getComputerID())..":"..tostring(os.epoch and os.epoch("utc") or os.time())..":"..os.clock())
+      self.iterations=V.iterations
+      self.key=crypto.pbkdf2(password,self.salt,self.iterations,progress)
+    end
     self.files={[""]=true,Documents=true,Pictures=true,Programs=true,[".Trash"]=true,[".system"]=true}
     self.open=true
     local ok,err=self.persist()
     if not ok then self.lock(); return nil,err end
     return true
   end
-  function self.setEncryption(enabled)
+  function self.setEncryption(enabled,password,entropy,progress)
     assert(self.open,"Personal drive is locked")
     assert(type(enabled)=="boolean","Encryption must be on or off")
-    local previous=self.encrypted; self.encrypted=enabled
+    if enabled==self.encrypted then return true end
+    local previous,oldKey,oldSalt,oldIterations=self.encrypted,self.key,self.salt,self.iterations
+    if enabled then
+      if type(password)~="string" or #password<12 then return nil,"Choose a passphrase of at least 12 characters." end
+      local salt=crypto.sha256("CCSacabam enable:"..tostring(entropy)..":"..tostring(os.epoch and os.epoch('utc') or os.time())..":"..os.clock())
+      local key=crypto.pbkdf2(password,salt,V.iterations,progress)
+      self.key,self.salt,self.iterations=key,salt,V.iterations
+    end
+    self.encrypted=enabled
     local ok,err=self.persist()
-    if not ok then self.encrypted=previous end
+    if not ok then self.encrypted,self.key,self.salt,self.iterations=previous,oldKey,oldSalt,oldIterations
+    elseif not enabled then self.key,self.salt,self.iterations=nil,nil,nil end
     return ok,err
   end
   function self.changePassword(password,entropy,progress)
     assert(self.open,"Drive is locked")
+    if not self.encrypted then return nil,"No password is needed while encryption is off." end
     if #password<12 then return nil,"Use at least 12 characters." end
     local oldKey,oldSalt,oldIterations=self.key,self.salt,self.iterations
     local newSalt=crypto.sha256(self.salt..tostring(entropy)..tostring(os.clock())..keyFor("password change"))

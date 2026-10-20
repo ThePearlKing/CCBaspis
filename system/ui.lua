@@ -55,6 +55,26 @@ function M.prompt(api, label, initial)
   end
 end
 function M.confirm(api, label)
+  if api.config and api.config().skipTypedConfirmation then
+    local selected=1
+    while true do
+      local t,w,h=api.theme(),term.getSize()
+      local lines=M.wrap(label,math.max(1,w-2)); local count=math.min(#lines,h-2)
+      M.fill(1,h-count-1,w,count+2,t.panel)
+      for i=1,count do M.text(2,h-count-2+i,lines[i],t.text,t.panel,w-2) end
+      local split=math.floor(w/2)
+      M.text(1,h-1,selected==1 and '> Confirm' or '  Confirm',selected==1 and t.onAccent or t.text,selected==1 and t.accent or t.panel,split)
+      M.text(split+1,h-1,selected==2 and '> Cancel' or '  Cancel',selected==2 and t.onAccent or t.text,selected==2 and t.accent or t.panel,w-split)
+      M.text(1,h,'Enter: select / F5: cancel',t.muted,t.panel,w)
+      local e,a,b,c=os.pullEventRaw()
+      if e=='key' then
+        if a==keys.enter then return selected==1
+        elseif a==keys.f5 then return false
+        elseif a==keys.tab or a==keys.left or a==keys.right then selected=3-selected end
+      elseif e=='mouse_click' and a==1 and c==h-1 then return b<=split
+      elseif e=='sacabam_close' or e=='terminate' then return false end
+    end
+  end
   return (M.prompt(api, label .. " (type YES)") or ""):upper() == "YES"
 end
 function M.message(api, value)

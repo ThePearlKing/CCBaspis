@@ -7,7 +7,7 @@ Build the single-file installer with `python3 tools/build.py`. It normalizes lin
 Run:
 
 ```sh
-python3 tools/test.py advanced basic network fresh fresh-basic pocket
+python3 tools/test.py advanced basic pocket network fresh fresh-basic fresh-encrypted setup setup-basic
 ```
 
 Requirements: CraftOS-PC on PATH as `craftos`, Python 3, and Python `cryptography`. Each case creates an isolated `/tmp/ccsacabam-...` directory with its own emulator configuration and save. The runner reports that path so failures can be inspected. Results are written to `computer/0/test-results.json`. Nothing is installed into the user's normal CraftOS-PC save.
@@ -24,7 +24,9 @@ Coverage includes:
 * Ordinary Lua filesystem and `io` writes, settings, `require`, relative paths, binary handles, and background timers.
 * Bundled app startup, Editor saving/undo, Settings confirmation, window movement/resizing/minimizing, event routing, small displays, and crash containment.
 * Peanut parsing and rejection cases; Pistachio handlers, limits, encryption functions, and Cashew script restrictions.
-* Actual standalone-installer prompts and first-account creation at the production 100,000-iteration KDF cost, including plaintext-default setup followed by enabling encryption.
+* Full-screen standalone setup and production 100,000-iteration encryption: passwordless default boot, enabling encryption in Settings, and installing with encryption already enabled.
+* Minimum-size 20×10 setup on both basic and advanced terminals: keyboard/mouse navigation, Back, cancellation, failure/retry, and masked password validation.
+* Shortcut removal/restoration, preserved application right-click events, contrasting window controls, and the default-OFF Skip typing YES preference.
 * A separate two-computer modem test for domains, computer-ID addresses, pages, 404s, traversal rejection, server shutdown, and Chat+ alongside Jupiter. Only this case enables emulator peripheral extensions to create the test hardware; the OS uses normal ComputerCraft modem APIs.
 
 Terminal snapshots are saved as `snapshot-*.json`. These retain text and foreground/background color rows for inspection. `python3 tools/preview.py snapshot.json output.png` renders them with Pillow, preserving the mosaic subpixels and substituting a host monospace font for ordinary text. Test passwords are public fixtures, never credentials for a real installation.

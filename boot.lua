@@ -41,7 +41,8 @@ local function main()
         assert(module("system/storage").write(fs.combine(root,"home/.examples-installed"),"1"))
       end
       local ctx={root=root,load=module,config=config,configModule=configModule,caps=caps,target=original,shell=shell,
-        password=login.password,isEncrypted=vault.isEncrypted,setEncryption=vault.setEncryption,
+        password=login.password,isEncrypted=vault.isEncrypted,
+        setEncryption=function(enabled,password,entropy) return vault.setEncryption(enabled,password,entropy,login.progress) end,
         cryptoProgress=login.progress,
         changePassword=function(password,entropy) return vault.changePassword(password,entropy,login.progress) end}
       local kernel=module("system/kernel").new(ctx)

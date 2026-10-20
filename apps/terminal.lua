@@ -8,7 +8,10 @@ return function(api,program)
   print("F1 apps | F2 switch | F4 close")
   local function shellTask()
     if program then
-      os.run({shell=parent,multishell=false},"/rom/programs/shell.lua",'"'..program..'"')
+      -- fs.combine returns a root-relative path without a leading slash.
+      -- Files already resolved it: do not resolve it again against shell.dir().
+      local absolute="/"..fs.combine("/",program)
+      os.run({shell=parent,multishell=false},"/rom/programs/shell.lua",'"'..absolute..'"')
       print("Program finished. Press any key."); os.pullEvent("key")
     else os.run({shell=parent,multishell=false},"/rom/programs/shell.lua") end
   end
