@@ -20,10 +20,10 @@ def run(name,color=True,width=51,height=19,vanilla=True):
             computer=directory/f'computer/{computer_id}'; computer.mkdir(parents=True)
             script_name='network-host.lua' if computer_id==host_id else 'network.lua'
             shutil.copy(ROOT/'tests'/script_name,computer/'startup.lua')
-            for folder in ('system','apps','sites','examples'):
+            for folder in ('system','apps','sites','examples','games'):
                 shutil.copytree(ROOT/folder,computer/'ccsacabam'/folder)
             shutil.copy(ROOT/'chatplus.lua',computer/'ccsacabam/chatplus.lua')
-    script='network.lua' if network else 'fresh.lua' if name.startswith('fresh') else 'setup.lua' if name.startswith('setup') else 'picker.lua' if name.startswith('picker') else 'visual.lua' if name.startswith('visual') else 'run.lua'
+    script='network.lua' if network else 'fresh.lua' if name.startswith('fresh') else 'setup.lua' if name.startswith('setup') else 'picker.lua' if name.startswith('picker') else 'visual.lua' if name.startswith('visual') else 'games.lua' if name.startswith('games') else 'run.lua'
     command=['craftos','--gui','-d',str(directory),'--mount-ro','/src='+str(ROOT),'--exec',f'shell.run("/src/tests/{script}", "{name}")']
     if network:
         # Each computer has its own host/client startup, including host ID 0.
@@ -60,7 +60,7 @@ def run(name,color=True,width=51,height=19,vanilla=True):
     for test in result['tests']:
         if not test['ok']: print(' FAIL',test['name'],test.get('error'),flush=True)
     success=result['failures']==0
-    if success and not network and not name.startswith(('setup','picker','visual')):
+    if success and not network and not name.startswith(('setup','picker','visual','games')):
         try:
             if name.startswith('fresh'): fresh_oracle(directory/'computer/0')
             else: oracle(directory/'computer/0')
@@ -80,6 +80,8 @@ def fresh_oracle(computer):
     plain=Cipher(algorithms.ChaCha20(key(b'encryption'),struct.pack('<I',1)+raw[40:52]),mode=None).decryptor().update(raw[52:-32])
     assert b'Programs/sealed-note.pist' in plain and b'Sites/welcome/index.cashew' in plain
     assert b'Programs/pmatrix.lua' in plain and b'Programs/pmatrix.pist' in plain
+    for name in ('snake','pong','blocks','mines','merge','lights','sokoban','memory','breakout','crumb'):
+        assert ('Games/'+name+'.lua').encode() in plain, name+' missing from fresh install'
 
 def oracle(computer):
     from cryptography.hazmat.primitives.ciphers import Cipher, algorithms
@@ -111,7 +113,8 @@ if __name__=='__main__':
     cases=sys.argv[1:] or ['advanced','basic']
     success=True
     for case in cases:
-        small=case.startswith('setup') or case.startswith('picker-small') or case.startswith('visual-small')
-        ok,path=run(case,color=case!='basic' and not case.endswith('-basic'),width=20 if small else 26 if case=='pocket' else 51,height=10 if small else 20 if case=='pocket' else 19)
+        small=case.startswith('setup') or case.startswith('picker-small') or case.startswith('visual-small') or case.startswith('games-small')
+        pocket=case=='pocket' or case.startswith('games-pocket')
+        ok,path=run(case,color=case!='basic' and not case.endswith('-basic'),width=20 if small else 26 if pocket else 51,height=10 if small else 20 if pocket else 19)
         success=success and ok
     raise SystemExit(0 if success else 1)

@@ -34,7 +34,7 @@ function M.normalize(c, caps)
   c = type(c) == "table" and c or {}
   local mode = c.mode
   if not caps.color then mode = "basic"
-  elseif mode ~= "basic" and mode ~= "color" and mode ~= "render" then mode = "color" end
+  elseif mode ~= "basic" and mode ~= "color" and mode ~= "render" then mode = "render" end
   if mode == "render" and not caps.blit then mode = "color" end
   local hidden={}
   if type(c.hiddenShortcuts)=="table" then

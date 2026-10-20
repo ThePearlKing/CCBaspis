@@ -9,6 +9,7 @@ Run:
 ```sh
 python3 tools/test.py advanced basic pocket network network-zero fresh fresh-basic fresh-encrypted setup setup-basic picker picker-basic picker-small picker-small-basic
 python3 tools/test.py visual visual-basic visual-small visual-small-basic
+python3 tools/test.py games games-basic games-pocket games-small games-small-basic
 ```
 
 Requirements: CraftOS-PC on PATH as `craftos`, Python 3, and Python `cryptography`. Each case creates an isolated `/tmp/ccsacabam-...` directory with its own emulator configuration and save. The runner reports that path so failures can be inspected. Results are written to `computer/0/test-results.json`, or `computer/1/test-results.json` when testing a host on computer 0. Nothing is installed into the user's normal CraftOS-PC save.
@@ -19,6 +20,7 @@ Coverage includes:
 
 * All Lua source parses in the actual emulator.
 * Installer checksum rejection, preservation of unrelated files/startup programs, rollback on an injected error, upgrades, and uninstall recovery.
+* Advanced render-mode defaults in setup, unattended install and config normalization; basic hardware fallback and explicit display choices. Staging copies only retained personal/custom files alongside the replacement system, so the disk-space check does not count old system files twice. The real upgrade test retains custom files and checks the encrypted drive byte for byte.
 * SHA-256, HMAC-SHA-256, PBKDF2, and ChaCha20 vectors. Python `hashlib`, `hmac`, and `cryptography` independently authenticate/decrypt actual drive and Pistachio envelopes.
 * Wrong passwords, tampered ciphertext, locked handles, failed writes, interrupted-save recovery, password changes, and encryption on/off conversion.
 * A physical-disk scan for a private sentinel and private filename after encrypted operation.
@@ -28,6 +30,7 @@ Coverage includes:
 * Customisation tab colour selection, cancellation, persistence, visible desktop/window changes, separate basic/dark/light profiles, invalid-colour rejection, reset confirmation, failed-save rollback, and minimum-size palette controls.
 * All eight wallpaper patterns in basic, color, and subpixel modes; preview/apply/cancel, keyboard and mouse controls, failed-save rollback, persistence, and desktop cache refresh.
 * Bundled app startup, Editor saving/undo, Settings confirmation, window movement/resizing/minimizing, event routing, small displays, and crash containment.
+* All ten games: collisions, scores, win/loss states, safe Mines openings, one-merge-per-move 2048 rules, all four Sokoban levels solved by search, and complete routes through eight generated Crumb Raider mazes. Real game windows test basic/advanced gates, pause/help/restart, resize suspension, timer cleanup, scores, and desktop/pocket/minimum-size displays. Integration tests launch through Apps, Terminal and Files, preserve edited `/Games` launchers on upgrade, and keep completion records inside the encrypted drive. Fresh-install oracles check all ten launchers.
 * Code Editor highlighting and completion for all four languages, Lua API members, multiline lexing, embedded scripts, save/undo/redo, and manual language selection on real windows.
 * Files double-click launch of a root-relative Lua path containing spaces, and E opening source in Code Editor.
 * Peanut parsing and rejection cases; Pistachio handlers, limits, encryption functions, and Cashew script restrictions.
@@ -42,3 +45,5 @@ Terminal snapshots are saved as `snapshot-*.json`. These retain text and foregro
 These are emulator integration tests, not an audit or a claim that every Lua program, peripheral mod, server configuration, or ComputerCraft version works. Minecraft server behavior, network range/chunk loading, performance under server load, and nonstandard peripherals still need in-game testing.
 
 Captured previews: [setup](previews/setup.png), [basic desktop](previews/basic-desktop.png), [Code Editor](previews/code.png), [resize handle](previews/resize-corner.png), [file picker](previews/filepicker.png), [Customisation](previews/customisation.png), [pmatrix](previews/pmatrix.png), [monochrome pmatrix](previews/pmatrix-basic.png), [circuit wallpaper](previews/wallpaper-circuit.png), and [waves wallpaper](previews/wallpaper-waves.png).
+
+Game previews: [Crumb Raider](previews/crumb-raider.png), [Breakout](previews/breakout.png), and the [basic Games launcher](previews/games-basic.png).

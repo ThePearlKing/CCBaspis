@@ -753,7 +753,52 @@ return function(api,start)
   end
 end
 ]]},
-  ["apps/help.lua"]={sha256="76af0a570a5858d951662956a6c73e6c48c2055ffeef4cec667da5e191b2bef6",data=[[
+  ["apps/games.lua"]={sha256="d1bc9f9be9b9f36745e947e368799d1bdcd38031c072040365faa2701054ce16",data=[[
+return function(api,id)
+  local catalog=api.load('system/game_catalog'); local ui=api.ui
+  if id then
+    for _,entry in ipairs(catalog) do if entry.id==id then return api.load('system/game').run(api,entry) end end
+    api.notify('Unknown game: '..tostring(id)); return
+  end
+  local selected,offset=1,0
+  while true do
+    local w,h=term.getSize(); local t=api.theme(); ui.clear(t)
+    ui.bar(1,' Games / '..#catalog..' installed',t)
+    local rows=math.max(1,h-5)
+    if selected<=offset then offset=selected-1 elseif selected>offset+rows then offset=selected-rows end
+    for row=1,rows do
+      local i=row+offset; local entry=catalog[i]
+      if entry then
+        ui.text(1,row+1,(i==selected and '> ' or '  ')..entry.name..(entry.advanced and ' [A]' or ''),
+          i==selected and t.onAccent or t.text,i==selected and t.accent or t.bg,w)
+      end
+    end
+    local entry=catalog[selected]
+    local label=entry.advanced and 'ADVANCED COMPUTER ONLY' or 'BASIC + ADVANCED'
+    if w>=22 then
+      ui.text(1,h-3,entry.detail,t.muted,t.bg,w); ui.text(1,h-2,label,entry.advanced and t.folder or t.muted,t.bg,w)
+    else
+      local lines=ui.wrap(label,w)
+      ui.text(1,h-3,lines[1],t.text,t.bg,w); ui.text(1,h-2,lines[2] or '',t.text,t.bg,w)
+    end
+    ui.text(1,h-1,'Files: /Games',t.muted,t.bg,w)
+    ui.text(1,h,'Enter play  Q close',t.text,t.panel,w)
+    local e,a,b,c=os.pullEventRaw()
+    if e=='sacabam_close' or e=='terminate' or (e=='key' and (a==keys.q or a==keys.escape)) then return
+    elseif e=='key' then
+      if a==keys.up then selected=math.max(1,selected-1)
+      elseif a==keys.down then selected=math.min(#catalog,selected+1)
+      elseif a==keys.home then selected=1 elseif a==keys['end'] then selected=#catalog
+      elseif a==keys.enter then api.launch('games',catalog[selected].id) end
+    elseif e=='mouse_scroll' then selected=math.max(1,math.min(#catalog,selected+a))
+    elseif e=='mouse_click' and a==1 and c>=2 and c<=rows+1 and catalog[offset+c-1] then
+      local choice=offset+c-1
+      if choice==selected then api.launch('games',catalog[choice].id) else selected=choice end
+    end
+  end
+end
+]]},
+  ["apps/help.lua"]={sha256="ea3629fc09ba4a4fdc2ca526249cfe0b17c5401908e1fbdc135b5ab03ddfa256",data=[[
 return function(api)
   local ui=api.ui; local scroll=0
   local content={
@@ -764,6 +809,8 @@ return function(api)
     "Advanced: drag title bars to move. Drag the bottom-right corner to resize. Click - / + / X to minimize, maximize or close.", "",
     "Right-click a desktop shortcut to open or remove it. Right-click empty desktop to restore shortcuts. Programs remain in Apps.", "Settings: Skip typing YES is OFF by default. Turn it on to confirm prompts with Enter or a click.", "",
     "FILES & PROGRAMS", "Double-click or Enter opens a file. Lua and Pistachio programs run in windows. E edits the selected file. N creates a file, D a folder. C/X/V copy, cut, paste. Delete moves to Trash; T opens Trash. Enter restores a trashed item.","",
+    "GAMES", "Open Games from Apps, type games in Terminal, or open a launcher in /Games. Ten games are installed. Snake, Pong, Blocks, Mines, 2048, Lights Out, Sokoban and Memory support basic computers. Breakout and Crumb Raider are marked ADVANCED COMPUTER ONLY. P pauses, H shows controls, R restarts, Q closes. F6 maximises a game that needs more room. Completed-game records follow the drive encryption setting.",
+    "CRUMB RAIDER", "A first-person 3D maze. Collect six golden crumbs, then find the green exit. W/S or Up/Down move; A/D or Left/Right turn. Z/X strafe. M opens the map. White is you, yellow is a crumb, green is the exit.","",
     "EDITOR", "Ctrl+S save, Ctrl+Shift+S save as.","Ctrl+O open, Ctrl+N new, Ctrl+F find.","Ctrl+Z undo, Ctrl+Y redo.","",
     "FILE PICKERS", "Open and Save dialogs browse folders. Arrows select; Enter or double-click opens. Backspace goes up. Tab moves between controls; F5 cancels. Ctrl+L edits the location, Ctrl+N creates a folder, Ctrl+H shows hidden files, and Ctrl+F switches the file-type filter. Name fields accept relative paths. Callisto: File or Ctrl+O opens a local page.","",
     "CUSTOMISATION", "Settings has General and Customisation tabs; use Tab, Left/Right, or click their names. Select a colour role, press Enter, choose a swatch, and Apply. F5 cancels the choice. R resets the current theme. Dark, light, and basic themes keep separate colours. Basic computers display colours as shades of gray.","",
@@ -2283,6 +2330,9 @@ if command=='host' then ccsacabam.launch('server',a,b)
 elseif command=='open' then ccsacabam.launch('browser',a)
 else print('europa host <domain> [site-folder]'); print('europa open <europa://domain/path>') end
 ]]},
+  ["examples/games.lua"]={sha256="b9d258b0a850187b25d8be3896803c77189c68aa6c27ef1a014709cb0637a7ae",data=[[
+assert(ccsacabam,'Run games inside CCSacabam').launch('games',...)
+]]},
   ["examples/ganymede-demo.lua"]={sha256="7553dc980a58a0a90c3b76fde7c792c6c658fb8fa7def39d14a880bd8ec69b30",data=[[
 local ganymede = require('ganymede')
 local form = ganymede.form('Ganymede / Lua UI')
@@ -2470,6 +2520,67 @@ on decrypt
   end
 end
 ]]},
+  ["games/README.txt"]={sha256="e0ed3fb40077f9ccffd0da8d1d71752c4ee1ec3d5645a623cbecf8bc3a044701",data=[[
+CCSacabam Games
+
+Open a .lua file to play, or run games in Terminal.
+P pauses, H explains controls, R restarts, Q quits.
+F6 maximises the game window.
+
+Snake - BASIC + ADVANCED
+Pong - BASIC + ADVANCED
+Blocks - BASIC + ADVANCED
+Mines - BASIC + ADVANCED
+2048 - BASIC + ADVANCED
+Lights Out - BASIC + ADVANCED
+Sokoban - BASIC + ADVANCED
+Memory - BASIC + ADVANCED
+Breakout - ADVANCED COMPUTER ONLY
+Crumb Raider - ADVANCED COMPUTER ONLY
+
+Crumb Raider: collect six golden crumbs in a 3D maze,
+then find the green exit. W/S move, A/D turn, M map.
+]]},
+  ["games/blocks.lua"]={sha256="0c08343de2029c427486f1964180c9b3c86e2e21b32901c05503d1607ee0c214",data=[[
+-- Blocks / BASIC + ADVANCED
+assert(ccsacabam,'Run this game inside CCSacabam').launch('games','blocks')
+]]},
+  ["games/breakout.lua"]={sha256="500612ae5743170459fb67efac1a533e8c3947747a1ef58eaae74534f7ff92af",data=[[
+-- Breakout / ADVANCED COMPUTER ONLY
+assert(ccsacabam,'Run this game inside CCSacabam').launch('games','breakout')
+]]},
+  ["games/crumb.lua"]={sha256="6a28f78a4b32bb05d1902885559c5085f565fc39ca43106315ee4496c394b7ad",data=[[
+-- Crumb Raider / ADVANCED COMPUTER ONLY
+assert(ccsacabam,'Run this game inside CCSacabam').launch('games','crumb')
+]]},
+  ["games/lights.lua"]={sha256="9313c1badee88f532f65014f79583511a0335392ec622617d33d402b0feb4219",data=[[
+-- Lights Out / BASIC + ADVANCED
+assert(ccsacabam,'Run this game inside CCSacabam').launch('games','lights')
+]]},
+  ["games/memory.lua"]={sha256="1b4c7085ee07cc51888f5011297dfbefbdbf44abad7e239e8b160488a8d1a1a4",data=[[
+-- Memory / BASIC + ADVANCED
+assert(ccsacabam,'Run this game inside CCSacabam').launch('games','memory')
+]]},
+  ["games/merge.lua"]={sha256="9bdbe414db5e1a23ed49dcba73840e9b1912398e1370f2dfaf66a8f32cb178a1",data=[[
+-- 2048 / BASIC + ADVANCED
+assert(ccsacabam,'Run this game inside CCSacabam').launch('games','merge')
+]]},
+  ["games/mines.lua"]={sha256="f846a06eef9edfe897d47526a5ea0a6c2dbc3eb5ee99e35be34bfdb8154aba61",data=[[
+-- Mines / BASIC + ADVANCED
+assert(ccsacabam,'Run this game inside CCSacabam').launch('games','mines')
+]]},
+  ["games/pong.lua"]={sha256="6e570efab7f4873fdd1f837bf12c281805a3b5a20329d2fb0bbd0bf9b2ad13e1",data=[[
+-- Pong / BASIC + ADVANCED
+assert(ccsacabam,'Run this game inside CCSacabam').launch('games','pong')
+]]},
+  ["games/snake.lua"]={sha256="a0d7b8c8087cfc5a13ca52b16b82078337d2d3978b5415bc70912309e0d56b9b",data=[[
+-- Snake / BASIC + ADVANCED
+assert(ccsacabam,'Run this game inside CCSacabam').launch('games','snake')
+]]},
+  ["games/sokoban.lua"]={sha256="cc274bd62af8ee56dae80591471c9ea40c6221cc522b39b074e65dadc219d067",data=[[
+-- Sokoban / BASIC + ADVANCED
+assert(ccsacabam,'Run this game inside CCSacabam').launch('games','sokoban')
+]]},
   ["sites/welcome/about.cashew"]={sha256="6a1c3347dc8f6ec27c51a813c3030452f5f5d6bb855438be47942c8a7b19b580",data=[[
 <cashew title="About Europa">
 <h1>SMALL WEB, BIG MOONS</h1>
@@ -2593,7 +2704,7 @@ function C.safeScript(ast)
 end
 return C
 ]]},
-  ["system/config.lua"]={sha256="292e9f5d88dd8afa1aef695cf1749266c06d810a9f2f56df093493625704d46e",data=[=[
+  ["system/config.lua"]={sha256="390a93f8d69e6ca59fdd69d14cee7253f2a8232157fa9eb526ce009ade1dfd93",data=[=[
 local M = {}
 M.version = "1.0.0"
 M.colorFields={
@@ -2630,7 +2741,7 @@ function M.normalize(c, caps)
   c = type(c) == "table" and c or {}
   local mode = c.mode
   if not caps.color then mode = "basic"
-  elseif mode ~= "basic" and mode ~= "color" and mode ~= "render" then mode = "color" end
+  elseif mode ~= "basic" and mode ~= "color" and mode ~= "render" then mode = "render" end
   if mode == "render" and not caps.blit then mode = "color" end
   local hidden={}
   if type(c.hiddenShortcuts)=="table" then
@@ -3204,6 +3315,651 @@ function F.draw(buffer,x,y,text,color)
 end
 return F
 ]]},
+  ["system/game.lua"]={sha256="5b08174e61de54cff04be797e8efd8528da41fb74d64da56ff02ea27bc3f4084",data=[[
+-- Shared window lifecycle, pause/help, restart and private-drive records.
+local M={}
+function M.run(api,entry)
+  local ui=api.ui; local w,h=term.getSize()
+  if entry.advanced and not api.caps.color then
+    ui.clear(api.theme())
+    local lines=ui.wrap(entry.name..'\nADVANCED COMPUTER ONLY\nThis game needs the advanced display.\nQ / Enter to close.',w)
+    for y,line in ipairs(lines) do if y<=h then ui.text(1,y,line,api.theme().text,api.theme().bg,w) end end
+    while true do
+      local e,k=os.pullEventRaw()
+      if e=='sacabam_close' or e=='terminate' or (e=='key' and (k==keys.q or k==keys.escape or k==keys.enter)) then return end
+    end
+  end
+  local factory=api.load('system/games/'..entry.id)
+  local game=factory.new(); local paused,help=false,false; local timer
+  local recordPath='/'..fs.combine(api.home,'.system/game-records.tbl')
+  local records=api.storage.load(recordPath,{})
+  if type(records)~='table' then records={} end
+  local recorded=false
+  local function record()
+    if not game.result or recorded then return end
+    recorded=true
+    -- Reload so two windows finishing games cannot overwrite each other's scores.
+    local current=api.storage.load(recordPath,{})
+    if type(current)~='table' then current={} end
+    local old=current[entry.id]; if type(old)~='table' then old={} end
+    current[entry.id]={plays=(tonumber(old.plays) or 0)+1,wins=(tonumber(old.wins) or 0)+(game.result=='win' and 1 or 0),
+      best=math.max(tonumber(old.best) or 0,tonumber(game.score) or 0)}
+    local ok,err=api.storage.save(recordPath,current)
+    if ok then records=current else api.notify('Could not save game record: '..tostring(err)) end
+  end
+  local function stop() if timer then os.cancelTimer(timer); timer=nil end end
+  api.onExit(stop)
+  local function overlay(text)
+    local lines=ui.wrap(text,math.max(1,w-4)); local start=math.max(2,math.floor((h-#lines)/2))
+    ui.fill(2,start-1,w-2,math.min(#lines+2,h-start),colors.black)
+    for i,line in ipairs(lines) do if start+i-1<h then ui.text(3,start+i-1,line,colors.white,colors.black,w-4) end end
+  end
+  while true do
+    w,h=term.getSize(); local enough=w>=entry.w and h>=entry.h
+    local c={w=w,h=h-2,ui=ui,pixels=api.pixels,color=api.caps.color and api.config().mode~='basic'}
+    c.text=function(x,y,text,fg,bg,width) ui.text(x,y+1,text,fg or colors.white,bg or colors.black,width) end
+    c.cell=function(x,y,text,active)
+      c.text(x,y,text,active and colors.black or colors.white,active and colors.white or colors.black)
+    end
+    c.drawPixels=function(canvas) api.pixels.draw(canvas,term,1,2,w,h-2) end
+    ui.clear({bg=colors.black,text=colors.white}); api.setTitle(entry.name)
+    if enough then game.draw(c) else
+      ui.text(1,2,'Window too small',colors.white,colors.black,w)
+      ui.text(1,3,'Needs '..entry.w..' x '..entry.h,colors.white,colors.black,w)
+      ui.text(1,4,'F6: maximise',colors.white,colors.black,w)
+    end
+    local old=records[entry.id]; local best=type(old)=='table' and tonumber(old.best) or 0
+    ui.text(1,1,entry.name..'  '..tostring(game.score or 0)..(w>=36 and '  Best '..tostring(best or 0) or ''),colors.white,colors.gray,w)
+    ui.text(1,h,'P pause H help R new Q quit',colors.white,colors.black,w)
+    if enough then
+      if help then overlay(entry.help..'\nH returns. P pauses. R restarts. Q closes.')
+      elseif game.result then overlay((game.result=='win' and 'You win!' or 'Game over')..'\n'..(game.message or '')..'\nR plays again. Q closes.')
+      elseif paused then overlay('Paused\nP resumes.') end
+    end
+    record()
+    if entry.timed and enough and not paused and not help and not game.result then
+      if not timer then timer=os.startTimer(.1) end
+    else stop() end
+    local e,a,b,d=os.pullEventRaw()
+    if e=='sacabam_close' or e=='terminate' or (e=='key' and (a==keys.q or a==keys.escape)) then stop(); return
+    elseif e=='key' then
+      local name=keys.getName(a)
+      if name=='h' and not b then help=not help
+      elseif name=='p' and not b then paused=not paused
+      elseif name=='r' and not b then stop(); game=factory.new(); recorded=false; help=false; paused=false
+      elseif enough and not paused and not help and not game.result then game.key(name,b==true) end
+    elseif e=='timer' and a==timer then timer=nil; if enough and not paused and not help and not game.result then game.tick(.1) end
+    elseif (e=='mouse_click' or e=='mouse_drag') and enough and not paused and not help and not game.result and game.mouse then
+      game.mouse(a,b,d-1,c)
+    end
+  end
+end
+return M
+]]},
+  ["system/game_catalog.lua"]={sha256="f196bed6f026cf820602e794a0e10796aef2ad29560efff4f300dc1656aec2c7",data=[[
+return {
+  {id='snake',name='Snake',detail='Eat, grow, avoid your own tail.',help='Arrows / WASD steer. Eat * without hitting a wall or yourself.',w=18,h=11,timed=true},
+  {id='pong',name='Pong',detail='First to seven against the computer.',help='Up/Down or W/S move your paddle. First to seven wins.',w=20,h=11,timed=true},
+  {id='blocks',name='Blocks',detail='Falling blocks and disappearing lines.',help='Left/Right move. Up rotates. Down drops one row. Space hard-drops.',w=16,h=14,timed=true},
+  {id='mines',name='Mines',detail='Clear the field, keep your feet.',help='Arrows move. Enter reveals. F flags. Left/right click reveal/flag. First reveal is safe.',w=18,h=11},
+  {id='merge',name='2048',detail='Slide matching tiles together.',help='Arrows slide every tile. Merge equal tiles to reach 2048.',w=21,h=11},
+  {id='lights',name='Lights Out',detail='One switch, five consequences.',help='Arrows move. Enter or click toggles a light and its neighbours. Turn them all off.',w=16,h=9},
+  {id='sokoban',name='Sokoban',detail='Push crates onto their marks.',help='Arrows / WASD move and push. Z undoes. Put every crate on a dot. Enter starts the next level.',w=18,h=11},
+  {id='memory',name='Memory',detail='Find all eight matching pairs.',help='Arrows move. Enter or click flips a card. Enter hides an unmatched pair.',w=18,h=9},
+  {id='breakout',name='Breakout',detail='Bounce through a wall of bricks.',help='Left/Right or A/D move. Space launches the ball. Clear all bricks before three balls are lost.',w=22,h=12,timed=true,advanced=true},
+  {id='crumb',name='Crumb Raider',detail='A first-person 3D vault raid.',help='W/S or Up/Down move. Left/Right or A/D turn. Z/X strafe. M map. Collect all golden crumbs, then reach the green exit.',w=22,h=12,timed=true,advanced=true},
+}
+]]},
+  ["system/games/blocks.lua"]={sha256="40e61fc8591de2268ee1c935c7d15f5733054a47274c5141be69b5fb84c50d5a",data=[=[
+local M={}
+local shapes={{{0,0},{1,0},{2,0},{3,0}},{{0,0},{1,0},{0,1},{1,1}},{{0,0},{1,0},{2,0},{1,1}},
+  {{1,0},{2,0},{0,1},{1,1}},{{0,0},{1,0},{1,1},{2,1}},{{0,0},{0,1},{1,1},{2,1}},{{2,0},{0,1},{1,1},{2,1}}}
+local inks={colors.cyan,colors.yellow,colors.purple,colors.lime,colors.red,colors.blue,colors.orange}
+function M.new(random)
+  random=random or math.random
+  local s={board={},score=0,lines=0,elapsed=0,next=random(1,7)}
+  for y=1,12 do s.board[y]={} end
+  local function fits(shape,x,y)
+    for _,p in ipairs(shape) do local xx,yy=x+p[1],y+p[2]
+      if xx<1 or xx>10 or yy>12 or (yy>=1 and s.board[yy][xx]) then return false end
+    end
+    return true
+  end
+  local function spawn()
+    s.kind=s.next; s.next=random(1,7); s.shape={}
+    for i,p in ipairs(shapes[s.kind]) do s.shape[i]={p[1],p[2]} end
+    s.x,s.y=4,1
+    if not fits(s.shape,s.x,s.y) then s.result='lose'; s.message=s.lines..' lines cleared' end
+  end
+  local function lock()
+    for _,p in ipairs(s.shape) do s.board[s.y+p[2]][s.x+p[1]]=s.kind end
+    local count=0; local y=12
+    while y>=1 do
+      local full=true; for x=1,10 do if not s.board[y][x] then full=false end end
+      if full then table.remove(s.board,y); table.insert(s.board,1,{}); count=count+1 else y=y-1 end
+    end
+    s.lines=s.lines+count; s.score=s.score+({0,100,300,500,800})[count+1]; spawn()
+  end
+  function s.drop()
+    if s.result then return end
+    if fits(s.shape,s.x,s.y+1) then s.y=s.y+1 else lock() end
+  end
+  function s.key(key)
+    if s.result then return end
+    local dx=key=='left' and -1 or key=='right' and 1 or 0
+    if dx~=0 and fits(s.shape,s.x+dx,s.y) then s.x=s.x+dx
+    elseif key=='down' then s.drop()
+    elseif key=='space' then while fits(s.shape,s.x,s.y+1) do s.y=s.y+1; s.score=s.score+1 end; lock()
+    elseif key=='up' and s.kind~=2 then
+      local rotated={}; local size=s.kind==1 and 4 or 3
+      for i,p in ipairs(s.shape) do rotated[i]={size-1-p[2],p[1]} end
+      for _,kick in ipairs({0,-1,1,-2,2}) do if fits(rotated,s.x+kick,s.y) then s.shape=rotated; s.x=s.x+kick; break end end
+    end
+  end
+  function s.tick(dt)
+    s.elapsed=s.elapsed+dt; local delay=math.max(.12,.7-s.lines*.025)
+    if s.elapsed>=delay then s.elapsed=s.elapsed-delay; s.drop() end
+  end
+  function s.draw(c)
+    for y=1,12 do
+      c.text(1,y,'|'); c.text(12,y,'|')
+      for x=1,10 do local kind=s.board[y][x]; c.text(x+1,y,kind and '#' or '.',kind and c.color and inks[kind] or kind and colors.white or colors.gray) end
+    end
+    for _,p in ipairs(s.shape) do if s.y+p[2]>=1 then c.text(s.x+p[1]+1,s.y+p[2],'#',c.color and inks[s.kind] or colors.white) end end
+    c.text(14,1,'Next'); for _,p in ipairs(shapes[s.next]) do c.text(14+p[1],3+p[2],'#',c.color and inks[s.next] or colors.white) end
+    if c.w>=20 then c.text(14,7,'Lines'); c.text(14,8,tostring(s.lines)) end
+  end
+  spawn(); return s
+end
+return M
+]=]},
+  ["system/games/breakout.lua"]={sha256="311802c23846ddd027f0912b906d7ae2a6c9e26ec168c1b491c095fbdbb8d38a",data=[[
+local M={}
+function M.new()
+  local s={paddle=40,x=40,y=42,vx=12,vy=-24,ready=true,lives=3,score=0,bricks={},remaining=32}
+  for row=1,4 do for col=1,8 do s.bricks[#s.bricks+1]={x=1+(col-1)*10,y=4+(row-1)*4,row=row,alive=true} end end
+  function s.key(key)
+    if key=='left' or key=='a' then s.paddle=math.max(7,s.paddle-5)
+    elseif key=='right' or key=='d' then s.paddle=math.min(73,s.paddle+5)
+    elseif key=='space' or key=='enter' then s.ready=false end
+    if s.ready then s.x=s.paddle end
+  end
+  function s.mouse(button,x,_,c) if button==1 then s.paddle=math.max(7,math.min(73,x/c.w*80)); if s.ready then s.x=s.paddle end end end
+  function s.tick(dt)
+    if s.ready or s.result then return end
+    local steps=math.ceil(math.max(math.abs(s.vx),math.abs(s.vy))*dt/.7)
+    for _=1,steps do
+      local ox,oy=s.x,s.y; s.x=s.x+s.vx*dt/steps; s.y=s.y+s.vy*dt/steps
+      if s.x<1 then s.x=1; s.vx=math.abs(s.vx) elseif s.x>79 then s.x=79; s.vx=-math.abs(s.vx) end
+      if s.y<1 then s.y=1; s.vy=math.abs(s.vy) end
+      if s.vy>0 and oy<=44 and s.y>=44 and math.abs(s.x-s.paddle)<=8 then
+        s.y=44; s.vy=-math.abs(s.vy); s.vx=(s.x-s.paddle)*3
+      end
+      for _,b in ipairs(s.bricks) do
+        if b.alive and s.x>=b.x-1 and s.x<=b.x+8 and s.y>=b.y-1 and s.y<=b.y+3 then
+          b.alive=false; s.remaining=s.remaining-1; s.score=s.score+10
+          if (ox<b.x-1 or ox>b.x+8) and oy>=b.y-1 and oy<=b.y+3 then s.vx=-s.vx else s.vy=-s.vy end
+          if s.remaining==0 then s.result='win'; s.message='No bricks left standing.'; return end
+          break
+        end
+      end
+      if s.y>49 then
+        s.lives=s.lives-1; s.ready=true; s.x,s.y=s.paddle,42; s.vx,s.vy=12,-24
+        if s.lives==0 then s.result='lose'; s.message=s.remaining..' bricks survived.' end
+        return
+      end
+    end
+  end
+  function s.draw(c)
+    local b=c.pixels.new(c.w*2,c.h*3,colors.black)
+    local function rect(x,y,w,h,color)
+      local x1,y1=math.floor(x/80*b.w)+1,math.floor(y/48*b.h)+1
+      local x2,y2=math.floor((x+w)/80*b.w),math.floor((y+h)/48*b.h)
+      b.rect(x1,y1,math.max(1,x2-x1+1),math.max(1,y2-y1+1),color)
+    end
+    for _,brick in ipairs(s.bricks) do if brick.alive then rect(brick.x,brick.y,8,3,({colors.red,colors.orange,colors.lime,colors.cyan})[brick.row]) end end
+    rect(s.paddle-7,45,14,2,colors.white); rect(s.x-1,s.y-1,2,2,colors.yellow)
+    c.drawPixels(b)
+    c.text(1,1,'Balls '..s.lives..(s.ready and ' | Space: launch' or ''))
+  end
+  return s
+end
+return M
+]]},
+  ["system/games/crumb.lua"]={sha256="67b04449c8df3f5451f815bcd6ffd90e1b5356685f577818954c822f2f2161f6",data=[=[
+-- Crumb Raider: perspective raycasting, depth-tested sprites and a carved maze.
+local M={}
+function M.new(random)
+  random=random or math.random
+  local s={map={},x=2.5,y=2.5,angle=0,crumbs={},collected=0,score=0,time=0,showMap=false,size=15}
+  for y=1,15 do s.map[y]={}; for x=1,15 do s.map[y][x]=1 end end
+  local stack={{2,2}}; s.map[2][2]=0
+  while #stack>0 do
+    local p=stack[#stack]; local options={}
+    for _,d in ipairs({{2,0},{0,2},{-2,0},{0,-2}}) do
+      local x,y=p[1]+d[1],p[2]+d[2]
+      if x>=2 and x<=14 and y>=2 and y<=14 and s.map[y][x]==1 then options[#options+1]={x,y} end
+    end
+    if #options==0 then table.remove(stack)
+    else local n=options[random(1,#options)]; s.map[(p[2]+n[2])/2][(p[1]+n[1])/2]=0; s.map[n[2]][n[1]]=0; stack[#stack+1]=n end
+  end
+  s.angle=s.map[2][3]==0 and 0 or math.pi/2
+  -- Breadth-first order gives reachable, well-spaced treasures and a distant exit.
+  local queue={{2,2}}; local visited={['2:2']=true}; local cursor=1
+  while cursor<=#queue do
+    local p=queue[cursor]; cursor=cursor+1
+    for _,d in ipairs({{1,0},{0,1},{-1,0},{0,-1}}) do
+      local x,y=p[1]+d[1],p[2]+d[2]; local id=x..':'..y
+      if s.map[y] and s.map[y][x]==0 and not visited[id] then visited[id]=true; queue[#queue+1]={x,y} end
+    end
+  end
+  local last=queue[#queue]; s.exit={x=last[1]+.5,y=last[2]+.5,exit=true}
+  for i=1,6 do local p=queue[math.floor(i*(#queue-2)/7)+2]; s.crumbs[i]={x=p[1]+.5,y=p[2]+.5} end
+  function s.solid(x,y) return not s.map[math.floor(y)] or s.map[math.floor(y)][math.floor(x)]~=0 end
+  local function walkable(x,y)
+    for _,dx in ipairs({-.18,.18}) do for _,dy in ipairs({-.18,.18}) do if s.solid(x+dx,y+dy) then return false end end end
+    return true
+  end
+  function s.collect()
+    for _,crumb in ipairs(s.crumbs) do
+      if not crumb.taken and (crumb.x-s.x)^2+(crumb.y-s.y)^2<.23 then crumb.taken=true; s.collected=s.collected+1; s.score=s.score+100 end
+    end
+    if s.collected==6 and (s.exit.x-s.x)^2+(s.exit.y-s.y)^2<.23 then
+      s.result='win'; s.score=s.score+math.max(0,1000-math.floor(s.time)); s.message='Six crumbs. One clean getaway.'
+    end
+  end
+  function s.move(dx,dy)
+    if s.result then return end
+    if walkable(s.x+dx,s.y) then s.x=s.x+dx end
+    if walkable(s.x,s.y+dy) then s.y=s.y+dy end
+    s.collect()
+  end
+  function s.key(key,held)
+    if s.result then return end
+    if key=='left' or key=='a' then s.angle=(s.angle-.17)%(math.pi*2)
+    elseif key=='right' or key=='d' then s.angle=(s.angle+.17)%(math.pi*2)
+    elseif key=='up' or key=='w' then s.move(math.cos(s.angle)*.3,math.sin(s.angle)*.3)
+    elseif key=='down' or key=='s' then s.move(-math.cos(s.angle)*.3,-math.sin(s.angle)*.3)
+    elseif key=='z' then s.move(math.sin(s.angle)*.3,-math.cos(s.angle)*.3)
+    elseif key=='x' then s.move(-math.sin(s.angle)*.3,math.cos(s.angle)*.3)
+    elseif key=='m' and not held then s.showMap=not s.showMap end
+  end
+  function s.tick(dt) if not s.result then s.time=s.time+dt end end
+  function s.ray(dx,dy)
+    local mx,my=math.floor(s.x),math.floor(s.y)
+    local deltaX,deltaY=dx==0 and math.huge or math.abs(1/dx),dy==0 and math.huge or math.abs(1/dy)
+    local stepX,stepY=dx<0 and -1 or 1,dy<0 and -1 or 1
+    local sideX=(dx<0 and s.x-mx or mx+1-s.x)*deltaX
+    local sideY=(dy<0 and s.y-my or my+1-s.y)*deltaY
+    local side,dist
+    for _=1,64 do
+      if sideX<sideY then mx=mx+stepX; dist=sideX; sideX=sideX+deltaX; side=0
+      else my=my+stepY; dist=sideY; sideY=sideY+deltaY; side=1 end
+      if not s.map[my] or s.map[my][mx]~=0 then
+        local hit=side==0 and s.y+dist*dy or s.x+dist*dx
+        return math.max(.05,dist),side,hit%1
+      end
+    end
+    return 64,0,0
+  end
+  function s.draw(c)
+    local pw,ph=c.w*2,c.h*3; local b=c.pixels.new(pw,ph,colors.black)
+    if s.showMap then
+      local scale=math.max(1,math.floor(math.min(pw/15,(ph-3)/15))); local ox=math.floor((pw-15*scale)/2)
+      for y=1,15 do for x=1,15 do b.rect(ox+(x-1)*scale+1,(y-1)*scale+1,scale,scale,s.map[y][x]==1 and colors.gray or colors.black) end end
+      local function dot(p,color) b.rect(ox+(math.floor(p.x)-1)*scale+1,(math.floor(p.y)-1)*scale+1,scale,scale,color) end
+      for _,crumb in ipairs(s.crumbs) do if not crumb.taken then dot(crumb,colors.yellow) end end
+      dot(s.exit,colors.lime); dot(s,colors.white)
+    else
+      local dirX,dirY=math.cos(s.angle),math.sin(s.angle); local planeX,planeY=-dirY*.66,dirX*.66
+      local depth={}
+      for x=1,pw do
+        local camera=(x-.5)*2/pw-1
+        local dist,side,u=s.ray(dirX+planeX*camera,dirY+planeY*camera); depth[x]=dist
+        local height=ph/dist; local top=ph/2-height/2
+        for y=1,ph do
+          local ink
+          if y<top then ink=y<ph*.28 and colors.blue or colors.black
+          elseif y>top+height then ink=(y%3==0) and colors.gray or colors.black
+          else
+            local mortar=math.floor(u*12)%6==0 or math.floor((y-top)/height*12)%4==0
+            ink=mortar and colors.black or dist>6 and colors.gray or side==1 and colors.brown or colors.orange
+          end
+          b.set(x,y,ink)
+        end
+      end
+      local sprites={s.exit}; for _,crumb in ipairs(s.crumbs) do if not crumb.taken then sprites[#sprites+1]=crumb end end
+      table.sort(sprites,function(a,d) return (a.x-s.x)^2+(a.y-s.y)^2>(d.x-s.x)^2+(d.y-s.y)^2 end)
+      local inverse=1/(planeX*dirY-dirX*planeY)
+      for _,sprite in ipairs(sprites) do
+        local rx,ry=sprite.x-s.x,sprite.y-s.y
+        local tx=inverse*(dirY*rx-dirX*ry); local ty=inverse*(-planeY*rx+planeX*ry)
+        if ty>.1 then
+          local size=math.min(ph,ph/ty*.3); local sx=pw/2*(1+tx/ty); local sy=ph/2+ph/ty*.15
+          for x=math.max(1,math.floor(sx-size)),math.min(pw,math.ceil(sx+size)) do
+            if ty<depth[x] then for y=math.max(1,math.floor(sy-size)),math.min(ph,math.ceil(sy+size)) do
+              if math.abs(x-sx)+math.abs(y-sy)<=size then
+                b.set(x,y,sprite.exit and (s.collected==6 and colors.lime or colors.green) or colors.yellow)
+              end
+            end end
+          end
+        end
+      end
+    end
+    c.drawPixels(b); c.text(1,c.h,'Crumbs '..s.collected..'/6  '..(s.collected==6 and 'Find green exit' or 'M map'))
+  end
+  return s
+end
+return M
+]=]},
+  ["system/games/lights.lua"]={sha256="b9ccf8633079ae771bc2d174f3cb68b66d977452084a0632efe01a68114e80a5",data=[[
+local M={}
+function M.new(random)
+  random=random or math.random
+  local s={cells={},x=3,y=3,moves=0,score=0}
+  for i=1,25 do s.cells[i]=false end
+  local function flip(x,y)
+    for _,d in ipairs({{0,0},{-1,0},{1,0},{0,-1},{0,1}}) do
+      local xx,yy=x+d[1],y+d[2]
+      if xx>=1 and xx<=5 and yy>=1 and yy<=5 then local i=(yy-1)*5+xx; s.cells[i]=not s.cells[i] end
+    end
+  end
+  for y=1,5 do for x=1,5 do if random(0,1)==1 then flip(x,y) end end end
+  local any=false; for _,on in ipairs(s.cells) do any=any or on end; if not any then flip(3,3) end
+  function s.key(key)
+    if s.result then return end
+    if key=='left' then s.x=math.max(1,s.x-1) elseif key=='right' then s.x=math.min(5,s.x+1)
+    elseif key=='up' then s.y=math.max(1,s.y-1) elseif key=='down' then s.y=math.min(5,s.y+1)
+    elseif key=='space' or key=='enter' then
+      flip(s.x,s.y); s.moves=s.moves+1; local lit=false
+      for _,on in ipairs(s.cells) do lit=lit or on end
+      if not lit then s.result='win'; s.score=math.max(1,1000-s.moves); s.message=s.moves..' switches.' end
+    end
+  end
+  function s.mouse(button,x,y,c)
+    local ox=math.floor((c.w-15)/2)+1; local xx=math.floor((x-ox)/3)+1
+    if button==1 and xx>=1 and xx<=5 and y>=1 and y<=5 then s.x,s.y=xx,y; s.key('enter') end
+  end
+  function s.draw(c)
+    local ox=math.floor((c.w-15)/2)+1
+    for y=1,5 do for x=1,5 do
+      local on=s.cells[(y-1)*5+x]; local selected=x==s.x and y==s.y
+      c.cell(ox+(x-1)*3,y,(selected and '[' or ' ')..(on and '*' or '.')..(selected and ']' or ' '),selected)
+    end end
+    c.text(ox,7,'Moves '..s.moves)
+  end
+  return s
+end
+return M
+]]},
+  ["system/games/memory.lua"]={sha256="3b73437a322c703d1b97fdbcdd4760c04c9dcb106920cdd48167780e21ef3dc0",data=[[
+local M={}
+function M.new(random)
+  random=random or math.random
+  local s={cards={},matched={},flipped={},cursor=1,turns=0,score=0}
+  for i=1,16 do s.cards[i]=string.char(65+math.floor((i-1)/2)) end
+  for i=16,2,-1 do local j=random(1,i); s.cards[i],s.cards[j]=s.cards[j],s.cards[i] end
+  function s.key(key)
+    if s.result then return end
+    if key=='left' then s.cursor=math.max(1,s.cursor-1) elseif key=='right' then s.cursor=math.min(16,s.cursor+1)
+    elseif key=='up' then s.cursor=math.max(1,s.cursor-4) elseif key=='down' then s.cursor=math.min(16,s.cursor+4)
+    elseif key=='enter' or key=='space' then
+      if #s.flipped==2 then s.flipped={}; return end
+      if s.matched[s.cursor] or s.flipped[1]==s.cursor then return end
+      s.flipped[#s.flipped+1]=s.cursor
+      if #s.flipped==2 then
+        s.turns=s.turns+1; local a,b=s.flipped[1],s.flipped[2]
+        if s.cards[a]==s.cards[b] then
+          s.matched[a],s.matched[b]=true,true; s.flipped={}; s.score=s.score+1
+          if s.score==8 then s.result='win'; s.message='Eight pairs in '..s.turns..' tries.' end
+        end
+      end
+    end
+  end
+  function s.mouse(button,x,y,c)
+    local ox=math.floor((c.w-16)/2)+1; local xx=math.floor((x-ox)/4)+1
+    if button==1 and xx>=1 and xx<=4 and y>=1 and y<=4 then s.cursor=(y-1)*4+xx; s.key('enter') end
+  end
+  function s.draw(c)
+    local ox=math.floor((c.w-16)/2)+1
+    for i=1,16 do
+      local visible=s.matched[i] or s.flipped[1]==i or s.flipped[2]==i
+      c.cell(ox+((i-1)%4)*4,1+math.floor((i-1)/4),'['..(visible and s.cards[i] or '?')..'] ',i==s.cursor)
+    end
+    c.text(ox,6,'Pairs '..s.score..'/8')
+    c.text(ox,7,#s.flipped==2 and 'Enter: hide pair' or 'Tries '..s.turns)
+  end
+  return s
+end
+return M
+]]},
+  ["system/games/merge.lua"]={sha256="1b00cc0fef98676fbc2c204cd6e8989251829591127738400f957d57e08d8cb1",data=[=[
+local M={}
+function M.new(random)
+  random=random or math.random
+  local s={cells={},score=0}
+  local function spawn()
+    local empty={}; for i=1,16 do if not s.cells[i] then empty[#empty+1]=i end end
+    if #empty>0 then s.cells[empty[random(1,#empty)]]=random(1,10)==10 and 4 or 2 end
+  end
+  local function possible()
+    for y=1,4 do for x=1,4 do local i=(y-1)*4+x; local v=s.cells[i]
+      if not v or (x<4 and v==s.cells[i+1]) or (y<4 and v==s.cells[i+4]) then return true end
+    end end
+    return false
+  end
+  function s.key(key)
+    if s.result or not ({left=true,right=true,up=true,down=true})[key] then return end
+    local changed=false
+    for line=1,4 do
+      local ids,values={},{}
+      for n=1,4 do
+        local x,y
+        if key=='left' or key=='right' then x=key=='left' and n or 5-n; y=line else x=line; y=key=='up' and n or 5-n end
+        ids[n]=(y-1)*4+x; if s.cells[ids[n]] then values[#values+1]=s.cells[ids[n]] end
+      end
+      local merged={}; local n=1
+      while n<=#values do
+        local v=values[n]
+        if values[n+1]==v then v=v*2; s.score=s.score+v; n=n+1 end
+        merged[#merged+1]=v; n=n+1
+      end
+      for i,id in ipairs(ids) do if s.cells[id]~=merged[i] then changed=true end; s.cells[id]=merged[i] end
+    end
+    if changed then spawn() end
+    for _,v in pairs(s.cells) do if v>=2048 then s.result='win'; s.message='2048. Nicely crunched.' end end
+    if not s.result and not possible() then s.result='lose'; s.message='No moves left.' end
+  end
+  function s.draw(c)
+    local ox=math.floor((c.w-20)/2)+1
+    for y=1,4 do for x=1,4 do
+      local v=s.cells[(y-1)*4+x]; local bg=colors.black
+      if c.color and v then bg=({[2]=colors.gray,[4]=colors.blue,[8]=colors.cyan,[16]=colors.purple,[32]=colors.brown,[64]=colors.red})[v] or colors.green end
+      c.text(ox+(x-1)*5,1+(y-1)*2,v and string.format('%4d',v) or '   .',colors.white,bg,4)
+    end end
+  end
+  spawn(); spawn(); return s
+end
+return M
+]=]},
+  ["system/games/mines.lua"]={sha256="0dbaf0bf6f440fb8918a5776c9e821bf67932c7f47e098b86993193e0a68852e",data=[[
+local M={}
+function M.new(random)
+  random=random or math.random
+  local s={bombs={},open={},flags={},x=1,y=1,score=0,started=false}
+  local function id(x,y) return (y-1)*8+x end
+  local function neighbours(x,y,fn)
+    for yy=math.max(1,y-1),math.min(8,y+1) do for xx=math.max(1,x-1),math.min(8,x+1) do if xx~=x or yy~=y then fn(xx,yy,id(xx,yy)) end end end
+  end
+  function s.count(x,y) local count=0; neighbours(x,y,function(_,_,i) if s.bombs[i] then count=count+1 end end); return count end
+  function s.reveal(x,y)
+    if s.result or s.flags[id(x,y)] or s.open[id(x,y)] then return end
+    if not s.started then
+      local cells={}; for yy=1,8 do for xx=1,8 do if math.abs(xx-x)>1 or math.abs(yy-y)>1 then cells[#cells+1]=id(xx,yy) end end end
+      for _=1,10 do s.bombs[table.remove(cells,random(1,#cells))]=true end; s.started=true
+    end
+    if s.bombs[id(x,y)] then s.result='lose'; s.message='That one was a mine.'; return end
+    local todo={{x,y}}
+    while #todo>0 do
+      local p=table.remove(todo); local i=id(p[1],p[2])
+      if not s.open[i] and not s.flags[i] then
+        s.open[i]=true; s.score=s.score+1
+        if s.count(p[1],p[2])==0 then neighbours(p[1],p[2],function(xx,yy,j) if not s.open[j] then todo[#todo+1]={xx,yy} end end) end
+      end
+    end
+    if s.score==54 then s.result='win'; s.message='Every safe square cleared.' end
+  end
+  function s.key(key,held)
+    if key=='left' then s.x=math.max(1,s.x-1) elseif key=='right' then s.x=math.min(8,s.x+1)
+    elseif key=='up' then s.y=math.max(1,s.y-1) elseif key=='down' then s.y=math.min(8,s.y+1)
+    elseif key=='enter' or key=='space' then s.reveal(s.x,s.y)
+    elseif key=='f' and not held and not s.open[id(s.x,s.y)] then local i=id(s.x,s.y); s.flags[i]=not s.flags[i] end
+  end
+  function s.mouse(button,x,y,c)
+    local ox=math.floor((c.w-16)/2)+1; local xx=math.floor((x-ox)/2)+1
+    if xx>=1 and xx<=8 and y>=1 and y<=8 then s.x,s.y=xx,y; s.key(button==2 and 'f' or 'enter') end
+  end
+  function s.draw(c)
+    local ox=math.floor((c.w-16)/2)+1; local flags=0
+    for y=1,8 do for x=1,8 do
+      local i=id(x,y); local mark=s.flags[i] and 'F' or '#'
+      if s.flags[i] then flags=flags+1 end
+      if s.open[i] then local n=s.count(x,y); mark=n==0 and '.' or tostring(n) end
+      if s.result=='lose' and s.bombs[i] then mark='*' end
+      c.cell(ox+(x-1)*2,y,mark..' ',x==s.x and y==s.y)
+    end end
+    c.text(ox,9,'Flags '..flags..'/10')
+  end
+  return s
+end
+return M
+]]},
+  ["system/games/pong.lua"]={sha256="2b819ab5a5d85d1b8f0e419d23d25511a72e9c429cd231b4ca9163e53a8ef2df",data=[[
+local M={}
+function M.new(random)
+  random=random or math.random
+  local s={player=4,computer=4,x=9,y=4,vx=6,vy=3,left=0,right=0,score=0}
+  local function serve(direction) s.x,s.y=9,4; s.vx=6*direction; s.vy=random(0,1)==0 and -3 or 3 end
+  function s.key(key)
+    if key=='up' or key=='w' then s.player=math.max(2,s.player-1)
+    elseif key=='down' or key=='s' then s.player=math.min(7,s.player+1) end
+  end
+  function s.tick(dt)
+    if s.result then return end
+    s.computer=math.max(2,math.min(7,s.computer+math.max(-2.7*dt,math.min(2.7*dt,s.y-s.computer))))
+    local old=s.x; s.x=s.x+s.vx*dt; s.y=s.y+s.vy*dt
+    if s.y<1 then s.y=2-s.y; s.vy=math.abs(s.vy) elseif s.y>8 then s.y=16-s.y; s.vy=-math.abs(s.vy) end
+    if old>=2 and s.x<=2 and math.abs(s.y-s.player)<=1.6 then
+      s.x=2; s.vx=math.min(12,math.abs(s.vx)+.3); s.vy=(s.y-s.player)*4
+    elseif old<=17 and s.x>=17 and math.abs(s.y-s.computer)<=1.6 then
+      s.x=17; s.vx=-math.min(12,math.abs(s.vx)+.3); s.vy=(s.y-s.computer)*4
+    end
+    if s.x<0 then s.right=s.right+1; serve(1)
+    elseif s.x>19 then s.left=s.left+1; s.score=s.left; serve(-1) end
+    if s.left==7 or s.right==7 then s.result=s.left==7 and 'win' or 'lose'; s.message=s.left..' : '..s.right end
+  end
+  function s.draw(c)
+    local ox=math.floor((c.w-18)/2)
+    for y=1,8 do c.text(ox+9,y,':',colors.gray) end
+    for dy=-1,1 do c.text(ox+1,s.player+dy,'|'); c.text(ox+18,math.floor(s.computer+.5)+dy,'|') end
+    c.text(ox+math.max(1,math.min(18,math.floor(s.x+.5))),math.max(1,math.min(8,math.floor(s.y+.5))),'O',c.color and colors.yellow or colors.white)
+    c.text(ox+5,9,s.left..'   :   '..s.right)
+  end
+  return s
+end
+return M
+]]},
+  ["system/games/snake.lua"]={sha256="6ade6557553a639f4a594936c048e6ca4a44c1608de47b7c02744be7a051a02e",data=[[
+local M={}
+function M.new(random)
+  random=random or math.random
+  local s={body={{x=8,y=4},{x=7,y=4},{x=6,y=4}},dx=1,dy=0,nextX=1,nextY=0,score=0,elapsed=0}
+  local function fruit()
+    local free={}
+    for y=1,8 do for x=1,16 do
+      local occupied=false; for _,p in ipairs(s.body) do if p.x==x and p.y==y then occupied=true end end
+      if not occupied then free[#free+1]={x=x,y=y} end
+    end end
+    if #free==0 then s.result='win'; s.message='The entire board is snake.' else s.food=free[random(1,#free)] end
+  end
+  fruit()
+  function s.key(key)
+    local d=({up={0,-1},w={0,-1},down={0,1},s={0,1},left={-1,0},a={-1,0},right={1,0},d={1,0}})[key]
+    if d and not (d[1]==-s.dx and d[2]==-s.dy) then s.nextX,s.nextY=d[1],d[2] end
+  end
+  function s.tick(dt)
+    if s.result then return end
+    s.elapsed=s.elapsed+dt; local delay=math.max(.09,.22-s.score*.002)
+    if s.elapsed<delay then return end; s.elapsed=s.elapsed-delay
+    s.dx,s.dy=s.nextX,s.nextY
+    local head={x=s.body[1].x+s.dx,y=s.body[1].y+s.dy}
+    local grows=head.x==s.food.x and head.y==s.food.y
+    local hit=head.x<1 or head.x>16 or head.y<1 or head.y>8
+    for i=1,#s.body-(grows and 0 or 1) do local p=s.body[i]; if p.x==head.x and p.y==head.y then hit=true end end
+    if hit then s.result='lose'; s.message='Tail: '..#s.body..' cells'; return end
+    table.insert(s.body,1,head)
+    if grows then s.score=s.score+10; fruit() else table.remove(s.body) end
+  end
+  function s.draw(c)
+    local ox=math.floor((c.w-16)/2)+1
+    for y=1,8 do c.text(ox,y,string.rep('.',16),colors.gray) end
+    c.text(ox+s.food.x-1,s.food.y,'*',c.color and colors.red or colors.white)
+    for i,p in ipairs(s.body) do c.text(ox+p.x-1,p.y,i==1 and '@' or 'o',c.color and colors.lime or colors.white) end
+  end
+  return s
+end
+return M
+]]},
+  ["system/games/sokoban.lua"]={sha256="d51950b498140cef2753057d9b8f10cb6ac4a833daf054587c66a8a7e2877e58",data=[[
+local M={}
+M.levels={
+  {'########','#      #','# .$@  #','#      #','########'},
+  {'########','# . .  #','# $ $  #','#   @  #','#      #','########'},
+  {'########','#  .   #','#  $   #','# . $  #','#  @   #','#      #','########'},
+  {'########','# . .  #','# $ $  #','#      #','#  $ . #','# @    #','########'},
+}
+function M.new()
+  local s={level=1,score=0,moves=0,history={}}
+  local function id(x,y) return y*16+x end
+  local function copy(t) local out={}; for k,v in pairs(t) do out[k]=v end; return out end
+  function s.load(level)
+    s.level=level; s.map=M.levels[level]; s.crates={}; s.goals={}; s.walls={}; s.history={}; s.cleared=false
+    for y,row in ipairs(s.map) do for x=1,#row do
+      local ch=row:sub(x,x); local i=id(x,y)
+      if ch=='#' then s.walls[i]=true elseif ch=='$' then s.crates[i]=true elseif ch=='.' then s.goals[i]=true elseif ch=='@' then s.x,s.y=x,y end
+    end end
+  end
+  function s.key(key)
+    if s.result then return end
+    if s.cleared then if key=='enter' then s.load(s.level+1) end; return end
+    if key=='z' and #s.history>0 then local prev=table.remove(s.history); s.x,s.y,s.crates,s.moves=prev.x,prev.y,prev.crates,prev.moves; return end
+    local d=({up={0,-1},w={0,-1},down={0,1},s={0,1},left={-1,0},a={-1,0},right={1,0},d={1,0}})[key]
+    if not d then return end
+    local x,y=s.x+d[1],s.y+d[2]; local target=id(x,y); local beyond=id(x+d[1],y+d[2])
+    if s.walls[target] or (s.crates[target] and (s.walls[beyond] or s.crates[beyond])) then return end
+    s.history[#s.history+1]={x=s.x,y=s.y,crates=copy(s.crates),moves=s.moves}; if #s.history>200 then table.remove(s.history,1) end
+    if s.crates[target] then s.crates[target]=nil; s.crates[beyond]=true end
+    s.x,s.y=x,y; s.moves=s.moves+1
+    local complete=true; for i in pairs(s.goals) do if not s.crates[i] then complete=false end end
+    if complete then
+      s.score=s.level*100; s.cleared=true
+      if s.level==#M.levels then s.result='win'; s.message='All four warehouses cleared.' end
+    end
+  end
+  function s.draw(c)
+    local ox=math.floor((c.w-16)/2)+1
+    for y,row in ipairs(s.map) do for x=1,#row do
+      local i=id(x,y); local glyph=s.walls[i] and '##' or s.crates[i] and (s.goals[i] and '**' or '[]') or s.goals[i] and '..' or '  '
+      if s.x==x and s.y==y then glyph='@ ' end
+      c.text(ox+(x-1)*2,y,glyph,c.color and (s.goals[i] and colors.lime or s.crates[i] and colors.yellow or colors.white) or colors.white)
+    end end
+    c.text(ox,8,'Level '..s.level..'/4')
+    c.text(ox,9,s.cleared and 'Enter: next level' or 'Z undo / '..s.moves..' moves')
+  end
+  s.load(1); return s
+end
+return M
+]]},
   ["system/ganymede.lua"]={sha256="1534835d0157cf9f7ec973c92ad51028691b82594195fa4bdcf212969a415017",data=[[
 -- Ganymede: the portable UI toolkit. Draws into the current program's window.
 local G={version='1.0'}
@@ -3279,7 +4035,7 @@ function G.form(title)
 end
 return G
 ]]},
-  ["system/kernel.lua"]={sha256="e93a0ee1c4f3524a38e53682d623aaf808316313266ca2da1c3ae06fc1e218ef",data=[=[
+  ["system/kernel.lua"]={sha256="24961b7e43df94dc747d67d81167afdd476cdef08de20159a87880e75c5dd837",data=[=[
 local K = {}
 local unpack = table.unpack or unpack
 local input = { char=true, key=true, key_up=true, paste=true, mouse_click=true,
@@ -3291,6 +4047,7 @@ K.catalog = {
   {id="code", name="Code Editor", detail="Lua, Peanut, Pistachio and Cashew", icon="editor"},
   {id="sketch", name="Sketch", detail="Draw and explore a rendered 3D scene", icon="sketch"},
   {id="pistachio", name="Pistachio", detail="Visual, event-driven programs", icon="editor"},
+  {id="games", name="Games", detail="Arcade games, puzzles and Crumb Raider 3D", icon="sketch"},
   {id="chatplus", name="Chat+", detail="Chat over a ComputerCraft modem", icon="terminal"},
   {id="browser", name="Callisto", detail="Browse the Europa network", icon="devices"},
   {id="server", name="Jupiter", detail="Host a Cashew website", icon="devices"},
@@ -4444,10 +5201,10 @@ function M.draw(b, target, ox, oy, maxW, maxH)
 end
 return M
 ]]},
-  ["system/programs.lua"]={sha256="ab701083b66825d619d56ebc1bf2c5f61a62e9f87b1f0aef1be523ef951d583a",data=[[
+  ["system/programs.lua"]={sha256="97601cfa5923a0776ab9d25460054d700498e56b034894a9de29b335be8a3f55",data=[[
 -- Add/refresh shipped commands after an upgrade without replacing user edits.
 local M={}
-local bundled={'pistachio.lua','europa.lua','pmatrix.lua','pmatrix.pist'}
+local bundled={'pistachio.lua','europa.lua','pmatrix.lua','pmatrix.pist','games.lua'}
 local legacy={
   ['pistachio.lua']='70badd04b0c3bdb0e7568a6afaf5e984e1fd06723ddc3e10947877940eef97f8',
   ['europa.lua']='26e0c24b08490d6cfe4cafd29179052fdc70d584b2d7cd26c8fd543dc069d815',
@@ -4456,11 +5213,20 @@ function M.update(root,storage,crypto)
   local record=fs.combine(root,'home/.system/bundled-commands.tbl')
   local previous=storage.load(record,{})
   local nextHashes={}; local changed=false
-  for _,name in ipairs(bundled) do
+  local files={}
+  for _,name in ipairs(bundled) do files[#files+1]={name,'examples/'..name,'Programs/'..name} end
+  local games=fs.combine(root,'games')
+  if fs.isDir(games) then
+    for _,name in ipairs(fs.list(games)) do
+      if not fs.isDir(fs.combine(games,name)) then files[#files+1]={'Games/'..name,'games/'..name,'Games/'..name} end
+    end
+  end
+  for _,entry in ipairs(files) do
+    local name=entry[1]
     local oldHash=legacy[name]
-    local source=assert(storage.read(fs.combine(root,'examples/'..name)))
+    local source=assert(storage.read(fs.combine(root,entry[2])))
     local hash=crypto.hex(crypto.sha256(source))
-    local destination=fs.combine(root,'home/Programs/'..name)
+    local destination=fs.combine(root,'home/'..entry[3])
     local current=storage.read(destination)
     local currentHash=current and crypto.hex(crypto.sha256(current))
     if not fs.exists(destination) or (currentHash and (currentHash==oldHash or currentHash==previous[name])) then
@@ -5326,7 +6092,7 @@ function S.run(package,installer)
   local native=term.current(); local color=native.isColor()
   local oldFG,oldBG=native.getTextColor(),native.getBackgroundColor()
   local page,focus,scroll='welcome','next',0
-  local options={mode=color and 'color' or 'basic',encrypt=false,initialize=true}
+  local options={mode=color and 'render' or 'basic',encrypt=false,initialize=true}
   local password,confirmation,entropy='','',{}
   local problem,progress,result,controls,hits,rows
   local ensure=true; local shift=false; local finished=false; local cancelled=false
@@ -5403,7 +6169,7 @@ function S.run(package,installer)
     elseif page=='display' then
       line(color and 'Advanced computer detected' or 'Basic computer detected',true); line('')
       option('basic','Basic / monochrome',options.mode=='basic')
-      if color then option('color','Color desktop',options.mode=='color'); option('render','Render / subpixels',options.mode=='render') end
+      if color then option('color','Color desktop',options.mode=='color'); option('render','Render / subpixels (default)',options.mode=='render') end
       line(''); line(descriptions[options.mode],true)
       if not color then line('This computer uses keyboard controls. All core apps are available.',true) end
     elseif page=='privacy' then
@@ -5603,8 +6369,16 @@ function I.install(package,options)
   local exists=fs.exists(target)
   assert(not exists or (fs.isDir(target) and fs.exists(target..'/.ccsacabam')),'Existing /ccsacabam is not an owned installation; choose a different source folder.')
   local oldInfo=exists and fs.exists(target..'/config/install.tbl') and textutils.unserialize(readFile(target..'/config/install.tbl')) or {}
+  local replaced={system=true,apps=true,examples=true,sites=true,games=true}
+  for path in pairs(package.files) do if not path:find('/',1,true) then replaced[path]=true end end
+  local preserved=0
+  if exists then
+    for _,name in ipairs(fs.list(target)) do if not replaced[name] then preserved=preserved+size(target..'/'..name) end end
+  end
   local free=fs.getFreeSpace('/')
-  assert(type(free)~='number' or free>=total+size(target)+8192,'Not enough space for a staged install and backup')
+  -- Backups are renamed into place. Only the new stage needs extra space;
+  -- it contains new system files plus copies of the existing personal data.
+  assert(type(free)~='number' or free>=total+preserved+8192,'Not enough space for a staged install and backup')
   local n=1; local backup
   repeat backup='/ccsacabam-backups/install-'..n; n=n+1 until not fs.exists(backup)
   local startupRestore=oldInfo and oldInfo.startupRestore or {}
@@ -5613,9 +6387,11 @@ function I.install(package,options)
   local ok,err=pcall(function()
     report('Preparing installation',0,1,'Preserving existing files')
     fs.makeDir(backup)
-    if exists then fs.copy(target,stage) else fs.makeDir(stage) end
-    for _,dir in ipairs({'system','apps','examples','sites'}) do
-      if fs.exists(stage..'/'..dir) then fs.delete(stage..'/'..dir) end
+    fs.makeDir(stage)
+    if exists then
+      for _,name in ipairs(fs.list(target)) do
+        if not replaced[name] then fs.copy(target..'/'..name,stage..'/'..name) end
+      end
     end
     local names={}; for path in pairs(package.files) do names[#names+1]=path end; table.sort(names)
     for i,path in ipairs(names) do
@@ -5626,7 +6402,7 @@ function I.install(package,options)
       report('Installing files',i,#names,path)
     end
     writeFile(stage..'/.ccsacabam',package.version or '1.0.0')
-    local mode=options.mode or (term.isColor() and 'color' or 'basic')
+    local mode=options.mode or (term.isColor() and 'render' or 'basic')
     if not term.isColor() then mode='basic' end
     assert(mode=='basic' or mode=='color' or mode=='render','Unknown display mode')
     writeFile(stage..'/config/display.tbl',textutils.serialize({mode=mode,welcome=true,encrypt=options.encrypt==true}))
@@ -5672,7 +6448,7 @@ end
 function I.run(package,args,setup)
   assert(bit32 and window and term.blit and fs.exists('/rom/modules/main/cc/require.lua'),'CCSacabam needs modern CC: Tweaked with cc.require.')
   local w,h=term.getSize(); assert(w>=20 and h>=10,'Display must be at least 20x10.')
-  local mode=term.isColor() and 'color' or 'basic'; local encrypt=false
+  local mode=term.isColor() and 'render' or 'basic'; local encrypt=false
   if args and args[1]=='--yes' then mode=args[2] or mode; encrypt=args[3]=='--encrypt'
   else return assert(setup,'Setup interface is missing').run(package,I) end
   print('Checking package and staging files...')

@@ -27,7 +27,7 @@ test('Standalone TUI selects display and privacy; no password when encryption is
   term.redirect(observed)
   parallel.waitForAll(function() assert(shell.run('/src/dist/ccsacabam-installer.lua')) end,function()
     waitFor('Welcome'); dump('setup-welcome'); key(keys.enter)
-    waitFor('computer detected'); if native.isColor() then key(keys.down); sleep(.1) end
+    waitFor('computer detected')
     dump('setup-display'); key(keys.enter)
     waitFor('Off / no password'); dump('setup-privacy')
     if encryptedInstall then

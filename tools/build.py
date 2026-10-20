@@ -16,7 +16,7 @@ def lua_string(value):
 
 def main():
     paths = [ROOT / name for name in ('boot.lua', 'uninstall.lua', 'chatplus.lua')]
-    for name in ('system', 'apps', 'examples', 'sites'):
+    for name in ('system', 'apps', 'examples', 'sites', 'games'):
         paths += [p for p in (ROOT / name).rglob('*') if p.is_file()]
     files = {}
     for path in sorted(paths):

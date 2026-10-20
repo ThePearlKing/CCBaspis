@@ -44,10 +44,11 @@ for path,hash in pairs(module('manifest').files) do package.files[path]={sha256=
 local I=module('tools/installer')
 writeFile('/keep.txt','KEEP EXISTING FILE'); writeFile('/startup.lua','print("old startup")'); writeFile('/startup/old.lua','print("directory startup")')
 test('Installer preserves files and startup backups',function()
-  local info=I.install(package,{mode='render'})
+  local info=I.install(package)
   eq(readFile('/keep.txt'),'KEEP EXISTING FILE')
   eq(readFile(info.backup..'/startup.lua'),'print("old startup")')
   assert(physical.exists(info.backup..'/startup/old.lua')); assert(physical.exists('/ccsacabam/boot.lua'))
+  eq(textutils.unserialize(readFile('/ccsacabam/config/display.tbl')).mode,rawTerm.isColor() and 'render' or 'basic')
 end)
 test('Installer rejects corrupt payload',function()
   local old=package.files['boot.lua'].data; package.files['boot.lua'].data=old..'-- corruption'
@@ -494,6 +495,45 @@ test('pmatrix command launches its Pistachio source from another directory and r
   key(keys.q); assert(not kernel.get(id)); assertRunning(terminal)
   eq(kernel.focus,terminal); kernel.remove(terminal)
 end)
+test('Games upgrade installs ten private-drive launchers and preserves user changes',function()
+  local storage=cached('system/storage'); local programs=cached('system/programs')
+  local catalog=cached('system/game_catalog'); eq(#catalog,10)
+  for _,entry in ipairs(catalog) do
+    eq(storage.read('/Games/'..entry.id..'.lua'),storage.read('/ccsacabam/games/'..entry.id..'.lua'))
+  end
+  assert(not cached('system/kernel').desktop.games)
+  local original=storage.read('/Games/snake.lua'); assert(storage.write('/Games/snake.lua',original..'-- user edit\n'))
+  programs.update('/ccsacabam',storage,C); eq(storage.read('/Games/snake.lua'),original..'-- user edit\n')
+  assert(storage.write('/Games/snake.lua',original))
+  assert(not physical.exists('/Games') and not physical.exists('/ccsacabam/home/Games'))
+end)
+test('Games launch through the shell, relative Games paths, and Files',function()
+  local terminal=kernel.launch('terminal'); text('games'); key(keys.enter)
+  local launcher=assertRunning(kernel.focus); eq(launcher.app,'games'); key(keys.q)
+  kernel.focusTask(terminal); text('cd /Games'); key(keys.enter); text('./snake'); key(keys.enter)
+  local snake=assertRunning(kernel.focus); eq(snake.title,'Snake'); key(keys.q); kernel.remove(terminal)
+  local files=kernel.launch('files','/Games'); assertRunning(files)
+  local names=vfs.list('/Games'); table.sort(names,function(a,b) return a:lower()<b:lower() end)
+  for _,name in ipairs(names) do if name=='lights.lua' then break end; key(keys.down) end
+  key(keys.enter); local game=assertRunning(kernel.focus); eq(game.title,'Lights Out'); key(keys.q)
+  for _,p in ipairs({table.unpack(kernel.tasks)}) do if p.app=='terminal' then kernel.remove(p.id) end end
+  kernel.remove(files)
+  local id=kernel.launch('games','crumb'); local p=assertRunning(id)
+  if not caps.color then
+    local screen=''; for y=1,p.h-2 do screen=screen..p.win.getLine(y)..' ' end
+    assert(screen:find('ADVANCED COMPUTER ONLY',1,true)); key(keys.enter)
+  else kernel.notice=nil; kernel.render(); dump('crumb'); key(keys.q) end
+  assert(not kernel.get(id))
+end)
+test('Game completion records stay inside the encrypted personal drive',function()
+  local factory=cached('system/games/lights'); local new=factory.new
+  factory.new=function() return new(function(low) return low end) end
+  local id=kernel.launch('games','lights'); factory.new=new; assertRunning(id); key(keys.enter)
+  local records=cached('system/storage').load('/.system/game-records.tbl')
+  eq(records.lights.wins,1); eq(records.lights.plays,1)
+  assert(not physical.exists('/.system/game-records.tbl') and not physical.exists('/ccsacabam/home/.system/game-records.tbl'))
+  key(keys.q); assert(not kernel.get(id))
+end)
 test('Shell commands and Lua executables resolve relative and quoted paths',function()
   local storage=cached('system/storage')
   assert(storage.write('/Documents/paths/source.lua',[[
@@ -773,8 +813,10 @@ test('Same apps render in basic mode and color mode',function()
   end
 end)
 test('Upgrade preserves encrypted vault byte for byte',function()
+  writeFile('/ccsacabam/custom/keep.txt','Preserve this unrelated file')
   vault.lock(); local beforeVault=readFile(vault.path)
   I.install(package,{mode='color'}); eq(readFile(vault.path),beforeVault)
+  eq(readFile('/ccsacabam/custom/keep.txt'),'Preserve this unrelated file')
 end)
 test('Real boot login, lock, wrong password and logout',function()
   local observed=window.create(rawTerm,1,1,w,h,false)

@@ -2,7 +2,7 @@
 
 An operating system for ComputerCraft, with optional drive encryption, ordinary Lua terminals, and native visual apps written in **Pistachio Script**.
 
-**Basic computers** get monochrome windows and complete keyboard navigation. **Advanced computers** get color, mouse controls, and an optional render mode with 2×3 subpixel graphics and a small custom banner font. Render mode uses normal terminal APIs, so it does not require CraftOS-PC graphics extensions.
+**Basic computers** get monochrome windows and complete keyboard navigation. **Advanced computers default to render mode**, with color, mouse controls, 2×3 subpixel graphics, and a small custom banner font. Setup and Settings still offer color and basic modes. Existing saved display choices are retained. Render mode uses normal terminal APIs, so it does not require CraftOS-PC graphics extensions.
 
 | Advanced render mode | Basic monochrome mode |
 | --- | --- |
@@ -64,11 +64,28 @@ Advanced computers also support clicking, scrolling, dragging title bars, and re
 
 **Settings → Customisation** changes desktop and wallpaper colors, bars, window backgrounds, text, selections, borders, title bars, window buttons, and resize grips. Use Tab or Left/Right to switch tabs; choose a role, pick a color, and Apply. F5 cancels a color choice; R resets the current theme after confirmation. Dark, light, and basic themes keep separate saved colors. Basic computers show the palette in [grayscale](https://tweaked.cc/module/colors.html). The Customisation controls keep their own readable colors so a low-contrast theme can always be reset.
 
-Included apps: Files with Trash, Editor with undo and search, Code Editor, Terminal, Sketch with a rotating 3D demo, Pistachio, your original Chat+, Callisto, Jupiter, Settings, Tasks, Devices, and Guide. Chat+ is copied into `Programs` and runs as a normal Lua program.
+Included apps: Files with Trash, Editor with undo and search, Code Editor, Terminal, Sketch with a rotating 3D demo, Pistachio, Games, your original Chat+, Callisto, Jupiter, Settings, Tasks, Devices, and Guide. Chat+ is copied into `Programs` and runs as a normal Lua program.
 
 Run **`pmatrix`** in Terminal for Matrix rain written in Pistachio Script. Space pauses, Up/Down or 1–9 set speed, C changes color, H shows help, Q exits, and F6 maximizes. It uses green trails on advanced computers and grayscale on basic computers. Open `/Programs/pmatrix.pist` in Code Editor to change the animation; the Lua launcher only opens that source. Existing installations receive both files on upgrade without overwriting edited copies.
 
 **Settings → Customisation → W (Wallpaper)** offers mountains, dots, grid, diagonal, checker, waves, stars, and circuit patterns, with a preview and Apply/Cancel. All patterns work in basic and color modes; render mode uses subpixels. Wallpaper colors use the existing Desktop background, Wallpaper back, and Wallpaper front settings. General → Wallpaper turns the pattern off.
+
+## Games
+
+Open **Games** from Apps, run **`games`** in Terminal, or open the `.lua` launchers in **`/Games`**. Run one directly with, for example, `games snake` or `/Games/snake.lua`. Upgrades install the folder and retain edited launchers. Games are not pinned to the desktop.
+
+| Basic + advanced | Advanced computer only |
+| --- | --- |
+| Snake, Pong, Blocks, Mines | Breakout — subpixel ball and brick physics |
+| 2048, Lights Out, Sokoban, Memory | Crumb Raider — first-person 3D maze exploration |
+
+**P** pauses, **H** shows the game's controls, **R** restarts, **Q/Escape** quits. **F6** maximizes the window. Games pause if the window is too small and resume when there is room. Completed-game counts, wins, and best scores are stored on the personal drive and follow its encryption setting.
+
+**Crumb Raider:** explore a newly generated maze, collect six golden crumbs, and reach the green exit. W/S or Up/Down move, A/D or Left/Right turn, Z/X strafe, and M opens the map. It has perspective walls, wall collision, and collectibles hidden by walls. All mazes are connected; the exit and every crumb are reachable. It runs on the normal ComputerCraft terminal using 2×3 subpixels.
+
+| Crumb Raider | Breakout |
+| --- | --- |
+| ![First-person maze in Crumb Raider](docs/previews/crumb-raider.png) | ![Subpixel Breakout](docs/previews/breakout.png) |
 
 ## Code Editor
 
@@ -127,6 +144,7 @@ python3 tools/build.py
 python3 tools/test.py advanced basic pocket network network-zero fresh fresh-basic fresh-encrypted setup setup-basic
 python3 tools/test.py picker picker-basic picker-small picker-small-basic
 python3 tools/test.py visual visual-basic visual-small visual-small-basic
+python3 tools/test.py games games-basic games-pocket games-small games-small-basic
 ```
 
 The build creates a deterministic installer and SHA-256 checksum. Tests use disposable emulator saves in `/tmp`; they do not touch your ordinary computers. The test runner needs Python's `cryptography` package for independent verification. See [testing](docs/TESTING.md) for coverage and limits.

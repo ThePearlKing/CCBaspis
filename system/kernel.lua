@@ -9,6 +9,7 @@ K.catalog = {
   {id="code", name="Code Editor", detail="Lua, Peanut, Pistachio and Cashew", icon="editor"},
   {id="sketch", name="Sketch", detail="Draw and explore a rendered 3D scene", icon="sketch"},
   {id="pistachio", name="Pistachio", detail="Visual, event-driven programs", icon="editor"},
+  {id="games", name="Games", detail="Arcade games, puzzles and Crumb Raider 3D", icon="sketch"},
   {id="chatplus", name="Chat+", detail="Chat over a ComputerCraft modem", icon="terminal"},
   {id="browser", name="Callisto", detail="Browse the Europa network", icon="devices"},
   {id="server", name="Jupiter", detail="Host a Cashew website", icon="devices"},

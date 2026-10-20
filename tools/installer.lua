@@ -41,8 +41,16 @@ function I.install(package,options)
   local exists=fs.exists(target)
   assert(not exists or (fs.isDir(target) and fs.exists(target..'/.ccsacabam')),'Existing /ccsacabam is not an owned installation; choose a different source folder.')
   local oldInfo=exists and fs.exists(target..'/config/install.tbl') and textutils.unserialize(readFile(target..'/config/install.tbl')) or {}
+  local replaced={system=true,apps=true,examples=true,sites=true,games=true}
+  for path in pairs(package.files) do if not path:find('/',1,true) then replaced[path]=true end end
+  local preserved=0
+  if exists then
+    for _,name in ipairs(fs.list(target)) do if not replaced[name] then preserved=preserved+size(target..'/'..name) end end
+  end
   local free=fs.getFreeSpace('/')
-  assert(type(free)~='number' or free>=total+size(target)+8192,'Not enough space for a staged install and backup')
+  -- Backups are renamed into place. Only the new stage needs extra space;
+  -- it contains new system files plus copies of the existing personal data.
+  assert(type(free)~='number' or free>=total+preserved+8192,'Not enough space for a staged install and backup')
   local n=1; local backup
   repeat backup='/ccsacabam-backups/install-'..n; n=n+1 until not fs.exists(backup)
   local startupRestore=oldInfo and oldInfo.startupRestore or {}
@@ -51,9 +59,11 @@ function I.install(package,options)
   local ok,err=pcall(function()
     report('Preparing installation',0,1,'Preserving existing files')
     fs.makeDir(backup)
-    if exists then fs.copy(target,stage) else fs.makeDir(stage) end
-    for _,dir in ipairs({'system','apps','examples','sites'}) do
-      if fs.exists(stage..'/'..dir) then fs.delete(stage..'/'..dir) end
+    fs.makeDir(stage)
+    if exists then
+      for _,name in ipairs(fs.list(target)) do
+        if not replaced[name] then fs.copy(target..'/'..name,stage..'/'..name) end
+      end
     end
     local names={}; for path in pairs(package.files) do names[#names+1]=path end; table.sort(names)
     for i,path in ipairs(names) do
@@ -64,7 +74,7 @@ function I.install(package,options)
       report('Installing files',i,#names,path)
     end
     writeFile(stage..'/.ccsacabam',package.version or '1.0.0')
-    local mode=options.mode or (term.isColor() and 'color' or 'basic')
+    local mode=options.mode or (term.isColor() and 'render' or 'basic')
     if not term.isColor() then mode='basic' end
     assert(mode=='basic' or mode=='color' or mode=='render','Unknown display mode')
     writeFile(stage..'/config/display.tbl',textutils.serialize({mode=mode,welcome=true,encrypt=options.encrypt==true}))
@@ -110,7 +120,7 @@ end
 function I.run(package,args,setup)
   assert(bit32 and window and term.blit and fs.exists('/rom/modules/main/cc/require.lua'),'CCSacabam needs modern CC: Tweaked with cc.require.')
   local w,h=term.getSize(); assert(w>=20 and h>=10,'Display must be at least 20x10.')
-  local mode=term.isColor() and 'color' or 'basic'; local encrypt=false
+  local mode=term.isColor() and 'render' or 'basic'; local encrypt=false
   if args and args[1]=='--yes' then mode=args[2] or mode; encrypt=args[3]=='--encrypt'
   else return assert(setup,'Setup interface is missing').run(package,I) end
   print('Checking package and staging files...')

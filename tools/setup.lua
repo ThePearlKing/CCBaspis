@@ -4,7 +4,7 @@ function S.run(package,installer)
   local native=term.current(); local color=native.isColor()
   local oldFG,oldBG=native.getTextColor(),native.getBackgroundColor()
   local page,focus,scroll='welcome','next',0
-  local options={mode=color and 'color' or 'basic',encrypt=false,initialize=true}
+  local options={mode=color and 'render' or 'basic',encrypt=false,initialize=true}
   local password,confirmation,entropy='','',{}
   local problem,progress,result,controls,hits,rows
   local ensure=true; local shift=false; local finished=false; local cancelled=false
@@ -81,7 +81,7 @@ function S.run(package,installer)
     elseif page=='display' then
       line(color and 'Advanced computer detected' or 'Basic computer detected',true); line('')
       option('basic','Basic / monochrome',options.mode=='basic')
-      if color then option('color','Color desktop',options.mode=='color'); option('render','Render / subpixels',options.mode=='render') end
+      if color then option('color','Color desktop',options.mode=='color'); option('render','Render / subpixels (default)',options.mode=='render') end
       line(''); line(descriptions[options.mode],true)
       if not color then line('This computer uses keyboard controls. All core apps are available.',true) end
     elseif page=='privacy' then
