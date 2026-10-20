@@ -1,13 +1,13 @@
 # Build and test
 
-The recorded validation passed **366 checks** on CraftOS-PC 2.8.3 / ComputerCraft 1.112.0: 109 each on advanced, basic, and pocket-sized displays, 24 modem-network checks across host IDs 0 and 1, nine fresh-install checks, and six minimum-size setup checks. Counts include source-parse checks. Independent Python crypto and disk-plaintext checks also passed. [The machine-readable report](validation.json) includes the installer checksum and individual results.
+The recorded validation passed **415 checks** on CraftOS-PC 2.8.3 / ComputerCraft 1.112.0: 116 each on advanced, basic, and pocket-sized displays, 24 modem-network checks across host IDs 0 and 1, nine fresh-install checks, six minimum-size setup checks, and 28 focused picker/Customisation checks on color, monochrome, and minimum-size windows. Counts include source-parse checks. Independent Python crypto and disk-plaintext checks also passed. [The machine-readable report](validation.json) includes the installer checksum and individual results.
 
 Build the single-file installer with `python3 tools/build.py`. It normalizes line endings in packaged source, includes each runtime file with a SHA-256 hash, and writes `dist/SHA256SUMS`. The original `chatplus.lua` is retained unchanged in the source checkout.
 
 Run:
 
 ```sh
-python3 tools/test.py advanced basic pocket network network-zero fresh fresh-basic fresh-encrypted setup setup-basic
+python3 tools/test.py advanced basic pocket network network-zero fresh fresh-basic fresh-encrypted setup setup-basic picker picker-basic picker-small picker-small-basic
 ```
 
 Requirements: CraftOS-PC on PATH as `craftos`, Python 3, and Python `cryptography`. Each case creates an isolated `/tmp/ccsacabam-...` directory with its own emulator configuration and save. The runner reports that path so failures can be inspected. Results are written to `computer/0/test-results.json`, or `computer/1/test-results.json` when testing a host on computer 0. Nothing is installed into the user's normal CraftOS-PC save.
@@ -23,6 +23,8 @@ Coverage includes:
 * A physical-disk scan for a private sentinel and private filename after encrypted operation.
 * Ordinary Lua filesystem and `io` writes, settings, `require`, relative paths, binary handles, and background timers.
 * Shared app working directories: real shell commands, nested shells, `.`/`..`/`./child`, quoted paths, inherited app launches, independent windows, file dialogs, Files navigation, Pistachio data, local browser links, and migration of stock launchers without overwriting user changes.
+* File-picker keyboard/mouse browsing, hidden/type filters, folder creation, cancellation, read-only paths, resizing down to an 18×6 app area, encrypted file selection, overwrite confirmation, and closing the parent window from a dialog.
+* Customisation tab colour selection, cancellation, persistence, visible desktop/window changes, separate basic/dark/light profiles, invalid-colour rejection, reset confirmation, failed-save rollback, and minimum-size palette controls.
 * Bundled app startup, Editor saving/undo, Settings confirmation, window movement/resizing/minimizing, event routing, small displays, and crash containment.
 * Code Editor highlighting and completion for all four languages, Lua API members, multiline lexing, embedded scripts, save/undo/redo, and manual language selection on real windows.
 * Files double-click launch of a root-relative Lua path containing spaces, and E opening source in Code Editor.
@@ -36,4 +38,4 @@ Terminal snapshots are saved as `snapshot-*.json`. These retain text and foregro
 
 These are emulator integration tests, not an audit or a claim that every Lua program, peripheral mod, server configuration, or ComputerCraft version works. Minecraft server behavior, network range/chunk loading, performance under server load, and nonstandard peripherals still need in-game testing.
 
-Captured previews: [setup](previews/setup.png), [basic desktop](previews/basic-desktop.png), [Code Editor](previews/code.png), and [resize handle](previews/resize-corner.png).
+Captured previews: [setup](previews/setup.png), [basic desktop](previews/basic-desktop.png), [Code Editor](previews/code.png), [resize handle](previews/resize-corner.png), [file picker](previews/filepicker.png), and [Customisation](previews/customisation.png).

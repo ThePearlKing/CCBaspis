@@ -26,7 +26,7 @@ europa open europa://workshop.cc/
 europa open ./index.cashew
 ```
 
-Jupiter inherits the launching terminal's directory. `.` means that directory, `..` means its parent, and `./folder` selects a child; absolute paths start at `/`. Quoted folders such as `"./my site"` work too. Jupiter displays the resolved absolute folder and keeps serving it if you later change directories in Terminal. Its folder prompt uses the inherited directory as well. A desktop launch starts in your personal home directory and initially selects `/Sites/welcome`.
+Jupiter inherits the launching terminal's directory. `.` means that directory, `..` means its parent, and `./folder` selects a child; absolute paths start at `/`. Quoted folders such as `"./my site"` work too. Jupiter displays the resolved absolute folder and keeps serving it if you later change directories in Terminal. Its folder browser starts in the published folder; relative locations resolve against the folder currently shown. A desktop launch starts in your personal home directory and initially selects `/Sites/welcome`.
 
 Callisto accepts local paths through `europa open`, including `./index.cashew`, `../site/index.cashew`, and `.` (a folder opens its `index.cashew`). Europa addresses keep their network meaning.
 
