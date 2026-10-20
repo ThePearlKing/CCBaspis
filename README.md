@@ -98,7 +98,7 @@ The welcome site is installed at `/Sites/welcome`. Open Jupiter, choose a domain
 
 ```sh
 python3 tools/build.py
-python3 tools/test.py advanced basic pocket network fresh fresh-basic fresh-encrypted setup setup-basic
+python3 tools/test.py advanced basic pocket network network-zero fresh fresh-basic fresh-encrypted setup setup-basic
 ```
 
 The build creates a deterministic installer and SHA-256 checksum. Tests use disposable emulator saves in `/tmp`; they do not touch your ordinary computers. The test runner needs Python's `cryptography` package for independent verification. See [testing](docs/TESTING.md) for coverage and limits.
