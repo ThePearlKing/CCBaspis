@@ -1,12 +1,10 @@
 {
-  "installer_sha256": "5cd2fa61768bad07117621bf0ae4ecc37b10e470dc240a33f70081ac85be275d",
+  "installer_sha256": "8c5596305f4388662fad68bedd27f5bfdced91aaeb853e8c276243fc6529fded",
   "cases": {
     "advanced": {
       "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
-      "screen": [
-        51,
-        19
-      ],
+      "failures": 0,
+      "complete": true,
       "tests": [
         {
           "name": "Lua syntax: src/apps/browser.lua",
@@ -34,6 +32,10 @@
         },
         {
           "name": "Lua syntax: src/apps/files.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/apps/games.lua",
           "ok": true
         },
         {
@@ -77,6 +79,10 @@
           "ok": true
         },
         {
+          "name": "Lua syntax: src/examples/games.lua",
+          "ok": true
+        },
+        {
           "name": "Lua syntax: src/examples/ganymede-demo.lua",
           "ok": true
         },
@@ -90,6 +96,46 @@
         },
         {
           "name": "Lua syntax: src/examples/pmatrix.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/blocks.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/breakout.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/crumb.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/lights.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/memory.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/merge.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/mines.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/pong.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/snake.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/sokoban.lua",
           "ok": true
         },
         {
@@ -122,6 +168,54 @@
         },
         {
           "name": "Lua syntax: src/system/font.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/game.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/game_catalog.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/blocks.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/breakout.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/crumb.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/lights.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/memory.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/merge.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/mines.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/pong.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/snake.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/sokoban.lua",
           "ok": true
         },
         {
@@ -186,6 +280,10 @@
         },
         {
           "name": "Lua syntax: src/tests/fresh.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/tests/games.lua",
           "ok": true
         },
         {
@@ -409,6 +507,18 @@
           "ok": true
         },
         {
+          "name": "Games upgrade installs ten private-drive launchers and preserves user changes",
+          "ok": true
+        },
+        {
+          "name": "Games launch through the shell, relative Games paths, and Files",
+          "ok": true
+        },
+        {
+          "name": "Game completion records stay inside the encrypted personal drive",
+          "ok": true
+        },
+        {
           "name": "Shell commands and Lua executables resolve relative and quoted paths",
           "ok": true
         },
@@ -493,18 +603,20 @@
           "ok": true
         }
       ],
-      "complete": true,
-      "failures": 0,
-      "color": true
+      "color": true,
+      "screen": [
+        51,
+        19
+      ]
     },
     "basic": {
-      "color": false,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
       "screen": [
         51,
         19
       ],
+      "failures": 0,
       "complete": true,
-      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
       "tests": [
         {
           "name": "Lua syntax: src/apps/browser.lua",
@@ -532,6 +644,10 @@
         },
         {
           "name": "Lua syntax: src/apps/files.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/apps/games.lua",
           "ok": true
         },
         {
@@ -575,6 +691,10 @@
           "ok": true
         },
         {
+          "name": "Lua syntax: src/examples/games.lua",
+          "ok": true
+        },
+        {
           "name": "Lua syntax: src/examples/ganymede-demo.lua",
           "ok": true
         },
@@ -588,6 +708,46 @@
         },
         {
           "name": "Lua syntax: src/examples/pmatrix.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/blocks.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/breakout.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/crumb.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/lights.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/memory.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/merge.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/mines.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/pong.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/snake.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/games/sokoban.lua",
           "ok": true
         },
         {
@@ -620,6 +780,54 @@
         },
         {
           "name": "Lua syntax: src/system/font.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/game.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/game_catalog.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/blocks.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/breakout.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/crumb.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/lights.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/memory.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/merge.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/mines.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/pong.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/snake.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/games/sokoban.lua",
           "ok": true
         },
         {
@@ -684,6 +892,10 @@
         },
         {
           "name": "Lua syntax: src/tests/fresh.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/tests/games.lua",
           "ok": true
         },
         {
@@ -907,6 +1119,18 @@
           "ok": true
         },
         {
+          "name": "Games upgrade installs ten private-drive launchers and preserves user changes",
+          "ok": true
+        },
+        {
+          "name": "Games launch through the shell, relative Games paths, and Files",
+          "ok": true
+        },
+        {
+          "name": "Game completion records stay inside the encrypted personal drive",
+          "ok": true
+        },
+        {
           "name": "Shell commands and Lua executables resolve relative and quoted paths",
           "ok": true
         },
@@ -991,9 +1215,13 @@
           "ok": true
         }
       ],
-      "failures": 0
+      "color": false
     },
     "pocket": {
+      "screen": [
+        26,
+        20
+      ],
       "tests": [
         {
           "ok": true,
@@ -1022,6 +1250,10 @@
         {
           "ok": true,
           "name": "Lua syntax: src/apps/files.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/apps/games.lua"
         },
         {
           "ok": true,
@@ -1065,6 +1297,10 @@
         },
         {
           "ok": true,
+          "name": "Lua syntax: src/examples/games.lua"
+        },
+        {
+          "ok": true,
           "name": "Lua syntax: src/examples/ganymede-demo.lua"
         },
         {
@@ -1078,6 +1314,46 @@
         {
           "ok": true,
           "name": "Lua syntax: src/examples/pmatrix.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/blocks.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/breakout.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/crumb.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/lights.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/memory.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/merge.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/mines.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/pong.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/snake.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/sokoban.lua"
         },
         {
           "ok": true,
@@ -1110,6 +1386,54 @@
         {
           "ok": true,
           "name": "Lua syntax: src/system/font.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/game.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/game_catalog.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/blocks.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/breakout.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/crumb.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/lights.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/memory.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/merge.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/mines.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/pong.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/snake.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/sokoban.lua"
         },
         {
           "ok": true,
@@ -1174,6 +1498,10 @@
         {
           "ok": true,
           "name": "Lua syntax: src/tests/fresh.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tests/games.lua"
         },
         {
           "ok": true,
@@ -1397,6 +1725,18 @@
         },
         {
           "ok": true,
+          "name": "Games upgrade installs ten private-drive launchers and preserves user changes"
+        },
+        {
+          "ok": true,
+          "name": "Games launch through the shell, relative Games paths, and Files"
+        },
+        {
+          "ok": true,
+          "name": "Game completion records stay inside the encrypted personal drive"
+        },
+        {
+          "ok": true,
           "name": "Shell commands and Lua executables resolve relative and quoted paths"
         },
         {
@@ -1480,73 +1820,12 @@
           "name": "Uninstaller restores original startup without deleting vault"
         }
       ],
-      "failures": 0,
-      "screen": [
-        26,
-        20
-      ],
       "complete": true,
       "color": true,
+      "failures": 0,
       "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)"
     },
     "network": {
-      "complete": true,
-      "failures": 0,
-      "tests": [
-        {
-          "name": "Two computers connect through emulated modems",
-          "ok": true
-        },
-        {
-          "name": "Europa resolves a domain and fetches a Cashew page",
-          "ok": true
-        },
-        {
-          "name": "Numeric computer addresses fetch linked pages",
-          "ok": true
-        },
-        {
-          "name": "Bare computer ID resolves the hosted homepage",
-          "ok": true
-        },
-        {
-          "name": "Relative shell hosting retains its folder after the launching terminal changes directory",
-          "ok": true
-        },
-        {
-          "name": "Callisto renders the remote welcome page by domain and computer ID",
-          "ok": true
-        },
-        {
-          "name": "Missing pages return 404 over a real modem",
-          "ok": true
-        },
-        {
-          "name": "Jupiter rejects a raw traversal request",
-          "ok": true
-        },
-        {
-          "name": "Unmodified Chat+ runs beside Jupiter and accepts a chat client",
-          "ok": true
-        },
-        {
-          "name": "Hosted apps keep Chat+ settings encrypted",
-          "ok": true
-        },
-        {
-          "name": "Jupiter flags a missing homepage; restoring it fixes both addresses without restart",
-          "ok": true
-        },
-        {
-          "name": "Closing Jupiter unregisters its domain",
-          "ok": true
-        }
-      ],
-      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
-      "color": true
-    },
-    "network-zero": {
-      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
       "tests": [
         {
           "ok": true,
@@ -1597,52 +1876,89 @@
           "name": "Closing Jupiter unregisters its domain"
         }
       ],
-      "failures": 0,
-      "color": true,
-      "complete": true
-    },
-    "fresh": {
-      "color": true,
       "complete": true,
-      "failures": 0,
-      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
-      "tests": [
-        {
-          "ok": true,
-          "name": "Standalone TUI selects display and privacy; no password when encryption is off"
-        },
-        {
-          "ok": true,
-          "name": "Plain boot skips login; enabling encryption creates a password and allows lock/unlock"
-        },
-        {
-          "ok": true,
-          "name": "Production PBKDF2 cost and examples stored only inside encrypted drive"
-        }
-      ]
-    },
-    "fresh-basic": {
-      "color": false,
-      "tests": [
-        {
-          "ok": true,
-          "name": "Standalone TUI selects display and privacy; no password when encryption is off"
-        },
-        {
-          "ok": true,
-          "name": "Plain boot skips login; enabling encryption creates a password and allows lock/unlock"
-        },
-        {
-          "ok": true,
-          "name": "Production PBKDF2 cost and examples stored only inside encrypted drive"
-        }
-      ],
-      "complete": true,
+      "color": true,
       "failures": 0,
       "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)"
     },
-    "fresh-encrypted": {
+    "network-zero": {
+      "complete": true,
+      "failures": 0,
+      "tests": [
+        {
+          "ok": true,
+          "name": "Two computers connect through emulated modems"
+        },
+        {
+          "ok": true,
+          "name": "Europa resolves a domain and fetches a Cashew page"
+        },
+        {
+          "ok": true,
+          "name": "Numeric computer addresses fetch linked pages"
+        },
+        {
+          "ok": true,
+          "name": "Bare computer ID resolves the hosted homepage"
+        },
+        {
+          "ok": true,
+          "name": "Relative shell hosting retains its folder after the launching terminal changes directory"
+        },
+        {
+          "ok": true,
+          "name": "Callisto renders the remote welcome page by domain and computer ID"
+        },
+        {
+          "ok": true,
+          "name": "Missing pages return 404 over a real modem"
+        },
+        {
+          "ok": true,
+          "name": "Jupiter rejects a raw traversal request"
+        },
+        {
+          "ok": true,
+          "name": "Unmodified Chat+ runs beside Jupiter and accepts a chat client"
+        },
+        {
+          "ok": true,
+          "name": "Hosted apps keep Chat+ settings encrypted"
+        },
+        {
+          "ok": true,
+          "name": "Jupiter flags a missing homepage; restoring it fixes both addresses without restart"
+        },
+        {
+          "ok": true,
+          "name": "Closing Jupiter unregisters its domain"
+        }
+      ],
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "color": true
+    },
+    "fresh": {
+      "complete": true,
       "color": true,
+      "tests": [
+        {
+          "name": "Standalone TUI selects display and privacy; no password when encryption is off",
+          "ok": true
+        },
+        {
+          "name": "Plain boot skips login; enabling encryption creates a password and allows lock/unlock",
+          "ok": true
+        },
+        {
+          "name": "Production PBKDF2 cost and examples stored only inside encrypted drive",
+          "ok": true
+        }
+      ],
+      "failures": 0,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)"
+    },
+    "fresh-basic": {
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
       "tests": [
         {
           "ok": true,
@@ -1657,13 +1973,34 @@
           "name": "Production PBKDF2 cost and examples stored only inside encrypted drive"
         }
       ],
-      "complete": true,
+      "color": false,
+      "failures": 0,
+      "complete": true
+    },
+    "fresh-encrypted": {
       "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "complete": true,
+      "tests": [
+        {
+          "ok": true,
+          "name": "Standalone TUI selects display and privacy; no password when encryption is off"
+        },
+        {
+          "ok": true,
+          "name": "Plain boot skips login; enabling encryption creates a password and allows lock/unlock"
+        },
+        {
+          "ok": true,
+          "name": "Production PBKDF2 cost and examples stored only inside encrypted drive"
+        }
+      ],
+      "color": true,
       "failures": 0
     },
     "setup": {
+      "complete": true,
       "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
-      "color": true,
+      "failures": 0,
       "tests": [
         {
           "name": "F5 cancels setup before any installation",
@@ -1678,30 +2015,32 @@
           "ok": true
         }
       ],
-      "complete": true,
-      "failures": 0
+      "color": true
     },
     "setup-basic": {
+      "color": false,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "failures": 0,
+      "complete": true,
       "tests": [
         {
-          "ok": true,
-          "name": "F5 cancels setup before any installation"
+          "name": "F5 cancels setup before any installation",
+          "ok": true
         },
         {
-          "ok": true,
-          "name": "Default plain setup, Back navigation, and retry after an error"
+          "name": "Default plain setup, Back navigation, and retry after an error",
+          "ok": true
         },
         {
-          "ok": true,
-          "name": "Encryption validates masked password and confirmation on a small screen"
+          "name": "Encryption validates masked password and confirmation on a small screen",
+          "ok": true
         }
-      ],
-      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
-      "complete": true,
-      "color": false,
-      "failures": 0
+      ]
     },
     "picker": {
+      "failures": 0,
+      "complete": true,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
       "tests": [
         {
           "name": "Keyboard browsing opens nested files and selects parent folders",
@@ -1732,86 +2071,46 @@
           "ok": true
         }
       ],
-      "complete": true,
-      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
-      "color": true,
-      "failures": 0
+      "color": true
     },
     "picker-basic": {
+      "color": false,
+      "complete": true,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
       "tests": [
         {
-          "ok": true,
-          "name": "Keyboard browsing opens nested files and selects parent folders"
+          "name": "Keyboard browsing opens nested files and selects parent folders",
+          "ok": true
         },
         {
-          "ok": true,
-          "name": "Save picker creates a folder and returns a filename without writing it"
+          "name": "Save picker creates a folder and returns a filename without writing it",
+          "ok": true
         },
         {
-          "ok": true,
-          "name": "Filters and hidden files can be toggled with the keyboard"
+          "name": "Filters and hidden files can be toggled with the keyboard",
+          "ok": true
         },
         {
-          "ok": true,
-          "name": "Invalid locations and read-only saves stay open; cancellation leaves files intact"
+          "name": "Invalid locations and read-only saves stay open; cancellation leaves files intact",
+          "ok": true
         },
         {
-          "ok": true,
-          "name": "Mouse browsing ignores right-click and opens folders/files with double-click"
+          "name": "Mouse browsing ignores right-click and opens folders/files with double-click",
+          "ok": true
         },
         {
-          "ok": true,
-          "name": "Picker resizes, scrolls, and forwards a window-close request"
+          "name": "Picker resizes, scrolls, and forwards a window-close request",
+          "ok": true
         },
         {
-          "ok": true,
-          "name": "Customisation palette remains usable at the minimum window size"
+          "name": "Customisation palette remains usable at the minimum window size",
+          "ok": true
         }
       ],
-      "failures": 0,
-      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
-      "complete": true,
-      "color": false
+      "failures": 0
     },
     "picker-small": {
       "failures": 0,
-      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
-      "color": true,
-      "tests": [
-        {
-          "name": "Keyboard browsing opens nested files and selects parent folders",
-          "ok": true
-        },
-        {
-          "name": "Save picker creates a folder and returns a filename without writing it",
-          "ok": true
-        },
-        {
-          "name": "Filters and hidden files can be toggled with the keyboard",
-          "ok": true
-        },
-        {
-          "name": "Invalid locations and read-only saves stay open; cancellation leaves files intact",
-          "ok": true
-        },
-        {
-          "name": "Mouse browsing ignores right-click and opens folders/files with double-click",
-          "ok": true
-        },
-        {
-          "name": "Picker resizes, scrolls, and forwards a window-close request",
-          "ok": true
-        },
-        {
-          "name": "Customisation palette remains usable at the minimum window size",
-          "ok": true
-        }
-      ],
-      "complete": true
-    },
-    "picker-small-basic": {
-      "color": false,
-      "failures": 0,
       "complete": true,
       "tests": [
         {
@@ -1843,90 +2142,48 @@
           "name": "Customisation palette remains usable at the minimum window size"
         }
       ],
+      "color": true,
       "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)"
     },
-    "visual": {
-      "color": true,
+    "picker-small-basic": {
       "complete": true,
       "tests": [
         {
-          "name": "Pistachio mutable arrays, object fields and nested loop indices",
-          "ok": true
+          "ok": true,
+          "name": "Keyboard browsing opens nested files and selects parent folders"
         },
         {
-          "name": "Pistachio arrays/coordinates stay bounded and web assignment targets are checked",
-          "ok": true
+          "ok": true,
+          "name": "Save picker creates a folder and returns a filename without writing it"
         },
         {
-          "name": "Frame code only runs during drawing and resets the default footer/background",
-          "ok": true
+          "ok": true,
+          "name": "Filters and hidden files can be toggled with the keyboard"
         },
         {
-          "name": "pmatrix runs hundreds of bounded frames, pauses, changes speed and resizes",
-          "ok": true
+          "ok": true,
+          "name": "Invalid locations and read-only saves stay open; cancellation leaves files intact"
         },
         {
-          "name": "Real Pistachio window animates, clips trails and uses color/monochrome ink",
-          "ok": true
+          "ok": true,
+          "name": "Mouse browsing ignores right-click and opens folders/files with double-click"
         },
         {
-          "name": "Window close, termination and forced cleanup cancel animation timers",
-          "ok": true
+          "ok": true,
+          "name": "Picker resizes, scrolls, and forwards a window-close request"
         },
         {
-          "name": "All eight wallpapers render distinctly in basic, color and subpixel modes",
-          "ok": true
-        },
-        {
-          "name": "Wallpaper chooser previews, cancels, applies, enables wallpaper and rolls back errors",
-          "ok": true
+          "ok": true,
+          "name": "Customisation palette remains usable at the minimum window size"
         }
       ],
-      "failures": 0,
-      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)"
-    },
-    "visual-basic": {
-      "tests": [
-        {
-          "name": "Pistachio mutable arrays, object fields and nested loop indices",
-          "ok": true
-        },
-        {
-          "name": "Pistachio arrays/coordinates stay bounded and web assignment targets are checked",
-          "ok": true
-        },
-        {
-          "name": "Frame code only runs during drawing and resets the default footer/background",
-          "ok": true
-        },
-        {
-          "name": "pmatrix runs hundreds of bounded frames, pauses, changes speed and resizes",
-          "ok": true
-        },
-        {
-          "name": "Real Pistachio window animates, clips trails and uses color/monochrome ink",
-          "ok": true
-        },
-        {
-          "name": "Window close, termination and forced cleanup cancel animation timers",
-          "ok": true
-        },
-        {
-          "name": "All eight wallpapers render distinctly in basic, color and subpixel modes",
-          "ok": true
-        },
-        {
-          "name": "Wallpaper chooser previews, cancels, applies, enables wallpaper and rolls back errors",
-          "ok": true
-        }
-      ],
-      "failures": 0,
-      "color": false,
       "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
-      "complete": true
+      "failures": 0,
+      "color": false
     },
-    "visual-small": {
-      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+    "visual": {
+      "failures": 0,
+      "complete": true,
       "tests": [
         {
           "ok": true,
@@ -1961,11 +2218,93 @@
           "name": "Wallpaper chooser previews, cancels, applies, enables wallpaper and rolls back errors"
         }
       ],
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "color": true
+    },
+    "visual-basic": {
       "failures": 0,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "complete": true,
+      "tests": [
+        {
+          "ok": true,
+          "name": "Pistachio mutable arrays, object fields and nested loop indices"
+        },
+        {
+          "ok": true,
+          "name": "Pistachio arrays/coordinates stay bounded and web assignment targets are checked"
+        },
+        {
+          "ok": true,
+          "name": "Frame code only runs during drawing and resets the default footer/background"
+        },
+        {
+          "ok": true,
+          "name": "pmatrix runs hundreds of bounded frames, pauses, changes speed and resizes"
+        },
+        {
+          "ok": true,
+          "name": "Real Pistachio window animates, clips trails and uses color/monochrome ink"
+        },
+        {
+          "ok": true,
+          "name": "Window close, termination and forced cleanup cancel animation timers"
+        },
+        {
+          "ok": true,
+          "name": "All eight wallpapers render distinctly in basic, color and subpixel modes"
+        },
+        {
+          "ok": true,
+          "name": "Wallpaper chooser previews, cancels, applies, enables wallpaper and rolls back errors"
+        }
+      ],
+      "color": false
+    },
+    "visual-small": {
+      "failures": 0,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
       "color": true,
-      "complete": true
+      "complete": true,
+      "tests": [
+        {
+          "name": "Pistachio mutable arrays, object fields and nested loop indices",
+          "ok": true
+        },
+        {
+          "name": "Pistachio arrays/coordinates stay bounded and web assignment targets are checked",
+          "ok": true
+        },
+        {
+          "name": "Frame code only runs during drawing and resets the default footer/background",
+          "ok": true
+        },
+        {
+          "name": "pmatrix runs hundreds of bounded frames, pauses, changes speed and resizes",
+          "ok": true
+        },
+        {
+          "name": "Real Pistachio window animates, clips trails and uses color/monochrome ink",
+          "ok": true
+        },
+        {
+          "name": "Window close, termination and forced cleanup cancel animation timers",
+          "ok": true
+        },
+        {
+          "name": "All eight wallpapers render distinctly in basic, color and subpixel modes",
+          "ok": true
+        },
+        {
+          "name": "Wallpaper chooser previews, cancels, applies, enables wallpaper and rolls back errors",
+          "ok": true
+        }
+      ]
     },
     "visual-small-basic": {
+      "complete": true,
+      "color": false,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
       "tests": [
         {
           "name": "Pistachio mutable arrays, object fields and nested loop indices",
@@ -2000,12 +2339,349 @@
           "ok": true
         }
       ],
-      "color": false,
-      "complete": true,
+      "failures": 0
+    },
+    "games": {
+      "tests": [
+        {
+          "ok": true,
+          "name": "Render is the advanced default; basic and explicit choices are retained"
+        },
+        {
+          "ok": true,
+          "name": "Snake grows, rejects reversals and ends on wall/self collisions"
+        },
+        {
+          "ok": true,
+          "name": "Pong paddles stay on court, bounce the ball, and first to seven wins"
+        },
+        {
+          "ok": true,
+          "name": "Blocks clears completed rows, rotates legally and detects top-out"
+        },
+        {
+          "ok": true,
+          "name": "Mines guarantees a safe opening, honours flags and detects wins/losses"
+        },
+        {
+          "ok": true,
+          "name": "2048 merges once per move, keeps no-op boards unchanged and detects endings"
+        },
+        {
+          "ok": true,
+          "name": "Lights Out has a solvable board and awards a win when every light is off"
+        },
+        {
+          "ok": true,
+          "name": "All four Sokoban levels are solvable; pushing, undo and progression work"
+        },
+        {
+          "ok": true,
+          "name": "Memory prevents duplicate flips and completes all eight pairs"
+        },
+        {
+          "ok": true,
+          "name": "Breakout launches, bounces, breaks bricks and handles last brick/last life"
+        },
+        {
+          "ok": true,
+          "name": "3D mazes have reachable treasures/exits, solid walls and a complete playable win path"
+        },
+        {
+          "ok": true,
+          "name": "Games launcher lists ten titles, labels advanced-only games and launches selection"
+        },
+        {
+          "ok": true,
+          "name": "Every game opens on real hardware, with basic gating and a small-window prompt"
+        },
+        {
+          "ok": true,
+          "name": "Timed games pause, restart, resize safely and clean up timers on every exit route"
+        },
+        {
+          "ok": true,
+          "name": "Completed games save records once and restart without duplicate records"
+        }
+      ],
+      "color": true,
       "failures": 0,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "complete": true
+    },
+    "games-basic": {
+      "failures": 0,
+      "complete": true,
+      "color": false,
+      "tests": [
+        {
+          "ok": true,
+          "name": "Render is the advanced default; basic and explicit choices are retained"
+        },
+        {
+          "ok": true,
+          "name": "Snake grows, rejects reversals and ends on wall/self collisions"
+        },
+        {
+          "ok": true,
+          "name": "Pong paddles stay on court, bounce the ball, and first to seven wins"
+        },
+        {
+          "ok": true,
+          "name": "Blocks clears completed rows, rotates legally and detects top-out"
+        },
+        {
+          "ok": true,
+          "name": "Mines guarantees a safe opening, honours flags and detects wins/losses"
+        },
+        {
+          "ok": true,
+          "name": "2048 merges once per move, keeps no-op boards unchanged and detects endings"
+        },
+        {
+          "ok": true,
+          "name": "Lights Out has a solvable board and awards a win when every light is off"
+        },
+        {
+          "ok": true,
+          "name": "All four Sokoban levels are solvable; pushing, undo and progression work"
+        },
+        {
+          "ok": true,
+          "name": "Memory prevents duplicate flips and completes all eight pairs"
+        },
+        {
+          "ok": true,
+          "name": "Breakout launches, bounces, breaks bricks and handles last brick/last life"
+        },
+        {
+          "ok": true,
+          "name": "3D mazes have reachable treasures/exits, solid walls and a complete playable win path"
+        },
+        {
+          "ok": true,
+          "name": "Games launcher lists ten titles, labels advanced-only games and launches selection"
+        },
+        {
+          "ok": true,
+          "name": "Every game opens on real hardware, with basic gating and a small-window prompt"
+        },
+        {
+          "ok": true,
+          "name": "Timed games pause, restart, resize safely and clean up timers on every exit route"
+        },
+        {
+          "ok": true,
+          "name": "Completed games save records once and restart without duplicate records"
+        }
+      ],
       "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)"
+    },
+    "games-pocket": {
+      "failures": 0,
+      "tests": [
+        {
+          "ok": true,
+          "name": "Render is the advanced default; basic and explicit choices are retained"
+        },
+        {
+          "ok": true,
+          "name": "Snake grows, rejects reversals and ends on wall/self collisions"
+        },
+        {
+          "ok": true,
+          "name": "Pong paddles stay on court, bounce the ball, and first to seven wins"
+        },
+        {
+          "ok": true,
+          "name": "Blocks clears completed rows, rotates legally and detects top-out"
+        },
+        {
+          "ok": true,
+          "name": "Mines guarantees a safe opening, honours flags and detects wins/losses"
+        },
+        {
+          "ok": true,
+          "name": "2048 merges once per move, keeps no-op boards unchanged and detects endings"
+        },
+        {
+          "ok": true,
+          "name": "Lights Out has a solvable board and awards a win when every light is off"
+        },
+        {
+          "ok": true,
+          "name": "All four Sokoban levels are solvable; pushing, undo and progression work"
+        },
+        {
+          "ok": true,
+          "name": "Memory prevents duplicate flips and completes all eight pairs"
+        },
+        {
+          "ok": true,
+          "name": "Breakout launches, bounces, breaks bricks and handles last brick/last life"
+        },
+        {
+          "ok": true,
+          "name": "3D mazes have reachable treasures/exits, solid walls and a complete playable win path"
+        },
+        {
+          "ok": true,
+          "name": "Games launcher lists ten titles, labels advanced-only games and launches selection"
+        },
+        {
+          "ok": true,
+          "name": "Every game opens on real hardware, with basic gating and a small-window prompt"
+        },
+        {
+          "ok": true,
+          "name": "Timed games pause, restart, resize safely and clean up timers on every exit route"
+        },
+        {
+          "ok": true,
+          "name": "Completed games save records once and restart without duplicate records"
+        }
+      ],
+      "color": true,
+      "complete": true,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)"
+    },
+    "games-small": {
+      "complete": true,
+      "tests": [
+        {
+          "ok": true,
+          "name": "Render is the advanced default; basic and explicit choices are retained"
+        },
+        {
+          "ok": true,
+          "name": "Snake grows, rejects reversals and ends on wall/self collisions"
+        },
+        {
+          "ok": true,
+          "name": "Pong paddles stay on court, bounce the ball, and first to seven wins"
+        },
+        {
+          "ok": true,
+          "name": "Blocks clears completed rows, rotates legally and detects top-out"
+        },
+        {
+          "ok": true,
+          "name": "Mines guarantees a safe opening, honours flags and detects wins/losses"
+        },
+        {
+          "ok": true,
+          "name": "2048 merges once per move, keeps no-op boards unchanged and detects endings"
+        },
+        {
+          "ok": true,
+          "name": "Lights Out has a solvable board and awards a win when every light is off"
+        },
+        {
+          "ok": true,
+          "name": "All four Sokoban levels are solvable; pushing, undo and progression work"
+        },
+        {
+          "ok": true,
+          "name": "Memory prevents duplicate flips and completes all eight pairs"
+        },
+        {
+          "ok": true,
+          "name": "Breakout launches, bounces, breaks bricks and handles last brick/last life"
+        },
+        {
+          "ok": true,
+          "name": "3D mazes have reachable treasures/exits, solid walls and a complete playable win path"
+        },
+        {
+          "ok": true,
+          "name": "Games launcher lists ten titles, labels advanced-only games and launches selection"
+        },
+        {
+          "ok": true,
+          "name": "Every game opens on real hardware, with basic gating and a small-window prompt"
+        },
+        {
+          "ok": true,
+          "name": "Timed games pause, restart, resize safely and clean up timers on every exit route"
+        },
+        {
+          "ok": true,
+          "name": "Completed games save records once and restart without duplicate records"
+        }
+      ],
+      "color": true,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "failures": 0
+    },
+    "games-small-basic": {
+      "complete": true,
+      "tests": [
+        {
+          "name": "Render is the advanced default; basic and explicit choices are retained",
+          "ok": true
+        },
+        {
+          "name": "Snake grows, rejects reversals and ends on wall/self collisions",
+          "ok": true
+        },
+        {
+          "name": "Pong paddles stay on court, bounce the ball, and first to seven wins",
+          "ok": true
+        },
+        {
+          "name": "Blocks clears completed rows, rotates legally and detects top-out",
+          "ok": true
+        },
+        {
+          "name": "Mines guarantees a safe opening, honours flags and detects wins/losses",
+          "ok": true
+        },
+        {
+          "name": "2048 merges once per move, keeps no-op boards unchanged and detects endings",
+          "ok": true
+        },
+        {
+          "name": "Lights Out has a solvable board and awards a win when every light is off",
+          "ok": true
+        },
+        {
+          "name": "All four Sokoban levels are solvable; pushing, undo and progression work",
+          "ok": true
+        },
+        {
+          "name": "Memory prevents duplicate flips and completes all eight pairs",
+          "ok": true
+        },
+        {
+          "name": "Breakout launches, bounces, breaks bricks and handles last brick/last life",
+          "ok": true
+        },
+        {
+          "name": "3D mazes have reachable treasures/exits, solid walls and a complete playable win path",
+          "ok": true
+        },
+        {
+          "name": "Games launcher lists ten titles, labels advanced-only games and launches selection",
+          "ok": true
+        },
+        {
+          "name": "Every game opens on real hardware, with basic gating and a small-window prompt",
+          "ok": true
+        },
+        {
+          "name": "Timed games pause, restart, resize safely and clean up timers on every exit route",
+          "ok": true
+        },
+        {
+          "name": "Completed games save records once and restart without duplicate records",
+          "ok": true
+        }
+      ],
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "color": false,
+      "failures": 0
     }
   },
-  "total_checks": 462,
-  "independent_checks": "Python hashlib/hmac/cryptography verified actual envelopes and fresh-install pmatrix command/source; the desktop suites also scanned physical storage for private plaintext and filenames."
+  "total_checks": 621,
+  "independent_checks": "Python hashlib/hmac/cryptography verified actual envelopes and all ten fresh-install game launchers; desktop suites also scanned physical storage for private plaintext and filenames."
 }

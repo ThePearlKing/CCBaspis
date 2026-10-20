@@ -185,7 +185,10 @@ test('Every game opens on real hardware, with basic gating and a small-window pr
       else
         if entry.timed then for i=1,4 do tick() end end
         snapshot(entry.id); event('key',keys.h,false); event('key',keys.h,false)
-        if entry.id=='crumb' then event('key',keys.right,false); assert(snapshot()~=nil); event('key',keys.m,false); snapshot('crumb-map') end
+        if entry.id=='crumb' then
+          local before=snapshot(); event('key',keys.right,false); assert(snapshot()~=before,'Turning did not change the 3D view')
+          before=snapshot(); event('key',keys.m,false); assert(snapshot()~=before,'Map did not open'); snapshot('crumb-map')
+        end
       end
       finish()
     end

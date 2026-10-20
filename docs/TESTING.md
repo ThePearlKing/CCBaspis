@@ -1,6 +1,6 @@
 # Build and test
 
-The recorded validation passed **462 checks** on CraftOS-PC 2.8.3 / ComputerCraft 1.112.0: 121 each on advanced, basic, and pocket-sized displays, 24 modem-network checks across host IDs 0 and 1, nine fresh-install checks, six minimum-size setup checks, 28 focused picker/Customisation checks, and 32 focused animation/language/wallpaper checks on color, monochrome, and minimum-size windows. Counts include source-parse checks. Independent Python crypto and disk-plaintext checks also passed. [The machine-readable report](validation.json) includes the installer checksum and individual results.
+The recorded validation passed **621 checks** on CraftOS-PC 2.8.3 / ComputerCraft 1.112.0: 149 each on advanced, basic, and pocket-sized displays, 24 modem-network checks across host IDs 0 and 1, nine fresh-install checks, six minimum-size setup checks, 28 focused picker/Customisation checks, 32 focused animation/language/wallpaper checks, and 75 game checks across advanced, basic, pocket-sized, and minimum-size windows. Counts include source-parse checks. Independent Python crypto and disk-plaintext checks also passed. [The machine-readable report](validation.json) includes the installer checksum and individual results.
 
 Build the single-file installer with `python3 tools/build.py`. It normalizes line endings in packaged source, includes each runtime file with a SHA-256 hash, and writes `dist/SHA256SUMS`. The original `chatplus.lua` is retained unchanged in the source checkout.
 
