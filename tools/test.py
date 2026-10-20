@@ -79,6 +79,7 @@ def fresh_oracle(computer):
     assert hmac.compare_digest(hmac.new(key(b'authentication'),raw[:-32],'sha256').digest(),raw[-32:])
     plain=Cipher(algorithms.ChaCha20(key(b'encryption'),struct.pack('<I',1)+raw[40:52]),mode=None).decryptor().update(raw[52:-32])
     assert b'Programs/sealed-note.pist' in plain and b'Sites/welcome/index.cashew' in plain
+    assert b'Programs/pmatrix.lua' in plain and b'Programs/pmatrix.pist' in plain
 
 def oracle(computer):
     from cryptography.hazmat.primitives.ciphers import Cipher, algorithms

@@ -1,966 +1,12 @@
 {
-  "installer_sha256": "cb69f94610abf6ae8467e0b6e33c4d18a2c6fde3b367411ff6df0c390d01e897",
+  "installer_sha256": "5cd2fa61768bad07117621bf0ae4ecc37b10e470dc240a33f70081ac85be275d",
   "cases": {
     "advanced": {
-      "color": true,
-      "tests": [
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/browser.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/chatplus.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/code.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/customisation.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/devices.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/editor.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/files.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/help.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/pistachio.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/processes.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/server.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/settings.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/sketch.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/terminal.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/boot.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/chatplus.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/examples/europa.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/examples/ganymede-demo.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/examples/peanut-demo.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/examples/pistachio.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/install.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/manifest.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/cashew.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/config.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/crypto.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/europa.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/filepicker.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/font.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/ganymede.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/kernel.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/login.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/paths.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/peanut.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/pistachio.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/pixels.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/programs.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/seal.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/session.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/storage.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/syntax.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/ui.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/vault.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/tests/fresh.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/tests/network-host.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/tests/network.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/tests/picker.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/tests/probe.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/tests/run.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/tests/setup.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/tools/installer.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/tools/setup.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/uninstall.lua"
-        },
-        {
-          "ok": true,
-          "name": "SHA256 empty and abc"
-        },
-        {
-          "ok": true,
-          "name": "HMAC RFC4231"
-        },
-        {
-          "ok": true,
-          "name": "PBKDF2 SHA256 4096 rounds"
-        },
-        {
-          "ok": true,
-          "name": "ChaCha20 RFC8439 block"
-        },
-        {
-          "ok": true,
-          "name": "Installer preserves files and startup backups"
-        },
-        {
-          "ok": true,
-          "name": "Installer rejects corrupt payload"
-        },
-        {
-          "ok": true,
-          "name": "Installer rolls back a failed startup swap"
-        },
-        {
-          "ok": true,
-          "name": "Create encrypted vault"
-        },
-        {
-          "ok": true,
-          "name": "Normal root and relative paths write only ciphertext"
-        },
-        {
-          "ok": true,
-          "name": "Filesystem handles, binary seek, rename, copy, find"
-        },
-        {
-          "ok": true,
-          "name": "Vault authentication rejects wrong passwords and tampering"
-        },
-        {
-          "ok": true,
-          "name": "Locked handles cannot read"
-        },
-        {
-          "ok": true,
-          "name": "Persistence failure keeps previous data"
-        },
-        {
-          "ok": true,
-          "name": "Interrupted encrypted writes recover without plaintext"
-        },
-        {
-          "ok": true,
-          "name": "Safe writer refuses to overwrite a directory"
-        },
-        {
-          "ok": true,
-          "name": "Encryption OFF removes login and keys; enabling creates a password"
-        },
-        {
-          "ok": true,
-          "name": "Failed encryption conversion preserves the previous mode and disk image"
-        },
-        {
-          "ok": true,
-          "name": "Legacy plaintext drives open without a password and migrate on save"
-        },
-        {
-          "ok": true,
-          "name": "Password change invalidates the old password and preserves files"
-        },
-        {
-          "ok": true,
-          "name": "Cleanup failure after a save keeps the committed image authoritative"
-        },
-        {
-          "ok": true,
-          "name": "Standard Lua environment with io, settings and require"
-        },
-        {
-          "ok": true,
-          "name": "Peanut round trips data, null, escapes and empty arrays"
-        },
-        {
-          "ok": true,
-          "name": "Peanut rejects malformed, duplicate and executable input"
-        },
-        {
-          "ok": true,
-          "name": "Code lexer handles four languages, multiline comments/strings and embedded scripts"
-        },
-        {
-          "ok": true,
-          "name": "Code completion knows APIs, variables and tags and skips strings/comments"
-        },
-        {
-          "ok": true,
-          "name": "Pistachio seal/unseal authenticate, reject tampering and work without drive encryption"
-        },
-        {
-          "ok": true,
-          "name": "Pistachio expressions, handlers, conditionals and loops"
-        },
-        {
-          "ok": true,
-          "name": "Pistachio rejects unknown statements and limits recursive handlers"
-        },
-        {
-          "ok": true,
-          "name": "Cashew parses HTML-like pages and Pistachio handlers"
-        },
-        {
-          "ok": true,
-          "name": "Cashew rejects file access, Lua, and malformed markup"
-        },
-        {
-          "ok": true,
-          "name": "Europa domains, numeric addresses, links and traversal protection"
-        },
-        {
-          "ok": true,
-          "name": "Boot every bundled application in a real window"
-        },
-        {
-          "ok": true,
-          "name": "Editor saves encrypted content and supports undo"
-        },
-        {
-          "ok": true,
-          "name": "Code Editor completes and highlights Lua, Peanut, Pistachio and Cashew in real windows"
-        },
-        {
-          "ok": true,
-          "name": "Code Editor member completion, undo/redo and manual language selection"
-        },
-        {
-          "ok": true,
-          "name": "Settings encryption toggle requires explicit confirmation"
-        },
-        {
-          "ok": true,
-          "name": "Customisation saves desktop, frame and button colours and resets the current profile"
-        },
-        {
-          "ok": true,
-          "name": "Custom colours validate palette values, keep presets separate and roll back failed saves"
-        },
-        {
-          "ok": true,
-          "name": "Skip typing YES defaults OFF, persists, and enables Enter/click confirmation"
-        },
-        {
-          "ok": true,
-          "name": "Sealed-note visual program masks passwords and saves only ciphertext on a plain drive"
-        },
-        {
-          "ok": true,
-          "name": "Two terminals have isolated shell working directories"
-        },
-        {
-          "ok": true,
-          "name": "Shared paths normalize dots, parents, absolute paths and spaces"
-        },
-        {
-          "ok": true,
-          "name": "Existing installs refresh stock launchers while retaining custom programs"
-        },
-        {
-          "ok": true,
-          "name": "Shell commands and Lua executables resolve relative and quoted paths"
-        },
-        {
-          "ok": true,
-          "name": "All app launches inherit the calling terminal directory and freeze it per window"
-        },
-        {
-          "ok": true,
-          "name": "File dialogs and Files navigation resolve paths against their own directory"
-        },
-        {
-          "ok": true,
-          "name": "File pickers browse encrypted files, cancel cleanly and preserve overwrite confirmation"
-        },
-        {
-          "ok": true,
-          "name": "Callisto chooses local pages through a file browser"
-        },
-        {
-          "ok": true,
-          "name": "Pistachio programs and Peanut load/save share the inherited working directory"
-        },
-        {
-          "ok": true,
-          "name": "Europa launchers, Jupiter folder edits and Callisto local pages share shell paths"
-        },
-        {
-          "ok": true,
-          "name": "Unmodified Lua programs use fs, io, require and settings"
-        },
-        {
-          "ok": true,
-          "name": "Files double-click runs a root-relative Lua path with spaces"
-        },
-        {
-          "ok": true,
-          "name": "Background programs receive timers without receiving another window keyboard input"
-        },
-        {
-          "ok": true,
-          "name": "Callisto renders Cashew and activates a Pistachio button"
-        },
-        {
-          "ok": true,
-          "name": "Pistachio keyboard and window manager controls"
-        },
-        {
-          "ok": true,
-          "name": "Window mouse coordinates, dragging and resizing"
-        },
-        {
-          "ok": true,
-          "name": "Desktop shortcut menus remove only shortcuts and persist the choice"
-        },
-        {
-          "ok": true,
-          "name": "Window buttons have distinct colors; right click preserves app coordinates"
-        },
-        {
-          "ok": true,
-          "name": "Desktop works at pocket and minimum display sizes"
-        },
-        {
-          "ok": true,
-          "name": "Application crash is contained and logged in encrypted drive"
-        },
-        {
-          "ok": true,
-          "name": "Same apps render in basic mode and color mode"
-        },
-        {
-          "ok": true,
-          "name": "Upgrade preserves encrypted vault byte for byte"
-        },
-        {
-          "ok": true,
-          "name": "Real boot login, lock, wrong password and logout"
-        },
-        {
-          "ok": true,
-          "name": "Uninstaller restores original startup without deleting vault"
-        }
-      ],
-      "screen": [
-        51,
-        19
-      ],
-      "complete": true,
-      "failures": 0,
-      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)"
-    },
-    "basic": {
-      "complete": true,
-      "tests": [
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/browser.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/chatplus.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/code.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/customisation.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/devices.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/editor.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/files.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/help.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/pistachio.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/processes.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/server.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/settings.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/sketch.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/apps/terminal.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/boot.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/chatplus.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/examples/europa.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/examples/ganymede-demo.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/examples/peanut-demo.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/examples/pistachio.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/install.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/manifest.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/cashew.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/config.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/crypto.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/europa.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/filepicker.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/font.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/ganymede.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/kernel.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/login.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/paths.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/peanut.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/pistachio.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/pixels.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/programs.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/seal.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/session.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/storage.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/syntax.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/ui.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/system/vault.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/tests/fresh.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/tests/network-host.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/tests/network.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/tests/picker.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/tests/probe.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/tests/run.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/tests/setup.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/tools/installer.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/tools/setup.lua"
-        },
-        {
-          "ok": true,
-          "name": "Lua syntax: src/uninstall.lua"
-        },
-        {
-          "ok": true,
-          "name": "SHA256 empty and abc"
-        },
-        {
-          "ok": true,
-          "name": "HMAC RFC4231"
-        },
-        {
-          "ok": true,
-          "name": "PBKDF2 SHA256 4096 rounds"
-        },
-        {
-          "ok": true,
-          "name": "ChaCha20 RFC8439 block"
-        },
-        {
-          "ok": true,
-          "name": "Installer preserves files and startup backups"
-        },
-        {
-          "ok": true,
-          "name": "Installer rejects corrupt payload"
-        },
-        {
-          "ok": true,
-          "name": "Installer rolls back a failed startup swap"
-        },
-        {
-          "ok": true,
-          "name": "Create encrypted vault"
-        },
-        {
-          "ok": true,
-          "name": "Normal root and relative paths write only ciphertext"
-        },
-        {
-          "ok": true,
-          "name": "Filesystem handles, binary seek, rename, copy, find"
-        },
-        {
-          "ok": true,
-          "name": "Vault authentication rejects wrong passwords and tampering"
-        },
-        {
-          "ok": true,
-          "name": "Locked handles cannot read"
-        },
-        {
-          "ok": true,
-          "name": "Persistence failure keeps previous data"
-        },
-        {
-          "ok": true,
-          "name": "Interrupted encrypted writes recover without plaintext"
-        },
-        {
-          "ok": true,
-          "name": "Safe writer refuses to overwrite a directory"
-        },
-        {
-          "ok": true,
-          "name": "Encryption OFF removes login and keys; enabling creates a password"
-        },
-        {
-          "ok": true,
-          "name": "Failed encryption conversion preserves the previous mode and disk image"
-        },
-        {
-          "ok": true,
-          "name": "Legacy plaintext drives open without a password and migrate on save"
-        },
-        {
-          "ok": true,
-          "name": "Password change invalidates the old password and preserves files"
-        },
-        {
-          "ok": true,
-          "name": "Cleanup failure after a save keeps the committed image authoritative"
-        },
-        {
-          "ok": true,
-          "name": "Standard Lua environment with io, settings and require"
-        },
-        {
-          "ok": true,
-          "name": "Peanut round trips data, null, escapes and empty arrays"
-        },
-        {
-          "ok": true,
-          "name": "Peanut rejects malformed, duplicate and executable input"
-        },
-        {
-          "ok": true,
-          "name": "Code lexer handles four languages, multiline comments/strings and embedded scripts"
-        },
-        {
-          "ok": true,
-          "name": "Code completion knows APIs, variables and tags and skips strings/comments"
-        },
-        {
-          "ok": true,
-          "name": "Pistachio seal/unseal authenticate, reject tampering and work without drive encryption"
-        },
-        {
-          "ok": true,
-          "name": "Pistachio expressions, handlers, conditionals and loops"
-        },
-        {
-          "ok": true,
-          "name": "Pistachio rejects unknown statements and limits recursive handlers"
-        },
-        {
-          "ok": true,
-          "name": "Cashew parses HTML-like pages and Pistachio handlers"
-        },
-        {
-          "ok": true,
-          "name": "Cashew rejects file access, Lua, and malformed markup"
-        },
-        {
-          "ok": true,
-          "name": "Europa domains, numeric addresses, links and traversal protection"
-        },
-        {
-          "ok": true,
-          "name": "Boot every bundled application in a real window"
-        },
-        {
-          "ok": true,
-          "name": "Editor saves encrypted content and supports undo"
-        },
-        {
-          "ok": true,
-          "name": "Code Editor completes and highlights Lua, Peanut, Pistachio and Cashew in real windows"
-        },
-        {
-          "ok": true,
-          "name": "Code Editor member completion, undo/redo and manual language selection"
-        },
-        {
-          "ok": true,
-          "name": "Settings encryption toggle requires explicit confirmation"
-        },
-        {
-          "ok": true,
-          "name": "Customisation saves desktop, frame and button colours and resets the current profile"
-        },
-        {
-          "ok": true,
-          "name": "Custom colours validate palette values, keep presets separate and roll back failed saves"
-        },
-        {
-          "ok": true,
-          "name": "Skip typing YES defaults OFF, persists, and enables Enter/click confirmation"
-        },
-        {
-          "ok": true,
-          "name": "Sealed-note visual program masks passwords and saves only ciphertext on a plain drive"
-        },
-        {
-          "ok": true,
-          "name": "Two terminals have isolated shell working directories"
-        },
-        {
-          "ok": true,
-          "name": "Shared paths normalize dots, parents, absolute paths and spaces"
-        },
-        {
-          "ok": true,
-          "name": "Existing installs refresh stock launchers while retaining custom programs"
-        },
-        {
-          "ok": true,
-          "name": "Shell commands and Lua executables resolve relative and quoted paths"
-        },
-        {
-          "ok": true,
-          "name": "All app launches inherit the calling terminal directory and freeze it per window"
-        },
-        {
-          "ok": true,
-          "name": "File dialogs and Files navigation resolve paths against their own directory"
-        },
-        {
-          "ok": true,
-          "name": "File pickers browse encrypted files, cancel cleanly and preserve overwrite confirmation"
-        },
-        {
-          "ok": true,
-          "name": "Callisto chooses local pages through a file browser"
-        },
-        {
-          "ok": true,
-          "name": "Pistachio programs and Peanut load/save share the inherited working directory"
-        },
-        {
-          "ok": true,
-          "name": "Europa launchers, Jupiter folder edits and Callisto local pages share shell paths"
-        },
-        {
-          "ok": true,
-          "name": "Unmodified Lua programs use fs, io, require and settings"
-        },
-        {
-          "ok": true,
-          "name": "Files double-click runs a root-relative Lua path with spaces"
-        },
-        {
-          "ok": true,
-          "name": "Background programs receive timers without receiving another window keyboard input"
-        },
-        {
-          "ok": true,
-          "name": "Callisto renders Cashew and activates a Pistachio button"
-        },
-        {
-          "ok": true,
-          "name": "Pistachio keyboard and window manager controls"
-        },
-        {
-          "ok": true,
-          "name": "Window mouse coordinates, dragging and resizing"
-        },
-        {
-          "ok": true,
-          "name": "Desktop shortcut menus remove only shortcuts and persist the choice"
-        },
-        {
-          "ok": true,
-          "name": "Window buttons have distinct colors; right click preserves app coordinates"
-        },
-        {
-          "ok": true,
-          "name": "Desktop works at pocket and minimum display sizes"
-        },
-        {
-          "ok": true,
-          "name": "Application crash is contained and logged in encrypted drive"
-        },
-        {
-          "ok": true,
-          "name": "Same apps render in basic mode and color mode"
-        },
-        {
-          "ok": true,
-          "name": "Upgrade preserves encrypted vault byte for byte"
-        },
-        {
-          "ok": true,
-          "name": "Real boot login, lock, wrong password and logout"
-        },
-        {
-          "ok": true,
-          "name": "Uninstaller restores original startup without deleting vault"
-        }
-      ],
       "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
       "screen": [
         51,
         19
       ],
-      "color": false,
-      "failures": 0
-    },
-    "pocket": {
-      "screen": [
-        26,
-        20
-      ],
-      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
-      "failures": 0,
-      "color": true,
       "tests": [
         {
           "name": "Lua syntax: src/apps/browser.lua",
@@ -1040,6 +86,10 @@
         },
         {
           "name": "Lua syntax: src/examples/pistachio.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/examples/pmatrix.lua",
           "ok": true
         },
         {
@@ -1131,6 +181,10 @@
           "ok": true
         },
         {
+          "name": "Lua syntax: src/system/wallpaper.lua",
+          "ok": true
+        },
+        {
           "name": "Lua syntax: src/tests/fresh.lua",
           "ok": true
         },
@@ -1156,6 +210,10 @@
         },
         {
           "name": "Lua syntax: src/tests/setup.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/tests/visual.lua",
           "ok": true
         },
         {
@@ -1323,6 +381,10 @@
           "ok": true
         },
         {
+          "name": "Wallpaper patterns persist from Settings and refresh the desktop cache",
+          "ok": true
+        },
+        {
           "name": "Skip typing YES defaults OFF, persists, and enables Enter/click confirmation",
           "ok": true
         },
@@ -1340,6 +402,10 @@
         },
         {
           "name": "Existing installs refresh stock launchers while retaining custom programs",
+          "ok": true
+        },
+        {
+          "name": "pmatrix command launches its Pistachio source from another directory and returns cleanly",
           "ok": true
         },
         {
@@ -1427,68 +493,1005 @@
           "ok": true
         }
       ],
-      "complete": true
+      "complete": true,
+      "failures": 0,
+      "color": true
     },
-    "network": {
+    "basic": {
+      "color": false,
+      "screen": [
+        51,
+        19
+      ],
+      "complete": true,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "tests": [
+        {
+          "name": "Lua syntax: src/apps/browser.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/apps/chatplus.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/apps/code.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/apps/customisation.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/apps/devices.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/apps/editor.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/apps/files.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/apps/help.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/apps/pistachio.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/apps/processes.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/apps/server.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/apps/settings.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/apps/sketch.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/apps/terminal.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/boot.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/chatplus.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/examples/europa.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/examples/ganymede-demo.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/examples/peanut-demo.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/examples/pistachio.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/examples/pmatrix.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/install.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/manifest.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/cashew.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/config.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/crypto.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/europa.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/filepicker.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/font.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/ganymede.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/kernel.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/login.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/paths.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/peanut.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/pistachio.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/pixels.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/programs.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/seal.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/session.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/storage.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/syntax.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/ui.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/vault.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/system/wallpaper.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/tests/fresh.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/tests/network-host.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/tests/network.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/tests/picker.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/tests/probe.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/tests/run.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/tests/setup.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/tests/visual.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/tools/installer.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/tools/setup.lua",
+          "ok": true
+        },
+        {
+          "name": "Lua syntax: src/uninstall.lua",
+          "ok": true
+        },
+        {
+          "name": "SHA256 empty and abc",
+          "ok": true
+        },
+        {
+          "name": "HMAC RFC4231",
+          "ok": true
+        },
+        {
+          "name": "PBKDF2 SHA256 4096 rounds",
+          "ok": true
+        },
+        {
+          "name": "ChaCha20 RFC8439 block",
+          "ok": true
+        },
+        {
+          "name": "Installer preserves files and startup backups",
+          "ok": true
+        },
+        {
+          "name": "Installer rejects corrupt payload",
+          "ok": true
+        },
+        {
+          "name": "Installer rolls back a failed startup swap",
+          "ok": true
+        },
+        {
+          "name": "Create encrypted vault",
+          "ok": true
+        },
+        {
+          "name": "Normal root and relative paths write only ciphertext",
+          "ok": true
+        },
+        {
+          "name": "Filesystem handles, binary seek, rename, copy, find",
+          "ok": true
+        },
+        {
+          "name": "Vault authentication rejects wrong passwords and tampering",
+          "ok": true
+        },
+        {
+          "name": "Locked handles cannot read",
+          "ok": true
+        },
+        {
+          "name": "Persistence failure keeps previous data",
+          "ok": true
+        },
+        {
+          "name": "Interrupted encrypted writes recover without plaintext",
+          "ok": true
+        },
+        {
+          "name": "Safe writer refuses to overwrite a directory",
+          "ok": true
+        },
+        {
+          "name": "Encryption OFF removes login and keys; enabling creates a password",
+          "ok": true
+        },
+        {
+          "name": "Failed encryption conversion preserves the previous mode and disk image",
+          "ok": true
+        },
+        {
+          "name": "Legacy plaintext drives open without a password and migrate on save",
+          "ok": true
+        },
+        {
+          "name": "Password change invalidates the old password and preserves files",
+          "ok": true
+        },
+        {
+          "name": "Cleanup failure after a save keeps the committed image authoritative",
+          "ok": true
+        },
+        {
+          "name": "Standard Lua environment with io, settings and require",
+          "ok": true
+        },
+        {
+          "name": "Peanut round trips data, null, escapes and empty arrays",
+          "ok": true
+        },
+        {
+          "name": "Peanut rejects malformed, duplicate and executable input",
+          "ok": true
+        },
+        {
+          "name": "Code lexer handles four languages, multiline comments/strings and embedded scripts",
+          "ok": true
+        },
+        {
+          "name": "Code completion knows APIs, variables and tags and skips strings/comments",
+          "ok": true
+        },
+        {
+          "name": "Pistachio seal/unseal authenticate, reject tampering and work without drive encryption",
+          "ok": true
+        },
+        {
+          "name": "Pistachio expressions, handlers, conditionals and loops",
+          "ok": true
+        },
+        {
+          "name": "Pistachio rejects unknown statements and limits recursive handlers",
+          "ok": true
+        },
+        {
+          "name": "Cashew parses HTML-like pages and Pistachio handlers",
+          "ok": true
+        },
+        {
+          "name": "Cashew rejects file access, Lua, and malformed markup",
+          "ok": true
+        },
+        {
+          "name": "Europa domains, numeric addresses, links and traversal protection",
+          "ok": true
+        },
+        {
+          "name": "Boot every bundled application in a real window",
+          "ok": true
+        },
+        {
+          "name": "Editor saves encrypted content and supports undo",
+          "ok": true
+        },
+        {
+          "name": "Code Editor completes and highlights Lua, Peanut, Pistachio and Cashew in real windows",
+          "ok": true
+        },
+        {
+          "name": "Code Editor member completion, undo/redo and manual language selection",
+          "ok": true
+        },
+        {
+          "name": "Settings encryption toggle requires explicit confirmation",
+          "ok": true
+        },
+        {
+          "name": "Customisation saves desktop, frame and button colours and resets the current profile",
+          "ok": true
+        },
+        {
+          "name": "Custom colours validate palette values, keep presets separate and roll back failed saves",
+          "ok": true
+        },
+        {
+          "name": "Wallpaper patterns persist from Settings and refresh the desktop cache",
+          "ok": true
+        },
+        {
+          "name": "Skip typing YES defaults OFF, persists, and enables Enter/click confirmation",
+          "ok": true
+        },
+        {
+          "name": "Sealed-note visual program masks passwords and saves only ciphertext on a plain drive",
+          "ok": true
+        },
+        {
+          "name": "Two terminals have isolated shell working directories",
+          "ok": true
+        },
+        {
+          "name": "Shared paths normalize dots, parents, absolute paths and spaces",
+          "ok": true
+        },
+        {
+          "name": "Existing installs refresh stock launchers while retaining custom programs",
+          "ok": true
+        },
+        {
+          "name": "pmatrix command launches its Pistachio source from another directory and returns cleanly",
+          "ok": true
+        },
+        {
+          "name": "Shell commands and Lua executables resolve relative and quoted paths",
+          "ok": true
+        },
+        {
+          "name": "All app launches inherit the calling terminal directory and freeze it per window",
+          "ok": true
+        },
+        {
+          "name": "File dialogs and Files navigation resolve paths against their own directory",
+          "ok": true
+        },
+        {
+          "name": "File pickers browse encrypted files, cancel cleanly and preserve overwrite confirmation",
+          "ok": true
+        },
+        {
+          "name": "Callisto chooses local pages through a file browser",
+          "ok": true
+        },
+        {
+          "name": "Pistachio programs and Peanut load/save share the inherited working directory",
+          "ok": true
+        },
+        {
+          "name": "Europa launchers, Jupiter folder edits and Callisto local pages share shell paths",
+          "ok": true
+        },
+        {
+          "name": "Unmodified Lua programs use fs, io, require and settings",
+          "ok": true
+        },
+        {
+          "name": "Files double-click runs a root-relative Lua path with spaces",
+          "ok": true
+        },
+        {
+          "name": "Background programs receive timers without receiving another window keyboard input",
+          "ok": true
+        },
+        {
+          "name": "Callisto renders Cashew and activates a Pistachio button",
+          "ok": true
+        },
+        {
+          "name": "Pistachio keyboard and window manager controls",
+          "ok": true
+        },
+        {
+          "name": "Window mouse coordinates, dragging and resizing",
+          "ok": true
+        },
+        {
+          "name": "Desktop shortcut menus remove only shortcuts and persist the choice",
+          "ok": true
+        },
+        {
+          "name": "Window buttons have distinct colors; right click preserves app coordinates",
+          "ok": true
+        },
+        {
+          "name": "Desktop works at pocket and minimum display sizes",
+          "ok": true
+        },
+        {
+          "name": "Application crash is contained and logged in encrypted drive",
+          "ok": true
+        },
+        {
+          "name": "Same apps render in basic mode and color mode",
+          "ok": true
+        },
+        {
+          "name": "Upgrade preserves encrypted vault byte for byte",
+          "ok": true
+        },
+        {
+          "name": "Real boot login, lock, wrong password and logout",
+          "ok": true
+        },
+        {
+          "name": "Uninstaller restores original startup without deleting vault",
+          "ok": true
+        }
+      ],
+      "failures": 0
+    },
+    "pocket": {
       "tests": [
         {
           "ok": true,
-          "name": "Two computers connect through emulated modems"
+          "name": "Lua syntax: src/apps/browser.lua"
         },
         {
           "ok": true,
-          "name": "Europa resolves a domain and fetches a Cashew page"
+          "name": "Lua syntax: src/apps/chatplus.lua"
         },
         {
           "ok": true,
-          "name": "Numeric computer addresses fetch linked pages"
+          "name": "Lua syntax: src/apps/code.lua"
         },
         {
           "ok": true,
-          "name": "Bare computer ID resolves the hosted homepage"
+          "name": "Lua syntax: src/apps/customisation.lua"
         },
         {
           "ok": true,
-          "name": "Relative shell hosting retains its folder after the launching terminal changes directory"
+          "name": "Lua syntax: src/apps/devices.lua"
         },
         {
           "ok": true,
-          "name": "Callisto renders the remote welcome page by domain and computer ID"
+          "name": "Lua syntax: src/apps/editor.lua"
         },
         {
           "ok": true,
-          "name": "Missing pages return 404 over a real modem"
+          "name": "Lua syntax: src/apps/files.lua"
         },
         {
           "ok": true,
-          "name": "Jupiter rejects a raw traversal request"
+          "name": "Lua syntax: src/apps/help.lua"
         },
         {
           "ok": true,
-          "name": "Unmodified Chat+ runs beside Jupiter and accepts a chat client"
+          "name": "Lua syntax: src/apps/pistachio.lua"
         },
         {
           "ok": true,
-          "name": "Hosted apps keep Chat+ settings encrypted"
+          "name": "Lua syntax: src/apps/processes.lua"
         },
         {
           "ok": true,
-          "name": "Jupiter flags a missing homepage; restoring it fixes both addresses without restart"
+          "name": "Lua syntax: src/apps/server.lua"
         },
         {
           "ok": true,
-          "name": "Closing Jupiter unregisters its domain"
+          "name": "Lua syntax: src/apps/settings.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/apps/sketch.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/apps/terminal.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/boot.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/chatplus.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/examples/europa.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/examples/ganymede-demo.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/examples/peanut-demo.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/examples/pistachio.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/examples/pmatrix.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/install.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/manifest.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/cashew.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/config.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/crypto.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/europa.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/filepicker.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/font.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/ganymede.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/kernel.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/login.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/paths.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/peanut.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/pistachio.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/pixels.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/programs.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/seal.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/session.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/storage.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/syntax.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/ui.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/vault.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/wallpaper.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tests/fresh.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tests/network-host.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tests/network.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tests/picker.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tests/probe.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tests/run.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tests/setup.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tests/visual.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tools/installer.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tools/setup.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/uninstall.lua"
+        },
+        {
+          "ok": true,
+          "name": "SHA256 empty and abc"
+        },
+        {
+          "ok": true,
+          "name": "HMAC RFC4231"
+        },
+        {
+          "ok": true,
+          "name": "PBKDF2 SHA256 4096 rounds"
+        },
+        {
+          "ok": true,
+          "name": "ChaCha20 RFC8439 block"
+        },
+        {
+          "ok": true,
+          "name": "Installer preserves files and startup backups"
+        },
+        {
+          "ok": true,
+          "name": "Installer rejects corrupt payload"
+        },
+        {
+          "ok": true,
+          "name": "Installer rolls back a failed startup swap"
+        },
+        {
+          "ok": true,
+          "name": "Create encrypted vault"
+        },
+        {
+          "ok": true,
+          "name": "Normal root and relative paths write only ciphertext"
+        },
+        {
+          "ok": true,
+          "name": "Filesystem handles, binary seek, rename, copy, find"
+        },
+        {
+          "ok": true,
+          "name": "Vault authentication rejects wrong passwords and tampering"
+        },
+        {
+          "ok": true,
+          "name": "Locked handles cannot read"
+        },
+        {
+          "ok": true,
+          "name": "Persistence failure keeps previous data"
+        },
+        {
+          "ok": true,
+          "name": "Interrupted encrypted writes recover without plaintext"
+        },
+        {
+          "ok": true,
+          "name": "Safe writer refuses to overwrite a directory"
+        },
+        {
+          "ok": true,
+          "name": "Encryption OFF removes login and keys; enabling creates a password"
+        },
+        {
+          "ok": true,
+          "name": "Failed encryption conversion preserves the previous mode and disk image"
+        },
+        {
+          "ok": true,
+          "name": "Legacy plaintext drives open without a password and migrate on save"
+        },
+        {
+          "ok": true,
+          "name": "Password change invalidates the old password and preserves files"
+        },
+        {
+          "ok": true,
+          "name": "Cleanup failure after a save keeps the committed image authoritative"
+        },
+        {
+          "ok": true,
+          "name": "Standard Lua environment with io, settings and require"
+        },
+        {
+          "ok": true,
+          "name": "Peanut round trips data, null, escapes and empty arrays"
+        },
+        {
+          "ok": true,
+          "name": "Peanut rejects malformed, duplicate and executable input"
+        },
+        {
+          "ok": true,
+          "name": "Code lexer handles four languages, multiline comments/strings and embedded scripts"
+        },
+        {
+          "ok": true,
+          "name": "Code completion knows APIs, variables and tags and skips strings/comments"
+        },
+        {
+          "ok": true,
+          "name": "Pistachio seal/unseal authenticate, reject tampering and work without drive encryption"
+        },
+        {
+          "ok": true,
+          "name": "Pistachio expressions, handlers, conditionals and loops"
+        },
+        {
+          "ok": true,
+          "name": "Pistachio rejects unknown statements and limits recursive handlers"
+        },
+        {
+          "ok": true,
+          "name": "Cashew parses HTML-like pages and Pistachio handlers"
+        },
+        {
+          "ok": true,
+          "name": "Cashew rejects file access, Lua, and malformed markup"
+        },
+        {
+          "ok": true,
+          "name": "Europa domains, numeric addresses, links and traversal protection"
+        },
+        {
+          "ok": true,
+          "name": "Boot every bundled application in a real window"
+        },
+        {
+          "ok": true,
+          "name": "Editor saves encrypted content and supports undo"
+        },
+        {
+          "ok": true,
+          "name": "Code Editor completes and highlights Lua, Peanut, Pistachio and Cashew in real windows"
+        },
+        {
+          "ok": true,
+          "name": "Code Editor member completion, undo/redo and manual language selection"
+        },
+        {
+          "ok": true,
+          "name": "Settings encryption toggle requires explicit confirmation"
+        },
+        {
+          "ok": true,
+          "name": "Customisation saves desktop, frame and button colours and resets the current profile"
+        },
+        {
+          "ok": true,
+          "name": "Custom colours validate palette values, keep presets separate and roll back failed saves"
+        },
+        {
+          "ok": true,
+          "name": "Wallpaper patterns persist from Settings and refresh the desktop cache"
+        },
+        {
+          "ok": true,
+          "name": "Skip typing YES defaults OFF, persists, and enables Enter/click confirmation"
+        },
+        {
+          "ok": true,
+          "name": "Sealed-note visual program masks passwords and saves only ciphertext on a plain drive"
+        },
+        {
+          "ok": true,
+          "name": "Two terminals have isolated shell working directories"
+        },
+        {
+          "ok": true,
+          "name": "Shared paths normalize dots, parents, absolute paths and spaces"
+        },
+        {
+          "ok": true,
+          "name": "Existing installs refresh stock launchers while retaining custom programs"
+        },
+        {
+          "ok": true,
+          "name": "pmatrix command launches its Pistachio source from another directory and returns cleanly"
+        },
+        {
+          "ok": true,
+          "name": "Shell commands and Lua executables resolve relative and quoted paths"
+        },
+        {
+          "ok": true,
+          "name": "All app launches inherit the calling terminal directory and freeze it per window"
+        },
+        {
+          "ok": true,
+          "name": "File dialogs and Files navigation resolve paths against their own directory"
+        },
+        {
+          "ok": true,
+          "name": "File pickers browse encrypted files, cancel cleanly and preserve overwrite confirmation"
+        },
+        {
+          "ok": true,
+          "name": "Callisto chooses local pages through a file browser"
+        },
+        {
+          "ok": true,
+          "name": "Pistachio programs and Peanut load/save share the inherited working directory"
+        },
+        {
+          "ok": true,
+          "name": "Europa launchers, Jupiter folder edits and Callisto local pages share shell paths"
+        },
+        {
+          "ok": true,
+          "name": "Unmodified Lua programs use fs, io, require and settings"
+        },
+        {
+          "ok": true,
+          "name": "Files double-click runs a root-relative Lua path with spaces"
+        },
+        {
+          "ok": true,
+          "name": "Background programs receive timers without receiving another window keyboard input"
+        },
+        {
+          "ok": true,
+          "name": "Callisto renders Cashew and activates a Pistachio button"
+        },
+        {
+          "ok": true,
+          "name": "Pistachio keyboard and window manager controls"
+        },
+        {
+          "ok": true,
+          "name": "Window mouse coordinates, dragging and resizing"
+        },
+        {
+          "ok": true,
+          "name": "Desktop shortcut menus remove only shortcuts and persist the choice"
+        },
+        {
+          "ok": true,
+          "name": "Window buttons have distinct colors; right click preserves app coordinates"
+        },
+        {
+          "ok": true,
+          "name": "Desktop works at pocket and minimum display sizes"
+        },
+        {
+          "ok": true,
+          "name": "Application crash is contained and logged in encrypted drive"
+        },
+        {
+          "ok": true,
+          "name": "Same apps render in basic mode and color mode"
+        },
+        {
+          "ok": true,
+          "name": "Upgrade preserves encrypted vault byte for byte"
+        },
+        {
+          "ok": true,
+          "name": "Real boot login, lock, wrong password and logout"
+        },
+        {
+          "ok": true,
+          "name": "Uninstaller restores original startup without deleting vault"
         }
       ],
-      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
-      "color": true,
       "failures": 0,
-      "complete": true
-    },
-    "network-zero": {
-      "failures": 0,
+      "screen": [
+        26,
+        20
+      ],
       "complete": true,
       "color": true,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)"
+    },
+    "network": {
+      "complete": true,
+      "failures": 0,
       "tests": [
         {
           "name": "Two computers connect through emulated modems",
@@ -1539,31 +1542,69 @@
           "ok": true
         }
       ],
-      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)"
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "color": true
+    },
+    "network-zero": {
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "tests": [
+        {
+          "ok": true,
+          "name": "Two computers connect through emulated modems"
+        },
+        {
+          "ok": true,
+          "name": "Europa resolves a domain and fetches a Cashew page"
+        },
+        {
+          "ok": true,
+          "name": "Numeric computer addresses fetch linked pages"
+        },
+        {
+          "ok": true,
+          "name": "Bare computer ID resolves the hosted homepage"
+        },
+        {
+          "ok": true,
+          "name": "Relative shell hosting retains its folder after the launching terminal changes directory"
+        },
+        {
+          "ok": true,
+          "name": "Callisto renders the remote welcome page by domain and computer ID"
+        },
+        {
+          "ok": true,
+          "name": "Missing pages return 404 over a real modem"
+        },
+        {
+          "ok": true,
+          "name": "Jupiter rejects a raw traversal request"
+        },
+        {
+          "ok": true,
+          "name": "Unmodified Chat+ runs beside Jupiter and accepts a chat client"
+        },
+        {
+          "ok": true,
+          "name": "Hosted apps keep Chat+ settings encrypted"
+        },
+        {
+          "ok": true,
+          "name": "Jupiter flags a missing homepage; restoring it fixes both addresses without restart"
+        },
+        {
+          "ok": true,
+          "name": "Closing Jupiter unregisters its domain"
+        }
+      ],
+      "failures": 0,
+      "color": true,
+      "complete": true
     },
     "fresh": {
       "color": true,
       "complete": true,
-      "tests": [
-        {
-          "name": "Standalone TUI selects display and privacy; no password when encryption is off",
-          "ok": true
-        },
-        {
-          "name": "Plain boot skips login; enabling encryption creates a password and allows lock/unlock",
-          "ok": true
-        },
-        {
-          "name": "Production PBKDF2 cost and examples stored only inside encrypted drive",
-          "ok": true
-        }
-      ],
       "failures": 0,
-      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)"
-    },
-    "fresh-basic": {
-      "failures": 0,
-      "complete": true,
       "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
       "tests": [
         {
@@ -1578,52 +1619,51 @@
           "ok": true,
           "name": "Production PBKDF2 cost and examples stored only inside encrypted drive"
         }
-      ],
-      "color": false
+      ]
     },
-    "fresh-encrypted": {
-      "failures": 0,
-      "complete": true,
-      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
-      "tests": [
-        {
-          "name": "Standalone TUI selects display and privacy; no password when encryption is off",
-          "ok": true
-        },
-        {
-          "name": "Plain boot skips login; enabling encryption creates a password and allows lock/unlock",
-          "ok": true
-        },
-        {
-          "name": "Production PBKDF2 cost and examples stored only inside encrypted drive",
-          "ok": true
-        }
-      ],
-      "color": true
-    },
-    "setup": {
+    "fresh-basic": {
+      "color": false,
       "tests": [
         {
           "ok": true,
-          "name": "F5 cancels setup before any installation"
+          "name": "Standalone TUI selects display and privacy; no password when encryption is off"
         },
         {
           "ok": true,
-          "name": "Default plain setup, Back navigation, and retry after an error"
+          "name": "Plain boot skips login; enabling encryption creates a password and allows lock/unlock"
         },
         {
           "ok": true,
-          "name": "Encryption validates masked password and confirmation on a small screen"
+          "name": "Production PBKDF2 cost and examples stored only inside encrypted drive"
         }
       ],
-      "failures": 0,
-      "color": true,
       "complete": true,
+      "failures": 0,
       "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)"
     },
-    "setup-basic": {
+    "fresh-encrypted": {
+      "color": true,
+      "tests": [
+        {
+          "ok": true,
+          "name": "Standalone TUI selects display and privacy; no password when encryption is off"
+        },
+        {
+          "ok": true,
+          "name": "Plain boot skips login; enabling encryption creates a password and allows lock/unlock"
+        },
+        {
+          "ok": true,
+          "name": "Production PBKDF2 cost and examples stored only inside encrypted drive"
+        }
+      ],
       "complete": true,
-      "color": false,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "failures": 0
+    },
+    "setup": {
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "color": true,
       "tests": [
         {
           "name": "F5 cancels setup before any installation",
@@ -1638,49 +1678,30 @@
           "ok": true
         }
       ],
-      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "complete": true,
       "failures": 0
     },
-    "picker": {
-      "failures": 0,
-      "complete": true,
+    "setup-basic": {
       "tests": [
         {
           "ok": true,
-          "name": "Keyboard browsing opens nested files and selects parent folders"
+          "name": "F5 cancels setup before any installation"
         },
         {
           "ok": true,
-          "name": "Save picker creates a folder and returns a filename without writing it"
+          "name": "Default plain setup, Back navigation, and retry after an error"
         },
         {
           "ok": true,
-          "name": "Filters and hidden files can be toggled with the keyboard"
-        },
-        {
-          "ok": true,
-          "name": "Invalid locations and read-only saves stay open; cancellation leaves files intact"
-        },
-        {
-          "ok": true,
-          "name": "Mouse browsing ignores right-click and opens folders/files with double-click"
-        },
-        {
-          "ok": true,
-          "name": "Picker resizes, scrolls, and forwards a window-close request"
-        },
-        {
-          "ok": true,
-          "name": "Customisation palette remains usable at the minimum window size"
+          "name": "Encryption validates masked password and confirmation on a small screen"
         }
       ],
       "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
-      "color": true
-    },
-    "picker-basic": {
       "complete": true,
       "color": false,
-      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "failures": 0
+    },
+    "picker": {
       "tests": [
         {
           "name": "Keyboard browsing opens nested files and selects parent folders",
@@ -1711,9 +1732,12 @@
           "ok": true
         }
       ],
+      "complete": true,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "color": true,
       "failures": 0
     },
-    "picker-small": {
+    "picker-basic": {
       "tests": [
         {
           "ok": true,
@@ -1745,47 +1769,243 @@
         }
       ],
       "failures": 0,
-      "complete": true,
       "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
-      "color": true
+      "complete": true,
+      "color": false
+    },
+    "picker-small": {
+      "failures": 0,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "color": true,
+      "tests": [
+        {
+          "name": "Keyboard browsing opens nested files and selects parent folders",
+          "ok": true
+        },
+        {
+          "name": "Save picker creates a folder and returns a filename without writing it",
+          "ok": true
+        },
+        {
+          "name": "Filters and hidden files can be toggled with the keyboard",
+          "ok": true
+        },
+        {
+          "name": "Invalid locations and read-only saves stay open; cancellation leaves files intact",
+          "ok": true
+        },
+        {
+          "name": "Mouse browsing ignores right-click and opens folders/files with double-click",
+          "ok": true
+        },
+        {
+          "name": "Picker resizes, scrolls, and forwards a window-close request",
+          "ok": true
+        },
+        {
+          "name": "Customisation palette remains usable at the minimum window size",
+          "ok": true
+        }
+      ],
+      "complete": true
     },
     "picker-small-basic": {
       "color": false,
       "failures": 0,
+      "complete": true,
       "tests": [
         {
-          "name": "Keyboard browsing opens nested files and selects parent folders",
+          "ok": true,
+          "name": "Keyboard browsing opens nested files and selects parent folders"
+        },
+        {
+          "ok": true,
+          "name": "Save picker creates a folder and returns a filename without writing it"
+        },
+        {
+          "ok": true,
+          "name": "Filters and hidden files can be toggled with the keyboard"
+        },
+        {
+          "ok": true,
+          "name": "Invalid locations and read-only saves stay open; cancellation leaves files intact"
+        },
+        {
+          "ok": true,
+          "name": "Mouse browsing ignores right-click and opens folders/files with double-click"
+        },
+        {
+          "ok": true,
+          "name": "Picker resizes, scrolls, and forwards a window-close request"
+        },
+        {
+          "ok": true,
+          "name": "Customisation palette remains usable at the minimum window size"
+        }
+      ],
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)"
+    },
+    "visual": {
+      "color": true,
+      "complete": true,
+      "tests": [
+        {
+          "name": "Pistachio mutable arrays, object fields and nested loop indices",
           "ok": true
         },
         {
-          "name": "Save picker creates a folder and returns a filename without writing it",
+          "name": "Pistachio arrays/coordinates stay bounded and web assignment targets are checked",
           "ok": true
         },
         {
-          "name": "Filters and hidden files can be toggled with the keyboard",
+          "name": "Frame code only runs during drawing and resets the default footer/background",
           "ok": true
         },
         {
-          "name": "Invalid locations and read-only saves stay open; cancellation leaves files intact",
+          "name": "pmatrix runs hundreds of bounded frames, pauses, changes speed and resizes",
           "ok": true
         },
         {
-          "name": "Mouse browsing ignores right-click and opens folders/files with double-click",
+          "name": "Real Pistachio window animates, clips trails and uses color/monochrome ink",
           "ok": true
         },
         {
-          "name": "Picker resizes, scrolls, and forwards a window-close request",
+          "name": "Window close, termination and forced cleanup cancel animation timers",
           "ok": true
         },
         {
-          "name": "Customisation palette remains usable at the minimum window size",
+          "name": "All eight wallpapers render distinctly in basic, color and subpixel modes",
+          "ok": true
+        },
+        {
+          "name": "Wallpaper chooser previews, cancels, applies, enables wallpaper and rolls back errors",
           "ok": true
         }
       ],
+      "failures": 0,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)"
+    },
+    "visual-basic": {
+      "tests": [
+        {
+          "name": "Pistachio mutable arrays, object fields and nested loop indices",
+          "ok": true
+        },
+        {
+          "name": "Pistachio arrays/coordinates stay bounded and web assignment targets are checked",
+          "ok": true
+        },
+        {
+          "name": "Frame code only runs during drawing and resets the default footer/background",
+          "ok": true
+        },
+        {
+          "name": "pmatrix runs hundreds of bounded frames, pauses, changes speed and resizes",
+          "ok": true
+        },
+        {
+          "name": "Real Pistachio window animates, clips trails and uses color/monochrome ink",
+          "ok": true
+        },
+        {
+          "name": "Window close, termination and forced cleanup cancel animation timers",
+          "ok": true
+        },
+        {
+          "name": "All eight wallpapers render distinctly in basic, color and subpixel modes",
+          "ok": true
+        },
+        {
+          "name": "Wallpaper chooser previews, cancels, applies, enables wallpaper and rolls back errors",
+          "ok": true
+        }
+      ],
+      "failures": 0,
+      "color": false,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "complete": true
+    },
+    "visual-small": {
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "tests": [
+        {
+          "ok": true,
+          "name": "Pistachio mutable arrays, object fields and nested loop indices"
+        },
+        {
+          "ok": true,
+          "name": "Pistachio arrays/coordinates stay bounded and web assignment targets are checked"
+        },
+        {
+          "ok": true,
+          "name": "Frame code only runs during drawing and resets the default footer/background"
+        },
+        {
+          "ok": true,
+          "name": "pmatrix runs hundreds of bounded frames, pauses, changes speed and resizes"
+        },
+        {
+          "ok": true,
+          "name": "Real Pistachio window animates, clips trails and uses color/monochrome ink"
+        },
+        {
+          "ok": true,
+          "name": "Window close, termination and forced cleanup cancel animation timers"
+        },
+        {
+          "ok": true,
+          "name": "All eight wallpapers render distinctly in basic, color and subpixel modes"
+        },
+        {
+          "ok": true,
+          "name": "Wallpaper chooser previews, cancels, applies, enables wallpaper and rolls back errors"
+        }
+      ],
+      "failures": 0,
+      "color": true,
+      "complete": true
+    },
+    "visual-small-basic": {
+      "tests": [
+        {
+          "name": "Pistachio mutable arrays, object fields and nested loop indices",
+          "ok": true
+        },
+        {
+          "name": "Pistachio arrays/coordinates stay bounded and web assignment targets are checked",
+          "ok": true
+        },
+        {
+          "name": "Frame code only runs during drawing and resets the default footer/background",
+          "ok": true
+        },
+        {
+          "name": "pmatrix runs hundreds of bounded frames, pauses, changes speed and resizes",
+          "ok": true
+        },
+        {
+          "name": "Real Pistachio window animates, clips trails and uses color/monochrome ink",
+          "ok": true
+        },
+        {
+          "name": "Window close, termination and forced cleanup cancel animation timers",
+          "ok": true
+        },
+        {
+          "name": "All eight wallpapers render distinctly in basic, color and subpixel modes",
+          "ok": true
+        },
+        {
+          "name": "Wallpaper chooser previews, cancels, applies, enables wallpaper and rolls back errors",
+          "ok": true
+        }
+      ],
+      "color": false,
       "complete": true,
+      "failures": 0,
       "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)"
     }
   },
-  "total_checks": 415,
-  "independent_checks": "Python hashlib/hmac/cryptography verified actual envelopes; the desktop suites also scanned physical storage for private plaintext and filenames."
+  "total_checks": 462,
+  "independent_checks": "Python hashlib/hmac/cryptography verified actual envelopes and fresh-install pmatrix command/source; the desktop suites also scanned physical storage for private plaintext and filenames."
 }

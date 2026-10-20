@@ -7,6 +7,11 @@ An operating system for ComputerCraft, with optional drive encryption, ordinary 
 | Advanced render mode | Basic monochrome mode |
 | --- | --- |
 | ![Pistachio counter in render mode](docs/previews/render.png) | ![The same counter on a basic computer](docs/previews/basic.png) |
+| ![pmatrix written in Pistachio](docs/previews/pmatrix.png) | ![pmatrix in monochrome](docs/previews/pmatrix-basic.png) |
+
+| Circuit wallpaper | Waves wallpaper |
+| --- | --- |
+| ![Circuit pattern](docs/previews/wallpaper-circuit.png) | ![Waves pattern](docs/previews/wallpaper-waves.png) |
 
 Previews are rendered from emulator terminal snapshots; their normal text uses a host monospace font.
 
@@ -121,6 +126,7 @@ The welcome site is installed at `/Sites/welcome`. Open Jupiter, choose a domain
 python3 tools/build.py
 python3 tools/test.py advanced basic pocket network network-zero fresh fresh-basic fresh-encrypted setup setup-basic
 python3 tools/test.py picker picker-basic picker-small picker-small-basic
+python3 tools/test.py visual visual-basic visual-small visual-small-basic
 ```
 
 The build creates a deterministic installer and SHA-256 checksum. Tests use disposable emulator saves in `/tmp`; they do not touch your ordinary computers. The test runner needs Python's `cryptography` package for independent verification. See [testing](docs/TESTING.md) for coverage and limits.
