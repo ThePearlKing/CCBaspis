@@ -75,7 +75,7 @@ function C.text(node,variables)
 end
 function C.safeScript(ast)
   local functions={str=true,num=true,len=true,min=true,max=true,abs=true,floor=true,round=true,
-    peanut=true,encode=true,upper=true,lower=true}
+    peanut=true,encode=true,upper=true,lower=true,array=true,random=true,slice=true}
   local function expression(node)
     if type(node)~='table' then return end
     if node.tag=='call' then assert(functions[node.name],'Web pages cannot call '..node.name) end
@@ -85,7 +85,7 @@ function C.safeScript(ast)
     label=true,button=true,input=true,checkbox=true,progress=true,banner=true,panel=true}
   for _,node in ipairs(ast) do
     assert(safe[node.op],'Web pages cannot use '..node.op)
-    for _,name in ipairs({'value','x','y','width','height'}) do expression(node[name]) end
+    for _,name in ipairs({'target','value','x','y','width','height','fg','bg'}) do expression(node[name]) end
     if node.body then C.safeScript(node.body) end
     if node.other then C.safeScript(node.other) end
   end

@@ -24,6 +24,7 @@ One statement per line. `#` starts a comment outside a string. Strings use doubl
 | `app "Title"` | Set the window title |
 | `let name = expression` | Initialize a variable during app startup |
 | `set name = expression` | Assign a variable during execution |
+| `set items[index] = expression` | Assign an array entry or object field (`set data.title = "Hi"` also works) |
 | `label id x y width expression` | Text |
 | `banner id x y width expression` | Text, or a two-cell-high pixel banner in render mode |
 | `button id x y width expression` | Button; activates the handler named `id` |
@@ -32,6 +33,10 @@ One statement per line. `#` starts a comment outside a string. Strings use doubl
 | `checkbox id x y width variable` | Boolean control |
 | `progress id x y width expression` | Progress in the range 0–100 |
 | `panel id x y width height` | Filled panel |
+| `background "black"` | App background color; takes a color name or ComputerCraft color value |
+| `status expression` | Replace the standard footer; `status ""` hides it |
+| `text x y foreground background expression` | Draw a clipped horizontal string, with explicit colors |
+| `column x y foreground background expression` | Draw a clipped vertical string, one character per row |
 | `notify expression` | Desktop notification |
 | `load variable "file.peanut"` | Read Peanut data |
 | `save variable "file.peanut"` | Write Peanut data |
@@ -59,7 +64,39 @@ every 1
 end
 ```
 
-`if expression` supports an optional `else` and closes with `end`. `repeat expression` runs its block that many times (0–1000), with `index` set to the current iteration. `function name` defines a parameterless function; `call name` invokes it. `on name` defines a named handler. `every seconds` creates a timer, from 0.1 seconds to one day. Define timers and functions at the top level.
+`if expression` supports an optional `else` and closes with `end`. `repeat expression` runs its block that many times (0–1000), with `index` set to the current iteration; nested loops restore the outer index. `function name` defines a parameterless function; `call name` invokes it. `on name` defines a named handler. `every seconds` creates a timer, from 0.1 seconds to one day. Define timers and functions at the top level.
+
+## Drawing and keyboard input
+
+`frame ... end` runs during each redraw. Inside it, `set`, loops, and function calls can calculate coordinates and emit drawing commands. Use timers to advance animation state: redraws also happen when a window is focused, so advancing animation inside a frame would make its speed depend on unrelated events. Drawing clips at the window edges; negative positions are useful for objects entering the screen.
+
+```text
+app "Moving text"
+let x = 1
+background "black"
+status ""
+every 0.1
+  set x = x % max(1, width) + 1
+end
+frame
+  set ink = color and "lime" or "white"
+  text x 3 ink "black" "Hello"
+end
+on key
+  if key == "q" or key == "escape"
+    quit
+  end
+end
+```
+
+`on key` receives `key`, the ComputerCraft key name, and `held`, whether this is a repeated key-down event. Defining it replaces the app's default Tab/Enter/input key handling; window-manager shortcuts still work. `on char` receives a printable `char` and replaces ordinary text-control character handling. `on resize` runs after the content dimensions change. Controls keep their usual behavior in apps without these handlers. Timers are cancelled when the app closes.
+
+For an editable example, run **`pmatrix`** in Terminal or open **`/Programs/pmatrix.pist`**. Its streams, random characters, per-column speeds, fading colors, pause, resize handling, and controls are all Pistachio code. `pmatrix.lua` only launches the source. This is an original [cmatrix-inspired](https://github.com/abishekvashok/cmatrix) implementation, not a translation of its C source or all command-line options.
+
+* **Space** pauses/resumes; **Up/Down**, **+/−**, or **1–9** adjust speed.
+* **C** cycles colors on advanced computers. Basic display mode uses grayscale trails.
+* **H** toggles help, **Q/Escape** quits, and **F6** maximizes the window.
+* `pmatrix --help` prints controls. No new desktop shortcut is installed.
 
 ## Expressions
 
@@ -74,7 +111,7 @@ Built-in values:
 * `render`: the selected mode is render mode.
 * `width`, `height`: current app content dimensions, excluding the window frame.
 
-Functions: `str`, `num` (invalid input becomes 0), `len`, `min`, `max`, `abs`, `floor`, `round`, `upper`, `lower`, `peanut(text)` to parse data, and `encode(value)` to serialize it. Use Peanut for structured literals:
+Functions: `str`, `num` (invalid input becomes 0), `len`, `min`, `max`, `abs`, `floor`, `round`, `upper`, `lower`, `slice(text, first, last)` (one-based, inclusive, negative indices count from the end), `random(low, high)` (inclusive integers), `array(count, fill)` (0–4096 scalar entries, default fill 0), `peanut(text)` to parse data, and `encode(value)` to serialize it. Random numbers are for effects/games, not encryption. Use Peanut for structured literals:
 
 ```text
 let profile = peanut("{name = \"Traveller\", scores = [10,20]}")
@@ -105,6 +142,6 @@ Save only the envelope if you want confidentiality with drive encryption off. Do
 
 ## Limits and web pages
 
-Source is limited to 128 KiB; strings to 128 KiB; block nesting to 32. Each initialization, event, timer, or layout gets a 10,000-operation budget. An app error is reported in Tasks and the personal-drive log. This is a small application language, not a C compiler or a complete general-purpose ecosystem.
+Source is limited to 128 KiB; strings to 128 KiB; block nesting to 32. Each initialization, event, timer, or layout gets a 10,000-operation budget. Array construction charges one operation per entry. Indexed assignments use integer indices 1–4096 or field names up to 256 characters, with at most 4096 entries per modified object. An app error is reported in Tasks and the personal-drive log. This is a small application language, not a C compiler or a complete general-purpose ecosystem.
 
 Cashew pages can embed Pistachio, but website scripts cannot load/save files, invoke encryption functions, or run Lua. See [Europa and Cashew](EUROPA.md).

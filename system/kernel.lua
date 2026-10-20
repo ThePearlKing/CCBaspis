@@ -236,24 +236,12 @@ function K.new(ctx)
     local previous=term.current(); term.redirect(self.frame)
     local t=self.theme(); UI.clear(t)
     UI.fill(1,2,self.width,self.height-2,t.desktop)
-    if ctx.config.mode=="basic" and ctx.config.wallpaper then
-      -- Sparse stippling gives the desktop its own texture on monochrome screens.
-      for y=2,self.height-1,2 do
-        for x=2+(math.floor(y/2)%2)*2,self.width,4 do UI.text(x,y,".",t.wallpaperFar,t.desktop) end
-      end
-    end
-    if ctx.config.mode=="render" and ctx.config.wallpaper then
+    if ctx.config.wallpaper then
+      local wallpaper=ctx.load('system/wallpaper')
       if not self.wallpaper then
-        local b=Pixels.new(self.width*2,(self.height-2)*3,t.desktop)
-        for x=1,b.w do
-          local ridge=math.floor(b.h*.56+math.sin(x/15)*7+math.sin(x/7)*3)
-          for y=math.max(1,ridge),b.h do b.set(x,y,t.wallpaperFar) end
-          local front=math.floor(b.h*.78+math.sin(x/21+2)*6)
-          for y=math.max(1,front),b.h do b.set(x,y,t.wallpaperNear) end
-        end
-        self.wallpaper=b
+        self.wallpaper=wallpaper.build(ctx.config,t,self.width,self.height-2,Pixels)
       end
-      Pixels.draw(self.wallpaper,term,1,2)
+      wallpaper.draw(self.wallpaper,Pixels,1,2)
     end
     local mono=ctx.config.mode=="basic"
     local barBG,barFG=t.bar,t.barText

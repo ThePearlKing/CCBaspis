@@ -213,11 +213,12 @@ return function(api,path)
   return api.load('apps/editor')(api,path,{code=true})
 end
 ]]},
-  ["apps/customisation.lua"]={sha256="10751e58290bfd8f8d9a57385f70a9955aac3542a327f4c2906118a633d02bef",data=[=[
+  ["apps/customisation.lua"]={sha256="97d4ade0e1594513163a07a20766940ceb7881ff7bbf0fe44279088448d750d7",data=[=[
 -- Settings tab: keep the controls readable even with a low-contrast user theme.
 return function(api)
   local ui=api.ui; local config=api.load('system/config')
   local self={editing=false}; local selected,offset,color=1,0,1; local rows=1
+  local pattern=1; local patternImage
   local neutral=config.theme({mode='basic'})
   local confirmApi={}; for k,v in pairs(api) do confirmApi[k]=v end
   confirmApi.theme=function() return neutral end
@@ -238,6 +239,17 @@ return function(api)
   local function apply()
     if store(config.colorFields[selected][1],2^(color-1)) then self.editing=false end
   end
+  local function beginPattern()
+    pattern=1
+    for i,name in ipairs(config.wallpaperPatterns) do if name==api.config().wallpaperPattern then pattern=i end end
+    self.editing='pattern'; patternImage=nil
+  end
+  local function applyPattern()
+    local c=api.config(); local previous,enabled=c.wallpaperPattern,c.wallpaper
+    c.wallpaperPattern=config.wallpaperPatterns[pattern]; c.wallpaper=true
+    local ok,err=api.saveConfig()
+    if ok then self.editing=false else api.config().wallpaperPattern=previous; api.config().wallpaper=enabled; api.notify(err) end
+  end
   local function swatch(x,y,width,n,active,label)
     local value=2^(n-1)
     local r,g,b=term.getPaletteColor(value)
@@ -247,7 +259,22 @@ return function(api)
   function self.draw()
     local w,h=term.getSize(); local t=api.theme()
     ui.fill(1,3,w,h-2,neutral.bg)
-    if self.editing then
+    if self.editing=='pattern' then
+      ui.text(1,3,'Wallpaper pattern',neutral.text,neutral.bg,w)
+      ui.text(1,4,'< '..config.wallpaperPatterns[pattern]..' >',neutral.onAccent,neutral.accent,w)
+      if h>=8 then
+        local key=pattern..':'..w..':'..h
+        if not patternImage or patternImage.key~=key then
+          local c={mode=api.config().mode,wallpaperPattern=config.wallpaperPatterns[pattern]}
+          patternImage={key=key,image=api.load('system/wallpaper').build(c,t,w,h-7,api.load('system/pixels'))}
+        end
+        api.load('system/wallpaper').draw(patternImage.image,api.load('system/pixels'),1,5)
+      end
+      local split=math.floor(w/2)
+      ui.text(1,h-1,'[Apply]',neutral.onAccent,neutral.accent,split)
+      ui.text(split+1,h-1,'[Cancel]',neutral.text,neutral.bg,w-split)
+      ui.text(1,h,'Arrows / Enter / F5',neutral.text,neutral.bg,w)
+    elseif self.editing then
       local field=config.colorFields[selected]
       ui.text(1,3,field[2],neutral.text,neutral.bg,w)
       if h>=10 then
@@ -281,14 +308,26 @@ return function(api)
         end
       end
       ui.text(1,h-2,config.colorNames[index(t[config.colorFields[selected][1]])]..' / '..config.profile(api.config()),neutral.text,neutral.bg,w)
-      ui.text(1,h-1,' Sample [selected] ',t.text,t.bg,w)
-      ui.text(9,h-1,'[selected]',t.onAccent,t.accent,math.min(10,w-8))
+      ui.text(1,h-1,'[W Wallpaper: '..api.config().wallpaperPattern..']',neutral.text,neutral.bg,w)
       ui.text(1,h,'Enter edit  R reset',neutral.text,neutral.bg,w)
     end
   end
   function self.event(e,a,b,c)
     local w,h=term.getSize()
-    if self.editing then
+    if self.editing=='pattern' then
+      local step=0
+      if e=='key' then
+        if a==keys.escape or a==keys.f5 then self.editing=false
+        elseif a==keys.enter then applyPattern()
+        elseif a==keys.left or a==keys.up then step=-1
+        elseif a==keys.right or a==keys.down then step=1 end
+      elseif e=='mouse_scroll' then step=a
+      elseif e=='mouse_click' and a==1 then
+        if c==h-1 then if b<=math.floor(w/2) then applyPattern() else self.editing=false end
+        elseif c==4 then step=b<=math.floor(w/2) and -1 or 1 end
+      end
+      pattern=((pattern-1+step)%#config.wallpaperPatterns)+1
+    elseif self.editing then
       if e=='key' then
         if a==keys.f5 or a==keys.escape then self.editing=false
         elseif a==keys.enter then apply()
@@ -310,6 +349,7 @@ return function(api)
       elseif a==keys.home then selected=1
       elseif a==keys['end'] then selected=#config.colorFields
       elseif a==keys.enter then begin() end
+    elseif (e=='char' and a:lower()=='w') or (e=='mouse_click' and a==1 and c==h-1) then beginPattern()
     elseif e=='char' and a:lower()=='r' then
       if ui.confirm(confirmApi,'Reset '..config.profile(api.config())..' colours?') then store() end
     elseif e=='mouse_click' and a==1 and c>=3 and c<3+rows and config.colorFields[offset+c-2] then
@@ -755,7 +795,7 @@ return function(api)
   end
 end
 ]]},
-  ["apps/pistachio.lua"]={sha256="2db925be9dbe3d11f650fadaf40407295eb489db86df1f1ac96b20e8ed6e290c",data=[[
+  ["apps/pistachio.lua"]={sha256="7ba0333d3bd45b20105c2135b2530ee11737ce37fb945380c6d6970142b8386f",data=[[
 return function(api,path)
   local ui=api.ui
   path=api.resolve(path or '/'..fs.combine(api.home,'Programs/counter.pist'))
@@ -767,11 +807,17 @@ return function(api,path)
   for _,timer in ipairs(state.timers) do timers[os.startTimer(timer.interval)]=timer end
   local controls={}; local focus=1
   local function draw()
-    local t=api.theme(); local w,h=term.getSize(); ui.clear(t); controls={}
+    local t=api.theme(); local w,h=term.getSize(); local layout=state.layout()
+    ui.clear({bg=state.background or t.bg,text=t.text}); controls={}
     api.setTitle(state.title)
-    for _,v in ipairs(state.layout()) do
+    for _,v in ipairs(layout) do
       v.w=math.max(1,math.min(v.w,w)); local text=tostring(v.value or '')
-      if v.kind=='panel' then
+      if v.kind=='text' then ui.text(v.x,v.y,text,v.fg,v.bg)
+      elseif v.kind=='column' then
+        if v.x>=1 and v.x<=w then
+          for i=math.max(1,2-v.y),math.min(#text,h-v.y+1) do ui.text(v.x,v.y+i-1,text:sub(i,i),v.fg,v.bg) end
+        end
+      elseif v.kind=='panel' then
         ui.fill(v.x,v.y,v.w,math.min(v.h,h),t.panel)
       elseif v.kind=='label' then ui.text(v.x,v.y,text,t.text,t.bg,v.w)
       elseif v.kind=='banner' and api.config().mode=='render' then
@@ -788,7 +834,7 @@ return function(api,path)
       end
     end
     focus=math.max(1,math.min(focus,#controls))
-    ui.text(1,h,'Tab: next  Enter: activate  F4: close',t.muted,t.panel,w)
+    if state.status~='' then ui.text(1,h,state.status or 'Tab: next  Enter: activate  F4: close',t.muted,t.panel,w) end
   end
   local function activate(control)
     if not control then return end
@@ -801,6 +847,9 @@ return function(api,path)
     if e=='sacabam_close' or e=='terminate' then break
     elseif e=='timer' and timers[a] then
       local timer=timers[a]; timers[a]=nil; state.tick(timer); timers[os.startTimer(timer.interval)]=timer
+    elseif e=='term_resize' then state.dispatch('resize')
+    elseif e=='key' and state.handlers.key then
+      state.vars.key=keys.getName(a) or ''; state.vars.held=b==true; state.dispatch('key')
     elseif e=='key' then
       if a==keys.tab then
         local backwards=api.keyDown(keys.leftShift) or api.keyDown(keys.rightShift)
@@ -808,6 +857,7 @@ return function(api,path)
       elseif a==keys.enter then activate(control)
       elseif a==keys.space and control and control.kind~='input' and control.kind~='password' then activate(control)
       elseif a==keys.backspace and control and (control.kind=='input' or control.kind=='password') then state.vars[control.bind]=tostring(state.vars[control.bind]):sub(1,-2); state.dispatch(control.id) end
+    elseif e=='char' and state.handlers.char then state.vars.char=a; state.dispatch('char')
     elseif (e=='char' or e=='paste') and control and (control.kind=='input' or control.kind=='password') then
       state.vars[control.bind]=(tostring(state.vars[control.bind])..a:gsub('[%c]','')):sub(1,1024); state.dispatch(control.id)
     elseif e=='mouse_click' then
@@ -2277,6 +2327,113 @@ local path = ...
 if not path then print('Usage: pistachio <file.pist>'); return end
 assert(ccsacabam,'Run this command inside CCSacabam').launch('pistachio',path)
 ]]},
+  ["examples/pmatrix.lua"]={sha256="694d88ca57291da96db3fafcca5045c0b14e0f3cebdc419b3e26026d2c814a89",data=[[
+-- The animation lives in pmatrix.pist; this is just the shell entry point.
+local option=...
+if option then
+  if option~='--help' and option~='-h' then printError('Unknown option: '..option) end
+  print('pmatrix - Matrix rain in Pistachio Script')
+  print('Space pause | Up/Down speed | 1-9 speed')
+  print('C colour | H help | Q/Esc quit | F6 maximise')
+  return
+end
+local source=fs.combine(fs.getDir(shell.getRunningProgram()),'pmatrix.pist')
+assert(ccsacabam,'Run pmatrix inside CCSacabam').launch('pistachio','/'..source)
+]]},
+  ["examples/pmatrix.pist"]={sha256="8adc381bc66521482242491fdde279134da385e16306d3d1e68fb5d276e3953c",data=[[
+# pmatrix: a cmatrix-inspired rain demo, implemented entirely in Pistachio.
+# The .lua command only opens this file. Edit this source in Code Editor.
+app "pmatrix"
+let heads = array(80, 0)
+let tails = array(80, 0)
+let rates = array(80, 0)
+let streams = array(80, "")
+let palette = peanut("[\"lime\",\"cyan\",\"red\",\"magenta\",\"yellow\",\"white\"]")
+let shadows = peanut("[\"green\",\"blue\",\"brown\",\"purple\",\"orange\",\"gray\"]")
+let glyphs = "01:7Z*+4/9<>B2X=6@A%5&!30;8?V|1S-4C7D90+K2N:5R6T8W3Y"
+let speed = 4
+let tint = 1
+let paused = false
+let help = false
+
+function seed
+  set columns = min(80, floor((width + 1) / 2))
+  repeat columns
+    set heads[index] = random(-height, height)
+    set tails[index] = random(6, max(7, min(24, height)))
+    set rates[index] = random(1, 3)
+    set start = random(1, len(glyphs) - tails[index])
+    set streams[index] = slice(glyphs, start, start + tails[index] - 1)
+  end
+end
+call seed
+
+every 0.1
+  if not paused
+    repeat columns
+      set heads[index] = heads[index] + speed * rates[index] / 6
+      set pick = random(1, len(glyphs))
+      set streams[index] = slice(streams[index], 2) .. slice(glyphs, pick, pick)
+      if heads[index] - tails[index] > height
+        set heads[index] = -random(1, max(2, height))
+        set rates[index] = random(1, 3)
+      end
+    end
+  end
+end
+
+on resize
+  call seed
+end
+on key
+  if key == "q" or key == "escape"
+    quit
+  end
+  if key == "space" and not held
+    set paused = not paused
+  end
+  if key == "up" or key == "equals" or key == "numPadAdd"
+    set speed = min(9, speed + 1)
+  end
+  if key == "down" or key == "minus" or key == "numPadSubtract"
+    set speed = max(1, speed - 1)
+  end
+  if key == "c" and not held
+    set tint = tint % len(palette) + 1
+  end
+  if key == "h" and not held
+    set help = not help
+  end
+end
+on char
+  if num(char) >= 1 and num(char) <= 9
+    set speed = num(char)
+  end
+end
+
+background "black"
+status ""
+frame
+  set bright = color and palette[tint] or "lightGray"
+  set dim = color and shadows[tint] or "gray"
+  repeat columns
+    set x = index * 2 - 1
+    set y = floor(heads[index])
+    set tail = tails[index]
+    column x (y-tail+1) dim "black" slice(streams[index], 1, tail - 4)
+    column x (y-3) bright "black" slice(streams[index], tail - 3, tail - 1)
+    text x y "white" "black" slice(streams[index], tail, tail)
+  end
+  if paused
+    text 1 1 "black" "white" " PAUSED | Space resumes "
+  end
+  if help
+    text 1 (height-2) "white" "black" "Space pause  Up/Down speed"
+    text 1 (height-1) "white" "black" "C colour  H help  Q quit"
+    text 1 height "white" "black" "Speed {speed}/9 | Pistachio"
+  end
+end
+]]},
   ["examples/sealed-note.pist"]={sha256="8974158b3668272dcb76e12fc7f10b52ed12175adfe7a8dfd61f73bbdceca4ca",data=[[
 # Only the encrypted envelope is saved, even if drive encryption is OFF.
 # Keep the passphrase yourself; it is never saved by this example.
@@ -2340,7 +2497,7 @@ end
   </script>
 </cashew>
 ]]},
-  ["system/cashew.lua"]={sha256="fcff3d140862daacdec4594499e5e2bd2e5c6be5ce48200572bca7d35eb70e76",data=[[
+  ["system/cashew.lua"]={sha256="e62da7ab6081e1216c45073a0d931092576a8929df693d57d8abeb3027d20722",data=[[
 -- Cashew: a deliberately small HTML-like document format with Pistachio events.
 local C={}
 local allowed={cashew=true,html=true,head=true,body=true,main=true,div=true,title=true,h1=true,h2=true,p=true,
@@ -2418,7 +2575,7 @@ function C.text(node,variables)
 end
 function C.safeScript(ast)
   local functions={str=true,num=true,len=true,min=true,max=true,abs=true,floor=true,round=true,
-    peanut=true,encode=true,upper=true,lower=true}
+    peanut=true,encode=true,upper=true,lower=true,array=true,random=true,slice=true}
   local function expression(node)
     if type(node)~='table' then return end
     if node.tag=='call' then assert(functions[node.name],'Web pages cannot call '..node.name) end
@@ -2428,7 +2585,7 @@ function C.safeScript(ast)
     label=true,button=true,input=true,checkbox=true,progress=true,banner=true,panel=true}
   for _,node in ipairs(ast) do
     assert(safe[node.op],'Web pages cannot use '..node.op)
-    for _,name in ipairs({'value','x','y','width','height'}) do expression(node[name]) end
+    for _,name in ipairs({'target','value','x','y','width','height','fg','bg'}) do expression(node[name]) end
     if node.body then C.safeScript(node.body) end
     if node.other then C.safeScript(node.other) end
   end
@@ -2436,7 +2593,7 @@ function C.safeScript(ast)
 end
 return C
 ]]},
-  ["system/config.lua"]={sha256="269fc74464b36849669a4bf7b1203879ed4177d35076e3e720f3ccdee5198867",data=[=[
+  ["system/config.lua"]={sha256="292e9f5d88dd8afa1aef695cf1749266c06d810a9f2f56df093493625704d46e",data=[=[
 local M = {}
 M.version = "1.0.0"
 M.colorFields={
@@ -2455,6 +2612,7 @@ M.colorFields={
   {'resize','Active resize grip'},{'resizeInactive','Inactive resize grip'},{'resizeText','Resize symbol'},
 }
 M.colorNames={'White','Orange','Magenta','Light blue','Yellow','Lime','Pink','Gray','Light gray','Cyan','Purple','Blue','Brown','Green','Red','Black'}
+M.wallpaperPatterns={'mountains','dots','grid','diagonal','checker','waves','stars','circuit'}
 function M.profile(c) return c.mode=='basic' and 'basic' or c.theme=='light' and 'light' or 'dark' end
 local function validColor(value)
   if type(value)~='number' then return false end
@@ -2486,8 +2644,10 @@ function M.normalize(c, caps)
       for _,field in ipairs(M.colorFields) do if validColor(source[field[1]]) then custom[profile][field[1]]=source[field[1]] end end
     end
   end
+  local pattern=mode=='basic' and 'dots' or 'mountains'
+  for _,name in ipairs(M.wallpaperPatterns) do if c.wallpaperPattern==name then pattern=name end end
   return { mode = mode, theme = c.theme == "light" and "light" or "dark",
-    wallpaper = c.wallpaper ~= false, clock24 = c.clock24 ~= false,
+    wallpaper = c.wallpaper ~= false, wallpaperPattern=pattern, clock24 = c.clock24 ~= false,
     welcome = c.welcome ~= false, version = M.version, hiddenShortcuts=hidden,
     skipTypedConfirmation = c.skipTypedConfirmation == true,customColors=custom }
 end
@@ -2511,7 +2671,7 @@ local function defaults(config)
 end
 function M.theme(config)
   local t=defaults(config); local mono=config.mode=='basic'
-  t.desktopText=t.text; t.wallpaperFar=mono and t.muted or colors.cyan; t.wallpaperNear=colors.black
+  t.desktopText=t.text; t.wallpaperFar=mono and t.muted or colors.cyan; t.wallpaperNear=mono and colors.gray or colors.black
   t.bar=mono and t.bg or t.accent; t.barText=mono and t.text or t.onAccent
   t.folder=mono and t.text or colors.yellow
   t.title=mono and t.accent or t.frame; t.titleText=mono and t.onAccent or t.frameText
@@ -3119,7 +3279,7 @@ function G.form(title)
 end
 return G
 ]]},
-  ["system/kernel.lua"]={sha256="ad62e5b65f77442e180682c02ef8c2f30066034ce465f33e9d3c6b00071f7bb7",data=[=[
+  ["system/kernel.lua"]={sha256="e93a0ee1c4f3524a38e53682d623aaf808316313266ca2da1c3ae06fc1e218ef",data=[=[
 local K = {}
 local unpack = table.unpack or unpack
 local input = { char=true, key=true, key_up=true, paste=true, mouse_click=true,
@@ -3358,24 +3518,12 @@ function K.new(ctx)
     local previous=term.current(); term.redirect(self.frame)
     local t=self.theme(); UI.clear(t)
     UI.fill(1,2,self.width,self.height-2,t.desktop)
-    if ctx.config.mode=="basic" and ctx.config.wallpaper then
-      -- Sparse stippling gives the desktop its own texture on monochrome screens.
-      for y=2,self.height-1,2 do
-        for x=2+(math.floor(y/2)%2)*2,self.width,4 do UI.text(x,y,".",t.wallpaperFar,t.desktop) end
-      end
-    end
-    if ctx.config.mode=="render" and ctx.config.wallpaper then
+    if ctx.config.wallpaper then
+      local wallpaper=ctx.load('system/wallpaper')
       if not self.wallpaper then
-        local b=Pixels.new(self.width*2,(self.height-2)*3,t.desktop)
-        for x=1,b.w do
-          local ridge=math.floor(b.h*.56+math.sin(x/15)*7+math.sin(x/7)*3)
-          for y=math.max(1,ridge),b.h do b.set(x,y,t.wallpaperFar) end
-          local front=math.floor(b.h*.78+math.sin(x/21+2)*6)
-          for y=math.max(1,front),b.h do b.set(x,y,t.wallpaperNear) end
-        end
-        self.wallpaper=b
+        self.wallpaper=wallpaper.build(ctx.config,t,self.width,self.height-2,Pixels)
       end
-      Pixels.draw(self.wallpaper,term,1,2)
+      wallpaper.draw(self.wallpaper,Pixels,1,2)
     end
     local mono=ctx.config.mode=="basic"
     local barBG,barFG=t.bar,t.barText
@@ -3920,9 +4068,9 @@ end
 P.parse=P.decode; P.stringify=P.encode
 return P
 ]]},
-  ["system/pistachio.lua"]={sha256="d9b13b5b6f066fd26554f39bc0c944b9575246486e826ba863bd0db99aef9552",data=[[
+  ["system/pistachio.lua"]={sha256="3754742410e69dd13ab8e9283502ae8f2df22dbce647d7191b2e3b11baf308f2",data=[[
 -- Pistachio Script: parsed application language, never evaluated as Lua.
-local P={version='1.0'}
+local P={version='1.1'}
 local function fail(line,message) error('Pistachio line '..tostring(line)..': '..message,0) end
 local function tokens(source,line)
   local out={}; local i=1
@@ -4031,15 +4179,33 @@ function P.parse(source)
         if not op then fail(line,'Expected a statement') end
         local node={op=op,line=line}
         local function expr(s) return P.expression(s,line) end
-        if op=='if' or op=='repeat' or op=='on' or op=='every' or op=='function' then
+        if op=='if' or op=='repeat' or op=='on' or op=='every' or op=='function' or op=='frame' then
           if op=='on' or op=='function' then
             if not rest:match('^[%a_][%w_]*$') then fail(line,'Expected handler name') end
             node.name=rest
+          elseif op=='frame' then assert(rest=='','frame takes no arguments')
           else node.value=expr(rest) end
           local stop; node.body,stop=block(depth+1)
           if stop=='else' and op=='if' then node.other,stop=block(depth+1) end
           if stop~='end' then fail(line,'Missing end for '..op) end
-        elseif op=='let' or op=='set' then
+        elseif op=='set' then
+          -- Find the assignment outside subscripts/strings (which may contain ==).
+          local depth,quoted,escaped,split=0,false,false
+          for i=1,#rest do
+            local c=rest:sub(i,i)
+            if quoted then
+              if escaped then escaped=false elseif c=='\\' then escaped=true elseif c=='"' then quoted=false end
+            elseif c=='"' then quoted=true
+            elseif c=='[' or c=='(' then depth=depth+1
+            elseif c==']' or c==')' then depth=depth-1
+            elseif c=='=' and depth==0 then split=i; break end
+          end
+          if not split then fail(line,'Use set name[index] = expression or set name = expression') end
+          node.target=expr(rest:sub(1,split-1)); node.value=expr(rest:sub(split+1))
+          local root=node.target
+          while root.tag=='index' do root=root.object end
+          if root.tag~='variable' then fail(line,'Assignment needs a variable or its field/index') end
+        elseif op=='let' then
           node.name,rest=rest:match('^([%a_][%w_]*)%s*=%s*(.+)$')
           if not node.name then fail(line,'Use '..op..' name = expression') end
           node.value=expr(rest)
@@ -4051,6 +4217,10 @@ function P.parse(source)
             if not text:match('^[%a_][%w_]*$') then fail(line,op..' needs a variable name') end
             node.bind=text
           end
+        elseif op=='text' or op=='column' then
+          local x,y,fg,bg,value=rest:match('^(%S+)%s+(%S+)%s+(%S+)%s+(%S+)%s+(.+)$')
+          if not x then fail(line,'Use '..op..' x y foreground background expression') end
+          node.x,node.y,node.fg,node.bg,node.value=expr(x),expr(y),expr(fg),expr(bg),expr(value)
         elseif op=='panel' then
           local id,x,y,w,h=rest:match('^([%a_][%w_]*)%s+(%S+)%s+(%S+)%s+(%S+)%s+(%S+)$')
           if not id then fail(line,'Use panel id x y width height') end
@@ -4063,7 +4233,7 @@ function P.parse(source)
           local name,path=rest:match('^([%a_][%w_]*)%s+(.+)$')
           if not name then fail(line,'Use save variable "path.peanut"') end
           node.name,node.value=name,expr(path)
-        elseif op=='app' or op=='notify' then node.value=expr(rest)
+        elseif op=='app' or op=='notify' or op=='background' or op=='status' then node.value=expr(rest)
         elseif op=='call' then
           if not rest:match('^[%a_][%w_]*$') then fail(line,'Expected function name') end; node.name=rest
         elseif op=='quit' then if rest~='' then fail(line,'quit takes no arguments') end
@@ -4084,7 +4254,22 @@ function P.runtime(ast,api,peanut)
   end
   local builtins={str=tostring,num=function(v) return tonumber(v) or 0 end,len=function(v) return #v end,
     min=math.min,max=math.max,abs=math.abs,floor=math.floor,round=function(n) return math.floor(n+0.5) end,
-    peanut=peanut.decode,encode=peanut.encode,upper=string.upper,lower=string.lower}
+    peanut=peanut.decode,encode=peanut.encode,upper=string.upper,lower=string.lower,slice=string.sub}
+  local function integer(n,low,high)
+    assert(type(n)=='number' and n==math.floor(n) and n>=low and n<=high,'Integer out of range')
+    return n
+  end
+  builtins.random=function(low,high) return math.random(integer(low,-1000000000,1000000000),integer(high,low,1000000000)) end
+  builtins.array=function(count,value)
+    integer(count,0,4096); assert(type(value)~='table','Array fill must be a scalar')
+    state.budget=state.budget-count; assert(state.budget>=0,'Instruction limit reached')
+    local out=peanut.array(); for i=1,count do out[i]=value==nil and 0 or value end; return out
+  end
+  local function displayColor(value)
+    if type(value)=='string' then value=colors[value] end
+    for i=0,15 do if value==2^i then return value end end
+    error('Expected a ComputerCraft color name or value',0)
+  end
   local box
   local function crypto()
     assert(api.load,'Encryption functions are available only to native programs')
@@ -4130,21 +4315,40 @@ function P.runtime(ast,api,peanut)
     end
   end
   state.eval=eval
-  local visual={label=true,button=true,input=true,password=true,checkbox=true,progress=true,banner=true,panel=true}
+  local visual={label=true,button=true,input=true,password=true,checkbox=true,progress=true,banner=true,panel=true,text=true,column=true}
+  local sizes=setmetatable({},{__mode='k'})
+  local function assign(target,value)
+    if target.tag=='variable' then state.vars[target.name]=value; return end
+    local object,key=eval(target.object),eval(target.key)
+    assert(type(object)=='table' and object~=peanut.null,'Assignment needs an array or object')
+    if type(key)=='number' then integer(key,1,4096)
+    else assert(type(key)=='string' and #key<=256,'Invalid field name') end
+    if not sizes[object] then local count=0; for _ in pairs(object) do count=count+1 end; sizes[object]=count end
+    local count=sizes[object]+(object[key]==nil and 0 or -1)+(value==nil and 0 or 1)
+    assert(count<=4096,'Object exceeds 4096 entries'); sizes[object]=count; object[key]=value
+  end
   local run
   run=function(nodes,phase)
     for _,n in ipairs(nodes) do
       state.budget=state.budget-1; if state.budget<0 then fail(n.line,'Instruction limit reached') end
       local ok,err=pcall(function()
-        if n.op=='if' then run(eval(n.value) and n.body or n.other or {},phase)
+        if n.op=='frame' then if phase=='render' then run(n.body,'frame') end
+        elseif n.op=='if' then run(eval(n.value) and n.body or n.other or {},phase)
         elseif n.op=='repeat' then
           local count=math.floor(tonumber(eval(n.value)) or -1); assert(count>=0 and count<=1000,'repeat range is 0..1000')
+          local previous=state.vars.index
           for i=1,count do state.vars.index=i; run(n.body,phase) end
+          state.vars.index=previous
         elseif visual[n.op] then
-          if phase=='render' then
-            local widget={kind=n.op,id=n.name,x=math.floor(eval(n.x)),y=math.floor(eval(n.y)),w=math.floor(eval(n.width)),bind=n.bind}
+          if phase=='render' or phase=='frame' then
+            local widget={kind=n.op,id=n.name,x=integer(math.floor(eval(n.x)),-1000000,1000000),y=integer(math.floor(eval(n.y)),-1000000,1000000),w=n.width and math.floor(eval(n.width)) or 1,bind=n.bind}
             if n.op=='panel' then widget.h=math.floor(eval(n.height)) else widget.value=eval(n.value) end
+            if n.fg then widget.fg=displayColor(eval(n.fg)); widget.bg=displayColor(eval(n.bg)) end
             state.widgets[#state.widgets+1]=widget
+          end
+        elseif n.op=='background' or n.op=='status' then
+          if phase=='render' or phase=='frame' then
+            local value=eval(n.value); state[n.op]=n.op=='background' and displayColor(value) or tostring(value)
           end
         elseif n.op=='on' or n.op=='function' then if phase=='init' then state.handlers[n.name]=n.body end
         elseif n.op=='every' then
@@ -4155,7 +4359,7 @@ function P.runtime(ast,api,peanut)
         elseif phase~='render' then
           if n.op=='let' then
             if phase=='init' then state.vars[n.name]=eval(n.value) end
-          elseif n.op=='set' then state.vars[n.name]=eval(n.value)
+          elseif n.op=='set' then assign(n.target,eval(n.value))
           elseif n.op=='app' then state.title=tostring(eval(n.value))
           elseif n.op=='notify' then api.notify(tostring(eval(n.value)))
           elseif n.op=='call' then assert(state.handlers[n.name],'Unknown function: '..n.name); run(state.handlers[n.name],phase)
@@ -4168,7 +4372,7 @@ function P.runtime(ast,api,peanut)
     end
   end
   function state.initialize() state.budget=10000; run(ast,'init') end
-  function state.layout() state.budget=10000; state.widgets={}; run(ast,'render'); return state.widgets end
+  function state.layout() state.budget=10000; state.widgets={}; state.background=nil; state.status=nil; run(ast,'render'); return state.widgets end
   function state.dispatch(name) state.budget=10000; if state.handlers[name] then run(state.handlers[name],'event') end end
   function state.tick(timer) state.budget=10000; run(timer.body,'event') end
   return state
@@ -4240,9 +4444,10 @@ function M.draw(b, target, ox, oy, maxW, maxH)
 end
 return M
 ]]},
-  ["system/programs.lua"]={sha256="54a449815afc175218987e816cffaa7870056b1814a9cd2032d0509f307fda92",data=[[
--- Refresh shipped launchers after an upgrade without replacing user edits.
+  ["system/programs.lua"]={sha256="ab701083b66825d619d56ebc1bf2c5f61a62e9f87b1f0aef1be523ef951d583a",data=[[
+-- Add/refresh shipped commands after an upgrade without replacing user edits.
 local M={}
+local bundled={'pistachio.lua','europa.lua','pmatrix.lua','pmatrix.pist'}
 local legacy={
   ['pistachio.lua']='70badd04b0c3bdb0e7568a6afaf5e984e1fd06723ddc3e10947877940eef97f8',
   ['europa.lua']='26e0c24b08490d6cfe4cafd29179052fdc70d584b2d7cd26c8fd543dc069d815',
@@ -4251,7 +4456,8 @@ function M.update(root,storage,crypto)
   local record=fs.combine(root,'home/.system/bundled-commands.tbl')
   local previous=storage.load(record,{})
   local nextHashes={}; local changed=false
-  for name,oldHash in pairs(legacy) do
+  for _,name in ipairs(bundled) do
+    local oldHash=legacy[name]
     local source=assert(storage.read(fs.combine(root,'examples/'..name)))
     local hash=crypto.hex(crypto.sha256(source))
     local destination=fs.combine(root,'home/Programs/'..name)
@@ -4426,7 +4632,7 @@ function M.name(name)
 end
 return M
 ]]},
-  ["system/syntax.lua"]={sha256="51bd0e3e6c1033f7f08f8a69d37ef260e04a3a0552dcd88020bd52be1fe5444d",data=[[
+  ["system/syntax.lua"]={sha256="d22815045751860c6efcb8b7bba5d3b92399dea6970255d106ad50cab170fa47",data=[[
 -- Editor lexing/completion only. Buffer contents are never executed.
 local S={}
 local function words(text)
@@ -4435,13 +4641,13 @@ end
 local keywords={
   lua=words('and break do else elseif end false for function goto if in local nil not or repeat return then true until while'),
   peanut=words('true false null'),
-  pistachio=words('app let set if else end repeat on every function call quit notify load save label banner button input password checkbox progress panel and or not true false null'),
+  pistachio=words('app let set if else end repeat on every function call quit notify load save label banner button input password checkbox progress panel frame background status text column and or not true false null'),
   cashew=words('cashew html head body main div title h1 h2 p pre a button input label br hr script'),
 }
 local builtins={
   lua=words('assert error ipairs next pairs pcall print printError read require select tonumber tostring type unpack write xpcall'),
   peanut={},
-  pistachio=words('advanced color render width height index str num len min max abs floor round upper lower peanut encode seal unseal'),
+  pistachio=words('advanced color render width height index key held char str num len min max abs floor round upper lower peanut encode seal unseal array random slice'),
   cashew=words('title href id name value type'),
 }
 local modules=words('fs term os math string table textutils shell colors colours keys http rednet peripheral paintutils window turtle pocket vector settings parallel bit32')
@@ -5022,6 +5228,63 @@ function V.new(crypto,storage,path)
   return self
 end
 return V
+]]},
+  ["system/wallpaper.lua"]={sha256="a8cabe195e209c64023b36bde3bbd043a9a0828e6ce3c788635a18f53c7a3194",data=[[
+-- Cached desktop textures: cell patterns everywhere, subpixels in render mode.
+local M={}
+local function sample(name,x,y,w,h)
+  if name=='mountains' then
+    if y>h*.78+math.sin(x/10+2)*2 then return 2,'#' end
+    if y>h*.56+math.sin(x/7)*2+math.sin(x/3) then return 1,':' end
+  elseif name=='dots' then
+    if math.floor(y)%2==0 and math.floor(x)%4==(math.floor(y/2)%2)*2 then return 1,'.' end
+  elseif name=='grid' then
+    local vertical=math.floor(x)%8==0; local horizontal=math.floor(y)%4==0
+    if vertical or horizontal then return 1,vertical and (horizontal and '+' or '|') or '-' end
+  elseif name=='diagonal' then
+    if (math.floor(x)+math.floor(y)*2)%8<2 then return 1,'/' end
+  elseif name=='checker' then
+    if (math.floor(x/4)+math.floor(y/2))%2==0 then return 1,':' end
+  elseif name=='waves' then
+    local wave=(y+math.sin(x/5)*2)%6
+    if wave<1 then return 1,'~' elseif wave>3 and wave<3.6 then return 2,'.' end
+  elseif name=='stars' then
+    local hash=(math.floor(x)*73+math.floor(y)*151+math.floor(x)*math.floor(y)*19)%127
+    if hash<3 then return 1,'+' elseif hash<9 then return 2,'.' end
+  elseif name=='circuit' then
+    local xx,yy=math.floor(x)%12,math.floor(y)%6
+    if xx==2 and yy<=3 then return 1,yy==3 and '+' or '|'
+    elseif yy==3 and xx>=2 and xx<=9 then return 1,xx==9 and 'o' or '-'
+    elseif xx==9 and yy==4 then return 2,'|' end
+  end
+  return 0,' '
+end
+function M.build(config,t,w,h,pixels)
+  local name=config.wallpaperPattern or (config.mode=='basic' and 'dots' or 'mountains')
+  if config.mode=='render' then
+    local canvas=pixels.new(w*2,h*3,t.desktop)
+    for y=1,canvas.h do for x=1,canvas.w do
+      local level=sample(name,x/2,y/3,w,h)
+      if level>0 then canvas.set(x,y,level==1 and t.wallpaperFar or t.wallpaperNear) end
+    end end
+    return {canvas=canvas}
+  end
+  local rows={}
+  for y=1,h do
+    local text,fg={},{}
+    for x=1,w do
+      local level,glyph=sample(name,x,y,w,h); text[x]=glyph
+      fg[x]=colors.toBlit(level==2 and t.wallpaperNear or t.wallpaperFar)
+    end
+    rows[y]={table.concat(text),table.concat(fg),string.rep(colors.toBlit(t.desktop),w)}
+  end
+  return {rows=rows}
+end
+function M.draw(image,pixels,x,y)
+  if image.canvas then pixels.draw(image.canvas,term,x,y)
+  else for i,row in ipairs(image.rows) do term.setCursorPos(x,y+i-1); term.blit(row[1],row[2],row[3]) end end
+end
+return M
 ]]},
   ["uninstall.lua"]={sha256="0b46240b3e35fc94921f127c489f6b43b21b9532a72e8fc19af4034f7ccd257e",data=[[
 -- Detach autostart without deleting the encrypted drive or installation.

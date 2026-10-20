@@ -16,6 +16,7 @@ M.colorFields={
   {'resize','Active resize grip'},{'resizeInactive','Inactive resize grip'},{'resizeText','Resize symbol'},
 }
 M.colorNames={'White','Orange','Magenta','Light blue','Yellow','Lime','Pink','Gray','Light gray','Cyan','Purple','Blue','Brown','Green','Red','Black'}
+M.wallpaperPatterns={'mountains','dots','grid','diagonal','checker','waves','stars','circuit'}
 function M.profile(c) return c.mode=='basic' and 'basic' or c.theme=='light' and 'light' or 'dark' end
 local function validColor(value)
   if type(value)~='number' then return false end
@@ -47,8 +48,10 @@ function M.normalize(c, caps)
       for _,field in ipairs(M.colorFields) do if validColor(source[field[1]]) then custom[profile][field[1]]=source[field[1]] end end
     end
   end
+  local pattern=mode=='basic' and 'dots' or 'mountains'
+  for _,name in ipairs(M.wallpaperPatterns) do if c.wallpaperPattern==name then pattern=name end end
   return { mode = mode, theme = c.theme == "light" and "light" or "dark",
-    wallpaper = c.wallpaper ~= false, clock24 = c.clock24 ~= false,
+    wallpaper = c.wallpaper ~= false, wallpaperPattern=pattern, clock24 = c.clock24 ~= false,
     welcome = c.welcome ~= false, version = M.version, hiddenShortcuts=hidden,
     skipTypedConfirmation = c.skipTypedConfirmation == true,customColors=custom }
 end
@@ -72,7 +75,7 @@ local function defaults(config)
 end
 function M.theme(config)
   local t=defaults(config); local mono=config.mode=='basic'
-  t.desktopText=t.text; t.wallpaperFar=mono and t.muted or colors.cyan; t.wallpaperNear=colors.black
+  t.desktopText=t.text; t.wallpaperFar=mono and t.muted or colors.cyan; t.wallpaperNear=mono and colors.gray or colors.black
   t.bar=mono and t.bg or t.accent; t.barText=mono and t.text or t.onAccent
   t.folder=mono and t.text or colors.yellow
   t.title=mono and t.accent or t.frame; t.titleText=mono and t.onAccent or t.frameText

@@ -61,6 +61,10 @@ Advanced computers also support clicking, scrolling, dragging title bars, and re
 
 Included apps: Files with Trash, Editor with undo and search, Code Editor, Terminal, Sketch with a rotating 3D demo, Pistachio, your original Chat+, Callisto, Jupiter, Settings, Tasks, Devices, and Guide. Chat+ is copied into `Programs` and runs as a normal Lua program.
 
+Run **`pmatrix`** in Terminal for Matrix rain written in Pistachio Script. Space pauses, Up/Down or 1–9 set speed, C changes color, H shows help, Q exits, and F6 maximizes. It uses green trails on advanced computers and grayscale on basic computers. Open `/Programs/pmatrix.pist` in Code Editor to change the animation; the Lua launcher only opens that source. Existing installations receive both files on upgrade without overwriting edited copies.
+
+**Settings → Customisation → W (Wallpaper)** offers mountains, dots, grid, diagonal, checker, waves, stars, and circuit patterns, with a preview and Apply/Cancel. All patterns work in basic and color modes; render mode uses subpixels. Wallpaper colors use the existing Desktop background, Wallpaper back, and Wallpaper front settings. General → Wallpaper turns the pattern off.
+
 ## Code Editor
 
 Open **Code Editor** from Apps, or select a source file in Files and press **E**. Lua and Pistachio files still run when opened normally; Peanut and Cashew files open for editing. Chat+ is run from Terminal with `chatplus host <room>` or `chatplus join <room> <nickname>`.

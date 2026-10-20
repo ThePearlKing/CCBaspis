@@ -2,6 +2,7 @@
 return function(api)
   local ui=api.ui; local config=api.load('system/config')
   local self={editing=false}; local selected,offset,color=1,0,1; local rows=1
+  local pattern=1; local patternImage
   local neutral=config.theme({mode='basic'})
   local confirmApi={}; for k,v in pairs(api) do confirmApi[k]=v end
   confirmApi.theme=function() return neutral end
@@ -22,6 +23,17 @@ return function(api)
   local function apply()
     if store(config.colorFields[selected][1],2^(color-1)) then self.editing=false end
   end
+  local function beginPattern()
+    pattern=1
+    for i,name in ipairs(config.wallpaperPatterns) do if name==api.config().wallpaperPattern then pattern=i end end
+    self.editing='pattern'; patternImage=nil
+  end
+  local function applyPattern()
+    local c=api.config(); local previous,enabled=c.wallpaperPattern,c.wallpaper
+    c.wallpaperPattern=config.wallpaperPatterns[pattern]; c.wallpaper=true
+    local ok,err=api.saveConfig()
+    if ok then self.editing=false else api.config().wallpaperPattern=previous; api.config().wallpaper=enabled; api.notify(err) end
+  end
   local function swatch(x,y,width,n,active,label)
     local value=2^(n-1)
     local r,g,b=term.getPaletteColor(value)
@@ -31,7 +43,22 @@ return function(api)
   function self.draw()
     local w,h=term.getSize(); local t=api.theme()
     ui.fill(1,3,w,h-2,neutral.bg)
-    if self.editing then
+    if self.editing=='pattern' then
+      ui.text(1,3,'Wallpaper pattern',neutral.text,neutral.bg,w)
+      ui.text(1,4,'< '..config.wallpaperPatterns[pattern]..' >',neutral.onAccent,neutral.accent,w)
+      if h>=8 then
+        local key=pattern..':'..w..':'..h
+        if not patternImage or patternImage.key~=key then
+          local c={mode=api.config().mode,wallpaperPattern=config.wallpaperPatterns[pattern]}
+          patternImage={key=key,image=api.load('system/wallpaper').build(c,t,w,h-7,api.load('system/pixels'))}
+        end
+        api.load('system/wallpaper').draw(patternImage.image,api.load('system/pixels'),1,5)
+      end
+      local split=math.floor(w/2)
+      ui.text(1,h-1,'[Apply]',neutral.onAccent,neutral.accent,split)
+      ui.text(split+1,h-1,'[Cancel]',neutral.text,neutral.bg,w-split)
+      ui.text(1,h,'Arrows / Enter / F5',neutral.text,neutral.bg,w)
+    elseif self.editing then
       local field=config.colorFields[selected]
       ui.text(1,3,field[2],neutral.text,neutral.bg,w)
       if h>=10 then
@@ -65,14 +92,26 @@ return function(api)
         end
       end
       ui.text(1,h-2,config.colorNames[index(t[config.colorFields[selected][1]])]..' / '..config.profile(api.config()),neutral.text,neutral.bg,w)
-      ui.text(1,h-1,' Sample [selected] ',t.text,t.bg,w)
-      ui.text(9,h-1,'[selected]',t.onAccent,t.accent,math.min(10,w-8))
+      ui.text(1,h-1,'[W Wallpaper: '..api.config().wallpaperPattern..']',neutral.text,neutral.bg,w)
       ui.text(1,h,'Enter edit  R reset',neutral.text,neutral.bg,w)
     end
   end
   function self.event(e,a,b,c)
     local w,h=term.getSize()
-    if self.editing then
+    if self.editing=='pattern' then
+      local step=0
+      if e=='key' then
+        if a==keys.escape or a==keys.f5 then self.editing=false
+        elseif a==keys.enter then applyPattern()
+        elseif a==keys.left or a==keys.up then step=-1
+        elseif a==keys.right or a==keys.down then step=1 end
+      elseif e=='mouse_scroll' then step=a
+      elseif e=='mouse_click' and a==1 then
+        if c==h-1 then if b<=math.floor(w/2) then applyPattern() else self.editing=false end
+        elseif c==4 then step=b<=math.floor(w/2) and -1 or 1 end
+      end
+      pattern=((pattern-1+step)%#config.wallpaperPatterns)+1
+    elseif self.editing then
       if e=='key' then
         if a==keys.f5 or a==keys.escape then self.editing=false
         elseif a==keys.enter then apply()
@@ -94,6 +133,7 @@ return function(api)
       elseif a==keys.home then selected=1
       elseif a==keys['end'] then selected=#config.colorFields
       elseif a==keys.enter then begin() end
+    elseif (e=='char' and a:lower()=='w') or (e=='mouse_click' and a==1 and c==h-1) then beginPattern()
     elseif e=='char' and a:lower()=='r' then
       if ui.confirm(confirmApi,'Reset '..config.profile(api.config())..' colours?') then store() end
     elseif e=='mouse_click' and a==1 and c>=3 and c<3+rows and config.colorFields[offset+c-2] then

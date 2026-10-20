@@ -1,5 +1,5 @@
 -- Pistachio Script: parsed application language, never evaluated as Lua.
-local P={version='1.0'}
+local P={version='1.1'}
 local function fail(line,message) error('Pistachio line '..tostring(line)..': '..message,0) end
 local function tokens(source,line)
   local out={}; local i=1
@@ -108,15 +108,33 @@ function P.parse(source)
         if not op then fail(line,'Expected a statement') end
         local node={op=op,line=line}
         local function expr(s) return P.expression(s,line) end
-        if op=='if' or op=='repeat' or op=='on' or op=='every' or op=='function' then
+        if op=='if' or op=='repeat' or op=='on' or op=='every' or op=='function' or op=='frame' then
           if op=='on' or op=='function' then
             if not rest:match('^[%a_][%w_]*$') then fail(line,'Expected handler name') end
             node.name=rest
+          elseif op=='frame' then assert(rest=='','frame takes no arguments')
           else node.value=expr(rest) end
           local stop; node.body,stop=block(depth+1)
           if stop=='else' and op=='if' then node.other,stop=block(depth+1) end
           if stop~='end' then fail(line,'Missing end for '..op) end
-        elseif op=='let' or op=='set' then
+        elseif op=='set' then
+          -- Find the assignment outside subscripts/strings (which may contain ==).
+          local depth,quoted,escaped,split=0,false,false
+          for i=1,#rest do
+            local c=rest:sub(i,i)
+            if quoted then
+              if escaped then escaped=false elseif c=='\\' then escaped=true elseif c=='"' then quoted=false end
+            elseif c=='"' then quoted=true
+            elseif c=='[' or c=='(' then depth=depth+1
+            elseif c==']' or c==')' then depth=depth-1
+            elseif c=='=' and depth==0 then split=i; break end
+          end
+          if not split then fail(line,'Use set name[index] = expression or set name = expression') end
+          node.target=expr(rest:sub(1,split-1)); node.value=expr(rest:sub(split+1))
+          local root=node.target
+          while root.tag=='index' do root=root.object end
+          if root.tag~='variable' then fail(line,'Assignment needs a variable or its field/index') end
+        elseif op=='let' then
           node.name,rest=rest:match('^([%a_][%w_]*)%s*=%s*(.+)$')
           if not node.name then fail(line,'Use '..op..' name = expression') end
           node.value=expr(rest)
@@ -128,6 +146,10 @@ function P.parse(source)
             if not text:match('^[%a_][%w_]*$') then fail(line,op..' needs a variable name') end
             node.bind=text
           end
+        elseif op=='text' or op=='column' then
+          local x,y,fg,bg,value=rest:match('^(%S+)%s+(%S+)%s+(%S+)%s+(%S+)%s+(.+)$')
+          if not x then fail(line,'Use '..op..' x y foreground background expression') end
+          node.x,node.y,node.fg,node.bg,node.value=expr(x),expr(y),expr(fg),expr(bg),expr(value)
         elseif op=='panel' then
           local id,x,y,w,h=rest:match('^([%a_][%w_]*)%s+(%S+)%s+(%S+)%s+(%S+)%s+(%S+)$')
           if not id then fail(line,'Use panel id x y width height') end
@@ -140,7 +162,7 @@ function P.parse(source)
           local name,path=rest:match('^([%a_][%w_]*)%s+(.+)$')
           if not name then fail(line,'Use save variable "path.peanut"') end
           node.name,node.value=name,expr(path)
-        elseif op=='app' or op=='notify' then node.value=expr(rest)
+        elseif op=='app' or op=='notify' or op=='background' or op=='status' then node.value=expr(rest)
         elseif op=='call' then
           if not rest:match('^[%a_][%w_]*$') then fail(line,'Expected function name') end; node.name=rest
         elseif op=='quit' then if rest~='' then fail(line,'quit takes no arguments') end
@@ -161,7 +183,22 @@ function P.runtime(ast,api,peanut)
   end
   local builtins={str=tostring,num=function(v) return tonumber(v) or 0 end,len=function(v) return #v end,
     min=math.min,max=math.max,abs=math.abs,floor=math.floor,round=function(n) return math.floor(n+0.5) end,
-    peanut=peanut.decode,encode=peanut.encode,upper=string.upper,lower=string.lower}
+    peanut=peanut.decode,encode=peanut.encode,upper=string.upper,lower=string.lower,slice=string.sub}
+  local function integer(n,low,high)
+    assert(type(n)=='number' and n==math.floor(n) and n>=low and n<=high,'Integer out of range')
+    return n
+  end
+  builtins.random=function(low,high) return math.random(integer(low,-1000000000,1000000000),integer(high,low,1000000000)) end
+  builtins.array=function(count,value)
+    integer(count,0,4096); assert(type(value)~='table','Array fill must be a scalar')
+    state.budget=state.budget-count; assert(state.budget>=0,'Instruction limit reached')
+    local out=peanut.array(); for i=1,count do out[i]=value==nil and 0 or value end; return out
+  end
+  local function displayColor(value)
+    if type(value)=='string' then value=colors[value] end
+    for i=0,15 do if value==2^i then return value end end
+    error('Expected a ComputerCraft color name or value',0)
+  end
   local box
   local function crypto()
     assert(api.load,'Encryption functions are available only to native programs')
@@ -207,21 +244,40 @@ function P.runtime(ast,api,peanut)
     end
   end
   state.eval=eval
-  local visual={label=true,button=true,input=true,password=true,checkbox=true,progress=true,banner=true,panel=true}
+  local visual={label=true,button=true,input=true,password=true,checkbox=true,progress=true,banner=true,panel=true,text=true,column=true}
+  local sizes=setmetatable({},{__mode='k'})
+  local function assign(target,value)
+    if target.tag=='variable' then state.vars[target.name]=value; return end
+    local object,key=eval(target.object),eval(target.key)
+    assert(type(object)=='table' and object~=peanut.null,'Assignment needs an array or object')
+    if type(key)=='number' then integer(key,1,4096)
+    else assert(type(key)=='string' and #key<=256,'Invalid field name') end
+    if not sizes[object] then local count=0; for _ in pairs(object) do count=count+1 end; sizes[object]=count end
+    local count=sizes[object]+(object[key]==nil and 0 or -1)+(value==nil and 0 or 1)
+    assert(count<=4096,'Object exceeds 4096 entries'); sizes[object]=count; object[key]=value
+  end
   local run
   run=function(nodes,phase)
     for _,n in ipairs(nodes) do
       state.budget=state.budget-1; if state.budget<0 then fail(n.line,'Instruction limit reached') end
       local ok,err=pcall(function()
-        if n.op=='if' then run(eval(n.value) and n.body or n.other or {},phase)
+        if n.op=='frame' then if phase=='render' then run(n.body,'frame') end
+        elseif n.op=='if' then run(eval(n.value) and n.body or n.other or {},phase)
         elseif n.op=='repeat' then
           local count=math.floor(tonumber(eval(n.value)) or -1); assert(count>=0 and count<=1000,'repeat range is 0..1000')
+          local previous=state.vars.index
           for i=1,count do state.vars.index=i; run(n.body,phase) end
+          state.vars.index=previous
         elseif visual[n.op] then
-          if phase=='render' then
-            local widget={kind=n.op,id=n.name,x=math.floor(eval(n.x)),y=math.floor(eval(n.y)),w=math.floor(eval(n.width)),bind=n.bind}
+          if phase=='render' or phase=='frame' then
+            local widget={kind=n.op,id=n.name,x=integer(math.floor(eval(n.x)),-1000000,1000000),y=integer(math.floor(eval(n.y)),-1000000,1000000),w=n.width and math.floor(eval(n.width)) or 1,bind=n.bind}
             if n.op=='panel' then widget.h=math.floor(eval(n.height)) else widget.value=eval(n.value) end
+            if n.fg then widget.fg=displayColor(eval(n.fg)); widget.bg=displayColor(eval(n.bg)) end
             state.widgets[#state.widgets+1]=widget
+          end
+        elseif n.op=='background' or n.op=='status' then
+          if phase=='render' or phase=='frame' then
+            local value=eval(n.value); state[n.op]=n.op=='background' and displayColor(value) or tostring(value)
           end
         elseif n.op=='on' or n.op=='function' then if phase=='init' then state.handlers[n.name]=n.body end
         elseif n.op=='every' then
@@ -232,7 +288,7 @@ function P.runtime(ast,api,peanut)
         elseif phase~='render' then
           if n.op=='let' then
             if phase=='init' then state.vars[n.name]=eval(n.value) end
-          elseif n.op=='set' then state.vars[n.name]=eval(n.value)
+          elseif n.op=='set' then assign(n.target,eval(n.value))
           elseif n.op=='app' then state.title=tostring(eval(n.value))
           elseif n.op=='notify' then api.notify(tostring(eval(n.value)))
           elseif n.op=='call' then assert(state.handlers[n.name],'Unknown function: '..n.name); run(state.handlers[n.name],phase)
@@ -245,7 +301,7 @@ function P.runtime(ast,api,peanut)
     end
   end
   function state.initialize() state.budget=10000; run(ast,'init') end
-  function state.layout() state.budget=10000; state.widgets={}; run(ast,'render'); return state.widgets end
+  function state.layout() state.budget=10000; state.widgets={}; state.background=nil; state.status=nil; run(ast,'render'); return state.widgets end
   function state.dispatch(name) state.budget=10000; if state.handlers[name] then run(state.handlers[name],'event') end end
   function state.tick(timer) state.budget=10000; run(timer.body,'event') end
   return state

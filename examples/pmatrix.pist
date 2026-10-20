@@ -1,0 +1,92 @@
+# pmatrix: a cmatrix-inspired rain demo, implemented entirely in Pistachio.
+# The .lua command only opens this file. Edit this source in Code Editor.
+app "pmatrix"
+let heads = array(80, 0)
+let tails = array(80, 0)
+let rates = array(80, 0)
+let streams = array(80, "")
+let palette = peanut("[\"lime\",\"cyan\",\"red\",\"magenta\",\"yellow\",\"white\"]")
+let shadows = peanut("[\"green\",\"blue\",\"brown\",\"purple\",\"orange\",\"gray\"]")
+let glyphs = "01:7Z*+4/9<>B2X=6@A%5&!30;8?V|1S-4C7D90+K2N:5R6T8W3Y"
+let speed = 4
+let tint = 1
+let paused = false
+let help = false
+
+function seed
+  set columns = min(80, floor((width + 1) / 2))
+  repeat columns
+    set heads[index] = random(-height, height)
+    set tails[index] = random(6, max(7, min(24, height)))
+    set rates[index] = random(1, 3)
+    set start = random(1, len(glyphs) - tails[index])
+    set streams[index] = slice(glyphs, start, start + tails[index] - 1)
+  end
+end
+call seed
+
+every 0.1
+  if not paused
+    repeat columns
+      set heads[index] = heads[index] + speed * rates[index] / 6
+      set pick = random(1, len(glyphs))
+      set streams[index] = slice(streams[index], 2) .. slice(glyphs, pick, pick)
+      if heads[index] - tails[index] > height
+        set heads[index] = -random(1, max(2, height))
+        set rates[index] = random(1, 3)
+      end
+    end
+  end
+end
+
+on resize
+  call seed
+end
+on key
+  if key == "q" or key == "escape"
+    quit
+  end
+  if key == "space" and not held
+    set paused = not paused
+  end
+  if key == "up" or key == "equals" or key == "numPadAdd"
+    set speed = min(9, speed + 1)
+  end
+  if key == "down" or key == "minus" or key == "numPadSubtract"
+    set speed = max(1, speed - 1)
+  end
+  if key == "c" and not held
+    set tint = tint % len(palette) + 1
+  end
+  if key == "h" and not held
+    set help = not help
+  end
+end
+on char
+  if num(char) >= 1 and num(char) <= 9
+    set speed = num(char)
+  end
+end
+
+background "black"
+status ""
+frame
+  set bright = color and palette[tint] or "lightGray"
+  set dim = color and shadows[tint] or "gray"
+  repeat columns
+    set x = index * 2 - 1
+    set y = floor(heads[index])
+    set tail = tails[index]
+    column x (y-tail+1) dim "black" slice(streams[index], 1, tail - 4)
+    column x (y-3) bright "black" slice(streams[index], tail - 3, tail - 1)
+    text x y "white" "black" slice(streams[index], tail, tail)
+  end
+  if paused
+    text 1 1 "black" "white" " PAUSED | Space resumes "
+  end
+  if help
+    text 1 (height-2) "white" "black" "Space pause  Up/Down speed"
+    text 1 (height-1) "white" "black" "C colour  H help  Q quit"
+    text 1 height "white" "black" "Speed {speed}/9 | Pistachio"
+  end
+end

@@ -6,13 +6,13 @@ end
 local keywords={
   lua=words('and break do else elseif end false for function goto if in local nil not or repeat return then true until while'),
   peanut=words('true false null'),
-  pistachio=words('app let set if else end repeat on every function call quit notify load save label banner button input password checkbox progress panel and or not true false null'),
+  pistachio=words('app let set if else end repeat on every function call quit notify load save label banner button input password checkbox progress panel frame background status text column and or not true false null'),
   cashew=words('cashew html head body main div title h1 h2 p pre a button input label br hr script'),
 }
 local builtins={
   lua=words('assert error ipairs next pairs pcall print printError read require select tonumber tostring type unpack write xpcall'),
   peanut={},
-  pistachio=words('advanced color render width height index str num len min max abs floor round upper lower peanut encode seal unseal'),
+  pistachio=words('advanced color render width height index key held char str num len min max abs floor round upper lower peanut encode seal unseal array random slice'),
   cashew=words('title href id name value type'),
 }
 local modules=words('fs term os math string table textutils shell colors colours keys http rednet peripheral paintutils window turtle pocket vector settings parallel bit32')

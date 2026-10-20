@@ -9,11 +9,17 @@ return function(api,path)
   for _,timer in ipairs(state.timers) do timers[os.startTimer(timer.interval)]=timer end
   local controls={}; local focus=1
   local function draw()
-    local t=api.theme(); local w,h=term.getSize(); ui.clear(t); controls={}
+    local t=api.theme(); local w,h=term.getSize(); local layout=state.layout()
+    ui.clear({bg=state.background or t.bg,text=t.text}); controls={}
     api.setTitle(state.title)
-    for _,v in ipairs(state.layout()) do
+    for _,v in ipairs(layout) do
       v.w=math.max(1,math.min(v.w,w)); local text=tostring(v.value or '')
-      if v.kind=='panel' then
+      if v.kind=='text' then ui.text(v.x,v.y,text,v.fg,v.bg)
+      elseif v.kind=='column' then
+        if v.x>=1 and v.x<=w then
+          for i=math.max(1,2-v.y),math.min(#text,h-v.y+1) do ui.text(v.x,v.y+i-1,text:sub(i,i),v.fg,v.bg) end
+        end
+      elseif v.kind=='panel' then
         ui.fill(v.x,v.y,v.w,math.min(v.h,h),t.panel)
       elseif v.kind=='label' then ui.text(v.x,v.y,text,t.text,t.bg,v.w)
       elseif v.kind=='banner' and api.config().mode=='render' then
@@ -30,7 +36,7 @@ return function(api,path)
       end
     end
     focus=math.max(1,math.min(focus,#controls))
-    ui.text(1,h,'Tab: next  Enter: activate  F4: close',t.muted,t.panel,w)
+    if state.status~='' then ui.text(1,h,state.status or 'Tab: next  Enter: activate  F4: close',t.muted,t.panel,w) end
   end
   local function activate(control)
     if not control then return end
@@ -43,6 +49,9 @@ return function(api,path)
     if e=='sacabam_close' or e=='terminate' then break
     elseif e=='timer' and timers[a] then
       local timer=timers[a]; timers[a]=nil; state.tick(timer); timers[os.startTimer(timer.interval)]=timer
+    elseif e=='term_resize' then state.dispatch('resize')
+    elseif e=='key' and state.handlers.key then
+      state.vars.key=keys.getName(a) or ''; state.vars.held=b==true; state.dispatch('key')
     elseif e=='key' then
       if a==keys.tab then
         local backwards=api.keyDown(keys.leftShift) or api.keyDown(keys.rightShift)
@@ -50,6 +59,7 @@ return function(api,path)
       elseif a==keys.enter then activate(control)
       elseif a==keys.space and control and control.kind~='input' and control.kind~='password' then activate(control)
       elseif a==keys.backspace and control and (control.kind=='input' or control.kind=='password') then state.vars[control.bind]=tostring(state.vars[control.bind]):sub(1,-2); state.dispatch(control.id) end
+    elseif e=='char' and state.handlers.char then state.vars.char=a; state.dispatch('char')
     elseif (e=='char' or e=='paste') and control and (control.kind=='input' or control.kind=='password') then
       state.vars[control.bind]=(tostring(state.vars[control.bind])..a:gsub('[%c]','')):sub(1,1024); state.dispatch(control.id)
     elseif e=='mouse_click' then
