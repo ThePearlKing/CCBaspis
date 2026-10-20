@@ -3,7 +3,7 @@ return function(api,domain,root)
   domain=domain or 'computer-'..os.getComputerID()..'.cc'
   root=api.resolve(root or '/Sites/welcome'); local message='Offline. Choose a domain and site folder.'
   local function chooseFolder()
-    local value=ui.prompt(api,'Published folder',root)
+    local value=ui.filePicker(api,{mode='folder',title='Publish folder',path=root})
     if value then root=api.resolve(value) end
   end
   local function hasHome()

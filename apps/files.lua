@@ -56,7 +56,7 @@ return function(api,start)
     if key=="open" then open()
     elseif key=="up" then navigate('..')
     elseif key=="home" then navigate('/'..api.home)
-    elseif key=="location" then local path=ui.prompt(api,"Go to folder",dir); if path then navigate(path) end
+    elseif key=="location" then local path=ui.filePicker(api,{mode='folder',title='Go to folder',path=dir}); if path then navigate(path) end
     elseif key=="new" then new(false)
     elseif key=="folder" then new(true)
     elseif key=="rename" and item then

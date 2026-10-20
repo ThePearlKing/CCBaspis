@@ -1,6 +1,6 @@
 -- CCSacabam 1.0.0: standalone offline installer
 local package={version="1.0.0",files={
-  ["apps/browser.lua"]={sha256="9023175a78279392b21fe6542bd79a7c469bbb5cd24ef184d5a1c4fdd00cb2ea",data=[=[
+  ["apps/browser.lua"]={sha256="42cbb334eaf9c64483edba3c2eae57f51d477680898b717c20184431906300ef",data=[=[
 return function(api,initial)
   local ui=api.ui; local E=api.load('system/europa'); local C=api.load('system/cashew'); local P=api.load('system/pistachio')
   local peanut=api.load('system/peanut'); local G=api.load('system/ganymede')
@@ -108,7 +108,7 @@ return function(api,initial)
   local function draw()
     local t=api.theme(); local w,h=term.getSize(); ui.clear(t); controls={}
     ui.text(1,1,' '..url,t.onAccent,t.accent,w)
-    ui.text(1,2,' Back  Home  Address  Bookmark',t.text,t.panel,w)
+    ui.text(1,2,' Back  Home  File  Address  Bookmark',t.text,t.panel,w)
     local items,total=layout(); scroll=math.max(0,math.min(scroll,math.max(0,total-h+4)))
     for _,v in ipairs(items) do
       local isControl=v.kind=='link' or v.kind=='button' or v.kind=='input' or v.kind=='checkbox'
@@ -130,6 +130,11 @@ return function(api,initial)
     ui.text(1,h,status..' | G address  Tab links',t.muted,t.panel,w)
   end
   local function promptAddress() navigate(ui.prompt(api,'Europa address',url=='about:home' and 'europa://' or url)) end
+  local function openFile()
+    local path=ui.filePicker(api,{mode='open',title='Open local page',path=url:sub(1,7)=='file://' and url:sub(8) or api.dir(),
+      extensions={'cashew','pist','txt','peanut'}})
+    if path then navigate('file://'..path) end
+  end
   local function back() local previous=table.remove(history); if previous then navigate(previous,true) end end
   local function bookmark()
     bookmarks[#bookmarks+1]=url
@@ -169,12 +174,13 @@ return function(api,initial)
         elseif a==keys.backspace then
           if selected and selected.kind=='input' and state then state.vars[selected.bind]=tostring(state.vars[selected.bind]):sub(1,-2); state.dispatch(selected.id)
           else back() end
+        elseif a==keys.o and (api.keyDown(keys.leftCtrl) or api.keyDown(keys.rightCtrl)) then openFile()
         elseif a==keys.l and (api.keyDown(keys.leftCtrl) or api.keyDown(keys.rightCtrl)) then promptAddress() end
       elseif e=='char' or e=='paste' then
         if selected and selected.kind=='input' and state then
           state.vars[selected.bind]=(tostring(state.vars[selected.bind])..a:gsub('[%c]','')):sub(1,1024); state.dispatch(selected.id)
         elseif e=='char' then
-          if a=='g' then promptAddress() elseif a=='h' then navigate('about:home') elseif a=='b' then bookmark()
+          if a=='g' then promptAddress() elseif a=='h' then navigate('about:home') elseif a=='b' then bookmark() elseif a=='o' then openFile()
           elseif a=='l' then
             local lines={}; for i,address in ipairs(bookmarks) do lines[#lines+1]=i..' '..address end
             api.notify(table.concat(lines,' | ')); local choice=tonumber(ui.prompt(api,'Bookmark number (1-'..#bookmarks..')'))
@@ -184,7 +190,7 @@ return function(api,initial)
       elseif e=='mouse_scroll' then scroll=scroll+a*3
       elseif e=='mouse_click' then
         if c==1 then promptAddress()
-        elseif c==2 then if b<=6 then back() elseif b<=12 then navigate('about:home') elseif b<=21 then promptAddress() else bookmark() end
+        elseif c==2 then if b<=6 then back() elseif b<=12 then navigate('about:home') elseif b<=18 then openFile() elseif b<=27 then promptAddress() else bookmark() end
         else for i,v in ipairs(controls) do if c==v.screenY and b>=v.x and b<v.x+v.w then focus=i; action(v); break end end end
       end
     end)
@@ -207,6 +213,112 @@ return function(api,path)
   return api.load('apps/editor')(api,path,{code=true})
 end
 ]]},
+  ["apps/customisation.lua"]={sha256="10751e58290bfd8f8d9a57385f70a9955aac3542a327f4c2906118a633d02bef",data=[=[
+-- Settings tab: keep the controls readable even with a low-contrast user theme.
+return function(api)
+  local ui=api.ui; local config=api.load('system/config')
+  local self={editing=false}; local selected,offset,color=1,0,1; local rows=1
+  local neutral=config.theme({mode='basic'})
+  local confirmApi={}; for k,v in pairs(api) do confirmApi[k]=v end
+  confirmApi.theme=function() return neutral end
+  local function index(value) for n=1,16 do if 2^(n-1)==value then return n end end return 1 end
+  local function store(key,value)
+    local c=api.config(); local profile=config.profile(c); local previous=c.customColors
+    local nextColors={}; for k,v in pairs(previous or {}) do nextColors[k]=v end
+    local changed={}; for k,v in pairs(nextColors[profile] or {}) do changed[k]=v end
+    if key then changed[key]=value else changed={} end
+    nextColors[profile]=changed; c.customColors=nextColors
+    local ok,err=api.saveConfig()
+    if not ok then api.config().customColors=previous; api.notify(err); return false end
+    return true
+  end
+  local function begin()
+    self.editing=true; color=index(api.theme()[config.colorFields[selected][1]])
+  end
+  local function apply()
+    if store(config.colorFields[selected][1],2^(color-1)) then self.editing=false end
+  end
+  local function swatch(x,y,width,n,active,label)
+    local value=2^(n-1)
+    local r,g,b=term.getPaletteColor(value)
+    local fg=(r+g+b)/3>.5 and colors.black or colors.white
+    ui.text(x,y,label or ((active and '>' or ' ')..string.format('%x',n-1)..(active and '<' or ' ')),fg,value,width)
+  end
+  function self.draw()
+    local w,h=term.getSize(); local t=api.theme()
+    ui.fill(1,3,w,h-2,neutral.bg)
+    if self.editing then
+      local field=config.colorFields[selected]
+      ui.text(1,3,field[2],neutral.text,neutral.bg,w)
+      if h>=10 then
+        local cell=math.floor(w/4)
+        for n=1,16 do swatch(1+((n-1)%4)*cell,4+math.floor((n-1)/4),cell,n,n==color) end
+        if h>=12 then
+          local preview={}; for k,v in pairs(t) do preview[k]=v end
+          preview[field[1]]=2^(color-1)
+          ui.text(1,8,' Title   - + X ',preview.titleText,preview.title,w)
+          ui.text(1,9,' Sample text ',preview.text,preview.bg,w)
+          ui.text(1,10,' Selected item ',preview.onAccent,preview.accent,w)
+        end
+        ui.text(1,h-2,config.colorNames[color],neutral.text,neutral.bg,w)
+      else
+        swatch(1,4,w,color,true,'< '..config.colorNames[color]..' >')
+        if h>=8 then ui.text(1,5,config.colorNames[color],neutral.text,neutral.bg,w) end
+      end
+      local split=math.floor(w/2)
+      ui.text(1,h-1,'[Apply]',neutral.onAccent,neutral.accent,split)
+      ui.text(split+1,h-1,'[Cancel]',neutral.text,neutral.panel,w-split)
+      ui.text(1,h,'Arrows / Enter / F5',neutral.text,neutral.bg,w)
+    else
+      rows=math.max(1,h-5)
+      if selected<=offset then offset=selected-1 elseif selected>offset+rows then offset=selected-rows end
+      for row=1,rows do
+        local n=offset+row; local field=config.colorFields[n]
+        if field then
+          ui.text(1,row+2,(n==selected and '> ' or '  ')..field[2],n==selected and neutral.onAccent or neutral.text,
+            n==selected and neutral.accent or neutral.bg,w-3)
+          swatch(w-2,row+2,3,index(t[field[1]]),false)
+        end
+      end
+      ui.text(1,h-2,config.colorNames[index(t[config.colorFields[selected][1]])]..' / '..config.profile(api.config()),neutral.text,neutral.bg,w)
+      ui.text(1,h-1,' Sample [selected] ',t.text,t.bg,w)
+      ui.text(9,h-1,'[selected]',t.onAccent,t.accent,math.min(10,w-8))
+      ui.text(1,h,'Enter edit  R reset',neutral.text,neutral.bg,w)
+    end
+  end
+  function self.event(e,a,b,c)
+    local w,h=term.getSize()
+    if self.editing then
+      if e=='key' then
+        if a==keys.f5 or a==keys.escape then self.editing=false
+        elseif a==keys.enter then apply()
+        elseif a==keys.left then color=math.max(1,color-1)
+        elseif a==keys.right then color=math.min(16,color+1)
+        elseif a==keys.up then color=math.max(1,color-(h>=10 and 4 or 1))
+        elseif a==keys.down then color=math.min(16,color+(h>=10 and 4 or 1)) end
+      elseif e=='mouse_click' and a==1 then
+        if c==h-1 then if b<=math.floor(w/2) then apply() else self.editing=false end
+        elseif h>=10 and c>=4 and c<=7 then
+          color=math.min(16,(c-4)*4+math.min(4,math.floor((b-1)/math.floor(w/4))+1))
+        elseif h<10 and c==4 then color=math.max(1,math.min(16,color+(b<=math.floor(w/2) and -1 or 1))) end
+      elseif e=='mouse_scroll' then color=math.max(1,math.min(16,color+a)) end
+    elseif e=='key' then
+      if a==keys.up then selected=math.max(1,selected-1)
+      elseif a==keys.down then selected=math.min(#config.colorFields,selected+1)
+      elseif a==keys.pageUp then selected=math.max(1,selected-rows)
+      elseif a==keys.pageDown then selected=math.min(#config.colorFields,selected+rows)
+      elseif a==keys.home then selected=1
+      elseif a==keys['end'] then selected=#config.colorFields
+      elseif a==keys.enter then begin() end
+    elseif e=='char' and a:lower()=='r' then
+      if ui.confirm(confirmApi,'Reset '..config.profile(api.config())..' colours?') then store() end
+    elseif e=='mouse_click' and a==1 and c>=3 and c<3+rows and config.colorFields[offset+c-2] then
+      selected=offset+c-2; begin()
+    elseif e=='mouse_scroll' then selected=math.max(1,math.min(#config.colorFields,selected+a)) end
+  end
+  return self
+end
+]=]},
   ["apps/devices.lua"]={sha256="99d30d1e6b8fa008e87f34f946ad676eea300a6ca090c460b79a1aaab53d6ef3",data=[[
 return function(api)
   local ui=api.ui; local scroll=0; local timer=os.startTimer(2)
@@ -240,7 +352,7 @@ return function(api)
   end
 end
 ]]},
-  ["apps/editor.lua"]={sha256="7852af8f00192611ef71d920105db5bae56b93b0babf53b969f3771ed8bffbdf",data=[[
+  ["apps/editor.lua"]={sha256="c03cfde79e0d51cc86634cea1e258e4b7e04ebc6e4229b75854871792908381b",data=[[
 return function(api,path,options)
   local ui=api.ui
   local code=options and options.code
@@ -288,7 +400,7 @@ return function(api,path,options)
     local target=path
     if not target or as then
       local extension=code and ({lua='lua',peanut='peanut',pistachio='pist',cashew='cashew'})[language] or 'txt'
-      target=ui.prompt(api,"Save path",target or api.resolve('untitled.'..extension))
+      target=ui.filePicker(api,{mode='save',title='Save '..(code and 'source' or 'file'),path=target or api.resolve('untitled.'..extension)})
     end
     if not target or target=="" then return false end
     target=api.resolve(target)
@@ -385,7 +497,10 @@ return function(api,path,options)
     popup=nil
     if name=="save" then save(api.keyDown(keys.leftShift) or api.keyDown(keys.rightShift))
     elseif name=="open" then
-      if discard() then local file=ui.prompt(api,"Open path",api.dir()..'/'); if file and file~="" then open(file) end end
+      if discard() then
+        local file=ui.filePicker(api,{mode='open',title='Open '..(code and 'source' or 'file'),path=path or api.dir()})
+        if file then open(file) end
+      end
     elseif name=="find" then find()
     elseif name=="undo" then history(undo,redo)
     elseif name=="redo" then history(redo,undo) end
@@ -452,7 +567,7 @@ return function(api,path,options)
   end
 end
 ]]},
-  ["apps/files.lua"]={sha256="289149e58e380b0344c1a5c820bbe8d13c41b2defc5e3bd874b7d0fce7391b1f",data=[[
+  ["apps/files.lua"]={sha256="15594edaf0a158de8d82395e55d61307e0f88de4a58a7602c4a839e3ea2765c8",data=[[
 return function(api,start)
   local ui=api.ui; local dir=api.resolve(start or api.dir())
   local selection,scroll=1,0; local entries={}; local clip; local showHidden=false
@@ -511,7 +626,7 @@ return function(api,start)
     if key=="open" then open()
     elseif key=="up" then navigate('..')
     elseif key=="home" then navigate('/'..api.home)
-    elseif key=="location" then local path=ui.prompt(api,"Go to folder",dir); if path then navigate(path) end
+    elseif key=="location" then local path=ui.filePicker(api,{mode='folder',title='Go to folder',path=dir}); if path then navigate(path) end
     elseif key=="new" then new(false)
     elseif key=="folder" then new(true)
     elseif key=="rename" and item then
@@ -598,7 +713,7 @@ return function(api,start)
   end
 end
 ]]},
-  ["apps/help.lua"]={sha256="5413f88d2426d6ad6cacdd43187112a18c1db6e6db6de32b5aec40644263e0fa",data=[[
+  ["apps/help.lua"]={sha256="76af0a570a5858d951662956a6c73e6c48c2055ffeef4cec667da5e191b2bef6",data=[[
 return function(api)
   local ui=api.ui; local scroll=0
   local content={
@@ -610,6 +725,8 @@ return function(api)
     "Right-click a desktop shortcut to open or remove it. Right-click empty desktop to restore shortcuts. Programs remain in Apps.", "Settings: Skip typing YES is OFF by default. Turn it on to confirm prompts with Enter or a click.", "",
     "FILES & PROGRAMS", "Double-click or Enter opens a file. Lua and Pistachio programs run in windows. E edits the selected file. N creates a file, D a folder. C/X/V copy, cut, paste. Delete moves to Trash; T opens Trash. Enter restores a trashed item.","",
     "EDITOR", "Ctrl+S save, Ctrl+Shift+S save as.","Ctrl+O open, Ctrl+N new, Ctrl+F find.","Ctrl+Z undo, Ctrl+Y redo.","",
+    "FILE PICKERS", "Open and Save dialogs browse folders. Arrows select; Enter or double-click opens. Backspace goes up. Tab moves between controls; F5 cancels. Ctrl+L edits the location, Ctrl+N creates a folder, Ctrl+H shows hidden files, and Ctrl+F switches the file-type filter. Name fields accept relative paths. Callisto: File or Ctrl+O opens a local page.","",
+    "CUSTOMISATION", "Settings has General and Customisation tabs; use Tab, Left/Right, or click their names. Select a colour role, press Enter, choose a swatch, and Apply. F5 cancels the choice. R resets the current theme. Dark, light, and basic themes keep separate colours. Basic computers display colours as shades of gray.","",
     "PERSONAL DRIVE", "Encryption starts OFF. Fine to leave off on a private computer. On a shared server, try encryption: it is CCSacabam's main security feature for saved files. With encryption off, there is no password or login screen. Files are readable outside the OS.",
     "Enable or disable encryption in Settings. When ON, names, content, temporary files and Trash are encrypted on disk. Normal filesystem paths in apps use this drive. /rom and the installed OS are read-only; /host shows existing physical files for importing.",
     "Save before locking or exiting. Unsaved app buffers are discarded. There is no password reset. Back up vault/data.scv while signed out. Enabling encryption does not erase older plaintext copies or backups.","",
@@ -727,13 +844,13 @@ return function(api)
   end
 end
 ]]},
-  ["apps/server.lua"]={sha256="f76658e917af5da1b1d6b8fda0c10bd84af34806febaa8a566e05cd3616b3367",data=[[
+  ["apps/server.lua"]={sha256="4167a9a6bd1630060a0204751775ecd2e3e21eee58dc432dfb3f440bad066e9b",data=[[
 return function(api,domain,root)
   local ui=api.ui; local E=api.load('system/europa'); local server
   domain=domain or 'computer-'..os.getComputerID()..'.cc'
   root=api.resolve(root or '/Sites/welcome'); local message='Offline. Choose a domain and site folder.'
   local function chooseFolder()
-    local value=ui.prompt(api,'Published folder',root)
+    local value=ui.filePicker(api,{mode='folder',title='Publish folder',path=root})
     if value then root=api.resolve(value) end
   end
   local function hasHome()
@@ -776,9 +893,10 @@ return function(api,domain,root)
   end
 end
 ]]},
-  ["apps/settings.lua"]={sha256="c05c4c33763dfab2fd42cd59928b0ea6d98eeed5603003eb48b1adbe8928d6cf",data=[[
+  ["apps/settings.lua"]={sha256="a49f61e46ce3d02bc43728275fe3c9b591a0d331b8a0ce1b983d05587b35dc13",data=[[
 return function(api)
   local ui=api.ui; local selected=1; local offset=0
+  local tab='general'; local custom=api.load('apps/customisation')(api)
   local function options()
     local c=api.config()
     return {"Display: "..c.mode,"Theme: "..c.theme,"Wallpaper: "..tostring(c.wallpaper),
@@ -826,27 +944,38 @@ return function(api)
     if n<=4 or n==8 then api.saveConfig() end
   end
   while true do
-    local t=api.theme(); local w,h=term.getSize(); ui.clear(t)
+    local t=tab=='custom' and api.load('system/config').theme({mode='basic'}) or api.theme(); local w,h=term.getSize(); ui.clear(t)
     ui.bar(1," Settings",t)
-    local items=options(); local rows=math.max(1,h-3)
+    if w>=27 then
+      ui.text(1,2,' General ',tab=='general' and t.onAccent or t.text,tab=='general' and t.accent or t.panel,10)
+      ui.text(11,2,' Customisation ',tab=='custom' and t.onAccent or t.text,tab=='custom' and t.accent or t.panel,w-10)
+    else ui.text(1,2,tab=='general' and '< General >' or '< Customisation >',t.onAccent,t.accent,w) end
+    local items=options(); local rows=math.max(1,h-4)
+    if tab=='custom' then custom.draw() else
     if selected<=offset then offset=selected-1 elseif selected>offset+rows then offset=selected-rows end
     for row=1,rows do local i=row+offset
-      if items[i] then ui.text(1,row+1,(selected==i and "> " or "  ")..i.." "..items[i],selected==i and t.onAccent or t.text,selected==i and t.accent or t.bg,w) end
+      if items[i] then ui.text(1,row+2,(selected==i and "> " or "  ")..i.." "..items[i],selected==i and t.onAccent or t.text,selected==i and t.accent or t.bg,w) end
     end
     ui.text(1,h-1,api.isEncrypted() and "Saved files are encrypted." or "Private PC? Off is fine. Shared server? Try ON.",t.muted,t.bg,w)
-    ui.text(1,h,"Arrows + Enter / click / number",t.text,t.panel,w)
+    ui.text(1,h,"Tab: tabs | Enter / number",t.text,t.panel,w)
+    end
     local e,a,b,c=os.pullEventRaw()
     if e=="sacabam_close" or e=="terminate" then return
+    elseif not custom.editing and e=='key' and (a==keys.tab or a==keys.left or a==keys.right) then
+      tab=a==keys.left and 'general' or a==keys.right and 'custom' or tab=='general' and 'custom' or 'general'
+    elseif not custom.editing and e=='mouse_click' and a==1 and c==2 then
+      if w>=27 then tab=b<=10 and 'general' or 'custom' else tab=tab=='general' and 'custom' or 'general' end
+    elseif tab=='custom' then custom.event(e,a,b,c)
     elseif e=="key" then
       if a==keys.up then selected=math.max(1,selected-1) elseif a==keys.down then selected=math.min(#items,selected+1)
       elseif a==keys.enter then choose(selected) end
     elseif e=="char" and tonumber(a) and tonumber(a)>=1 and tonumber(a)<=#items then selected=tonumber(a); choose(selected)
-    elseif e=="mouse_click" and c>1 and c<=rows+1 and items[offset+c-1] then selected=offset+c-1; choose(selected)
+    elseif e=="mouse_click" and a==1 and c>2 and c<=rows+2 and items[offset+c-2] then selected=offset+c-2; choose(selected)
     elseif e=="mouse_scroll" then selected=math.max(1,math.min(#items,selected+a)) end
   end
 end
 ]]},
-  ["apps/sketch.lua"]={sha256="9d288cd0ac9783e3e04e9d069a7b72b6dcf657175b6a86d1f81873b6efecc813",data=[=[
+  ["apps/sketch.lua"]={sha256="4f6462f78cb8d9c4db0fe0354a37064fc7bf1816efad00ce54b8d1d563029110",data=[=[
 return function(api,path)
   local ui,pixels=api.ui,api.pixels
   local hex='0123456789abcdef'; local color=colors.cyan; local cx,cy=1,1
@@ -876,7 +1005,7 @@ return function(api,path)
   if path then open(path) end
   local function discard() return not dirty or ui.confirm(api,'Discard unsaved drawing?') end
   local function save()
-    local file=ui.prompt(api,'Save sketch',path or api.resolve('untitled.sketch'))
+    local file=ui.filePicker(api,{mode='save',title='Save sketch',path=path or api.resolve('untitled.sketch'),extensions={'sketch'}})
     if not file then return end
     file=api.resolve(file)
     if file~=path and fs.exists(file) and not ui.confirm(api,'Replace existing sketch?') then return end
@@ -923,7 +1052,9 @@ return function(api,path)
   end
   local function command(cmd)
     if cmd=='s' then save()
-    elseif cmd=='o' and discard() then local file=ui.prompt(api,'Open sketch',api.dir()..'/'); if file then open(file) end
+    elseif cmd=='o' and discard() then
+      local file=ui.filePicker(api,{mode='open',title='Open sketch',path=path or api.dir(),extensions={'sketch'}})
+      if file then open(file) end
     elseif cmd=='n' and discard() then canvas=pixels.new(80,39,colors.black); dirty=false
     elseif cmd=='d' then demo=not demo; if demo then timer=os.startTimer(.1) elseif timer then os.cancelTimer(timer); timer=nil end
     elseif cmd=='[' then color=color/2; if color<1 then color=32768 end
@@ -2305,9 +2436,31 @@ function C.safeScript(ast)
 end
 return C
 ]]},
-  ["system/config.lua"]={sha256="11854c189d6ec37fb1aa47faaf42221dd7ad278e290296c2c030816d15cfeaba",data=[[
+  ["system/config.lua"]={sha256="269fc74464b36849669a4bf7b1203879ed4177d35076e3e720f3ccdee5198867",data=[=[
 local M = {}
 M.version = "1.0.0"
+M.colorFields={
+  {'desktop','Desktop background'},{'desktopText','Desktop labels'},
+  {'wallpaperFar','Wallpaper back'},{'wallpaperNear','Wallpaper front'},
+  {'bar','Desktop bars'},{'barText','Desktop bar text'},
+  {'bg','Window background'},{'panel','Panels / toolbars'},{'text','Text'},
+  {'muted','Secondary text'},{'accent','Selection / accents'},{'onAccent','Selected text'},
+  {'border','Dividers'},{'danger','Errors'},{'folder','Folder names'},
+  {'frame','Active window border'},{'frameText','Active border text'},
+  {'inactiveFrame','Inactive border'},{'inactiveFrameText','Inactive border text'},
+  {'title','Active title bar'},{'titleText','Active title text'},
+  {'inactiveTitle','Inactive title bar'},{'inactiveTitleText','Inactive title text'},
+  {'minimize','Minimise button'},{'maximize','Maximise button'},{'close','Close button'},
+  {'controlText','Min/max symbols'},{'closeText','Close symbol'},
+  {'resize','Active resize grip'},{'resizeInactive','Inactive resize grip'},{'resizeText','Resize symbol'},
+}
+M.colorNames={'White','Orange','Magenta','Light blue','Yellow','Lime','Pink','Gray','Light gray','Cyan','Purple','Blue','Brown','Green','Red','Black'}
+function M.profile(c) return c.mode=='basic' and 'basic' or c.theme=='light' and 'light' or 'dark' end
+local function validColor(value)
+  if type(value)~='number' then return false end
+  for i=0,15 do if value==2^i then return true end end
+  return false
+end
 function M.capabilities(target)
   target = target or term.current()
   local w, h = target.getSize()
@@ -2325,12 +2478,20 @@ function M.normalize(c, caps)
   if type(c.hiddenShortcuts)=="table" then
     for id,value in pairs(c.hiddenShortcuts) do if type(id)=="string" and value==true then hidden[id]=true end end
   end
+  local custom={}
+  for _,profile in ipairs({'dark','light','basic'}) do
+    custom[profile]={}
+    local source=type(c.customColors)=='table' and c.customColors[profile]
+    if type(source)=='table' then
+      for _,field in ipairs(M.colorFields) do if validColor(source[field[1]]) then custom[profile][field[1]]=source[field[1]] end end
+    end
+  end
   return { mode = mode, theme = c.theme == "light" and "light" or "dark",
     wallpaper = c.wallpaper ~= false, clock24 = c.clock24 ~= false,
     welcome = c.welcome ~= false, version = M.version, hiddenShortcuts=hidden,
-    skipTypedConfirmation = c.skipTypedConfirmation == true }
+    skipTypedConfirmation = c.skipTypedConfirmation == true,customColors=custom }
 end
-function M.theme(config)
+local function defaults(config)
   if config.mode == "basic" then
     return { bg = colors.black, panel = colors.black, text = colors.white,
       muted = colors.white, accent = colors.white, onAccent = colors.black,
@@ -2348,8 +2509,22 @@ function M.theme(config)
     border = colors.gray, desktop = colors.blue, danger = colors.red,
     frame=colors.lightGray,frameText=colors.black,inactiveFrame=colors.gray,inactiveFrameText=colors.white }
 end
+function M.theme(config)
+  local t=defaults(config); local mono=config.mode=='basic'
+  t.desktopText=t.text; t.wallpaperFar=mono and t.muted or colors.cyan; t.wallpaperNear=colors.black
+  t.bar=mono and t.bg or t.accent; t.barText=mono and t.text or t.onAccent
+  t.folder=mono and t.text or colors.yellow
+  t.title=mono and t.accent or t.frame; t.titleText=mono and t.onAccent or t.frameText
+  t.inactiveTitle,t.inactiveTitleText=t.inactiveFrame,t.inactiveFrameText
+  t.minimize=mono and t.title or colors.yellow; t.maximize=mono and t.title or colors.lime; t.close=mono and t.title or colors.red
+  t.controlText=mono and t.titleText or colors.black; t.closeText=mono and t.titleText or colors.white
+  t.resize=mono and t.bg or colors.gray; t.resizeInactive=mono and t.bg or colors.black; t.resizeText=colors.white
+  local custom=config.customColors and config.customColors[M.profile(config)] or {}
+  for _,field in ipairs(M.colorFields) do if validColor(custom[field[1]]) then t[field[1]]=custom[field[1]] end end
+  return t
+end
 return M
-]]},
+]=]},
   ["system/crypto.lua"]={sha256="2cda78cb7e1d30944bd4e3911fdf371f95f6a1e97855c10ad5682081bcabb5d7",data=[[
 -- SHA-256, HMAC-SHA-256, PBKDF2 and IETF ChaCha20. Pure Lua / bit32.
 -- Encrypt-then-MAC envelope; see docs/SECURITY.md for the format and limits.
@@ -2593,6 +2768,261 @@ function E.fetch(address)
 end
 return E
 ]]},
+  ["system/filepicker.lua"]={sha256="4007dc82096eece72f03b3fb02635367761883b81a6ff1b206fdbd336c16b0bc",data=[[
+-- Shared, window-sized file/folder selection. All paths use the personal fs.
+local M={}
+function M.choose(api,options)
+  local o=options or {}; local ui=api.ui; local mode=o.mode or 'open'
+  assert(mode=='open' or mode=='save' or mode=='folder','Invalid picker mode')
+  local dir=api.resolve(o.path or api.dir()); local name=''
+  if not fs.isDir(dir) then name=fs.getName(dir); dir='/'..fs.getDir(dir) end
+  while not fs.isDir(dir) and dir~='/' do dir=api.resolve('..',dir) end
+  if mode=='folder' then name='.' end
+  local entries,selected,scroll={},1,0
+  local hidden=false; local filtered=o.extensions~=nil; local message
+  local focus=mode=='save' and 'name' or 'list'; local held={}; local hits={}; local order={}
+  local field={value=name,cursor=#name,all=mode=='save'}
+  local location={value=dir,cursor=#dir,all=false}; local creating,priorName
+  local lastClick,lastTime; local search,lastSearch='',0
+  local function down(key) return held[key] or (api.keyDown and api.keyDown(key)) end
+  local function ctrl() return down(keys.leftCtrl) or down(keys.rightCtrl) end
+  local function shift() return down(keys.leftShift) or down(keys.rightShift) end
+  local function setField(value,all)
+    field.value,field.cursor,field.all=value,#value,all or false
+  end
+  local function allowed(value)
+    if not filtered then return true end
+    for _,extension in ipairs(o.extensions) do
+      extension=extension:gsub('^%.',''):lower()
+      if value:lower():sub(-#extension-1)=='.'..extension then return true end
+    end
+    return false
+  end
+  local function refresh(preselect)
+    local list={}
+    for _,value in ipairs(fs.list(dir)) do
+      local path=api.resolve(value,dir); local folder=fs.isDir(path)
+      if (hidden or value:sub(1,1)~='.') and (folder or (mode~='folder' and allowed(value))) then
+        list[#list+1]={name=value,path=path,folder=folder}
+      end
+    end
+    table.sort(list,function(a,b)
+      if a.folder~=b.folder then return a.folder end
+      return a.name:lower()==b.name:lower() and a.name<b.name or a.name:lower()<b.name:lower()
+    end)
+    if mode=='folder' then table.insert(list,1,{name='This folder',path=dir,folder=true,current=true}) end
+    entries,selected,scroll=list,1,0
+    if preselect then for i,item in ipairs(list) do if item.name==preselect then selected=i; break end end end
+    location.value,location.cursor,location.all=dir,#dir,false
+    lastClick=nil
+    search,lastSearch='',0
+  end
+  local function navigate(path)
+    local target=api.resolve(path,dir)
+    assert(fs.isDir(target),'Folder not found')
+    local previous=dir; dir=target
+    local ok,err=pcall(refresh)
+    if not ok then dir=previous; error(err,0) end
+    if mode=='folder' then setField('.') elseif mode=='open' then setField('') end
+    focus='list'; message=nil
+  end
+  local function select(index)
+    selected=math.max(1,math.min(index,#entries)); local item=entries[selected]
+    if item and not creating then
+      if mode=='folder' then setField(item.current and '.' or item.name)
+      elseif mode=='open' or not item.folder then setField(item.name) end
+    end
+    lastClick=nil
+  end
+  local function accept()
+    if creating then
+      assert(api.storage.name(field.value),'Use a folder name without slashes')
+      local path=api.resolve(field.value,dir)
+      assert(not fs.exists(path),'That name already exists')
+      assert(not fs.isReadOnly(dir),'This folder is read-only')
+      fs.makeDir(path); creating=false; setField(priorName); navigate(path); return
+    end
+    local value=field.value
+    if value=='' and entries[selected] then value=entries[selected].name end
+    assert(value~='','Choose a '..(mode=='folder' and 'folder' or 'file'))
+    local path=api.resolve(value,dir)
+    if mode=='folder' then assert(fs.isDir(path),'Folder not found'); return path end
+    if fs.isDir(path) then navigate(path); return end
+    if mode=='open' then assert(fs.exists(path),'File not found')
+    else
+      local parent='/'..fs.getDir(path)
+      assert(fs.isDir(parent),'Choose an existing folder')
+      assert(not fs.isReadOnly(path),'This folder is read-only')
+    end
+    return path
+  end
+  local function activateItem()
+    local item=entries[selected]; if not item then return end
+    if item.current then return item.path end
+    if item.folder then navigate(item.path)
+    else setField(item.name); return accept() end
+  end
+  local function action(id)
+    message=nil
+    if id=='up' then navigate('..')
+    elseif id=='home' then navigate('/'..api.home)
+    elseif id=='hidden' then hidden=not hidden; refresh()
+    elseif id=='filter' then filtered=not filtered; refresh()
+    elseif id=='new' then
+      assert(not fs.isReadOnly(dir),'This folder is read-only')
+      if not creating then priorName=field.value end
+      creating=true; setField('',true); focus='name'
+    elseif id=='accept' then return accept()
+    elseif id=='list' then return activateItem()
+    elseif id=='cancel' then return false
+    elseif id=='path' then navigate(location.value)
+    elseif id=='name' then return accept() end
+  end
+  local function report(err)
+    message=tostring(err):gsub('^.-:%d+: ','')
+    if api.notify then api.notify(message) end
+  end
+  local ok,err=pcall(refresh,name); if not ok then report(err) end
+  local function draw()
+    local t=api.theme(); local w,h=term.getSize(); ui.clear(t); hits={}; order={}
+    local roomy=h>=10; local help=h>=8
+    local buttonsY=help and h-1 or h; local nameY=buttonsY-1
+    local statusY=roomy and nameY-1 or nil
+    local bottom=(statusY or nameY)-1; local rows=math.max(1,bottom-3)
+    local title=o.title or (mode=='save' and 'Save file' or mode=='folder' and 'Choose folder' or 'Open file')
+    ui.bar(1,' '..(not roomy and message or title),t)
+    local function hit(id,x,y,width) hits[#hits+1]={id=id,x=x,y=y,w=width}; order[#order+1]=id end
+    local function button(id,label,x,y,width)
+      hit(id,x,y,width)
+      ui.text(x,y,label,focus==id and t.onAccent or t.text,focus==id and t.accent or t.panel,width)
+    end
+    local function input(id,data,label,y,register)
+      local x=#label+1; local width=math.max(1,w-#label)
+      local offset=math.max(0,data.cursor-width+1)
+      if focus~=id then offset=math.max(0,#data.value-width) end
+      ui.text(1,y,label,t.muted,t.panel,#label)
+      ui.text(x,y,data.value:sub(offset+1),focus==id and data.all and t.onAccent or t.text,
+        focus==id and data.all and t.accent or t.bg,width)
+      if register~=false then hit(id,x,y,width) end
+      if focus==id then
+        term.setCursorPos(math.min(w,x+data.cursor-offset),y); term.setCursorBlink(true)
+      end
+      return {x=x,offset=offset}
+    end
+    input('path',location,'> ',2)
+    local x=1
+    for _,control in ipairs({{'up','[Up]'},{'home','[Home]'},{'new','[New]'},{'hidden',hidden and '[*]' or '[.]'}}) do
+      button(control[1],control[2],x,3,#control[2]); x=x+#control[2]
+    end
+    if o.extensions and x+4<=w then button('filter',filtered and '[Type]' or '[All]',x,3,math.min(6,w-x+1)) end
+    order[#order+1]='list'
+    if selected<=scroll then scroll=selected-1 elseif selected>scroll+rows then scroll=selected-rows end
+    scroll=math.max(0,math.min(scroll,math.max(0,#entries-rows)))
+    for row=1,rows do
+      local item=entries[scroll+row]
+      if item then
+        local active=selected==scroll+row
+        local label=(active and '>' or ' ')..(item.current and '= ' or item.folder and '+ ' or '  ')..item.name..(item.folder and not item.current and '/' or '')
+        ui.text(1,row+3,label,active and t.onAccent or (item.folder and t.folder or t.text),
+          active and t.accent or t.bg,w-1)
+        hits[#hits+1]={id='item',index=scroll+row,x=1,y=row+3,w=w-1}
+      end
+    end
+    if #entries==0 then ui.text(1,4,' (empty folder)',t.muted,t.bg,w) end
+    if #entries>rows then
+      local grip=4+math.floor(scroll/(#entries-rows)*math.max(0,rows-1))
+      for y=4,bottom do ui.text(w,y,y==grip and '#' or '|',t.border,t.bg) end
+    end
+    if statusY then ui.text(1,statusY,message or (#entries..' items'..(filtered and ' | filtered' or '')..(hidden and ' | hidden shown' or '')),t.muted,t.panel,w) end
+    input('name',field,creating and 'New: ' or mode=='folder' and 'Folder: ' or 'Name: ',nameY)
+    local split=math.floor(w/2)
+    button('accept',creating and '[Create]' or mode=='save' and '[Save]' or mode=='folder' and '[Select]' or '[Open]',1,buttonsY,split)
+    button('cancel','[Cancel]',split+1,buttonsY,w-split)
+    if help then ui.text(1,h,'Tab focus  Enter open  F5 cancel',t.muted,t.panel,w) end
+    -- Other controls move the cursor while drawing; restore the active input last.
+    if focus=='path' then input('path',location,'> ',2,false)
+    elseif focus=='name' then input('name',field,creating and 'New: ' or mode=='folder' and 'Folder: ' or 'Name: ',nameY,false) end
+    return rows
+  end
+  local function edit(data,event,a)
+    if event=='char' or event=='paste' then
+      if ctrl() then return end
+      local text=a:gsub('[%c]','')
+      if data.all then data.value=''; data.cursor=0; data.all=false end
+      text=text:sub(1,512-#data.value)
+      data.value=data.value:sub(1,data.cursor)..text..data.value:sub(data.cursor+1); data.cursor=data.cursor+#text
+    elseif event=='key' then
+      if ctrl() and a==keys.a then data.all=true
+      elseif a==keys.backspace or a==keys.delete then
+        if data.all then data.value=''; data.cursor=0
+        elseif a==keys.backspace and data.cursor>0 then
+          data.value=data.value:sub(1,data.cursor-1)..data.value:sub(data.cursor+1); data.cursor=data.cursor-1
+        elseif a==keys.delete then data.value=data.value:sub(1,data.cursor)..data.value:sub(data.cursor+2) end
+        data.all=false
+      elseif a==keys.left then data.cursor=math.max(0,data.cursor-1); data.all=false
+      elseif a==keys.right then data.cursor=math.min(#data.value,data.cursor+1); data.all=false
+      elseif a==keys.home then data.cursor=0; data.all=false
+      elseif a==keys['end'] then data.cursor=#data.value; data.all=false end
+    end
+  end
+  while true do
+    local rows=draw(); local e,a,b,c=os.pullEventRaw(); local result
+    if e=='sacabam_close' or e=='terminate' then term.setCursorBlink(false); return nil,'close' end
+    if e=='key_up' then held[a]=nil elseif e=='key' then held[a]=true end
+    local success,why=pcall(function()
+      if e=='key' and (a==keys.f5 or a==keys.escape) then
+        if creating then creating=false; setField(priorName); focus='list' else result=false end
+      elseif e=='key' and ctrl() and a==keys.l then focus='path'; location.all=true
+      elseif e=='key' and ctrl() and a==keys.h then action('hidden')
+      elseif e=='key' and ctrl() and a==keys.n then action('new')
+      elseif e=='key' and ctrl() and a==keys.f and o.extensions then action('filter')
+      elseif e=='key' and ctrl() and a==keys.enter then result=accept()
+      elseif e=='key' and a==keys.tab then
+        local index=1; for i,id in ipairs(order) do if id==focus then index=i; break end end
+        focus=order[(index-1+(shift() and -1 or 1))%#order+1]
+      elseif e=='key' and a==keys.enter then result=action(focus)
+      elseif focus=='path' or focus=='name' then
+        if e=='key' or e=='char' or e=='paste' then edit(focus=='path' and location or field,e,a) end
+      elseif e=='key' and focus=='list' then
+        if a==keys.up then select(selected-1) elseif a==keys.down then select(selected+1)
+        elseif a==keys.pageUp then select(selected-rows) elseif a==keys.pageDown then select(selected+rows)
+        elseif a==keys.home then select(1) elseif a==keys['end'] then select(#entries)
+        elseif a==keys.left or a==keys.backspace then navigate('..')
+        elseif a==keys.right then local item=entries[selected]; if item and item.folder and not item.current then navigate(item.path) end end
+      elseif e=='key' and (a==keys.left or a==keys.right) then
+        local group=(focus=='accept' or focus=='cancel') and {'accept','cancel'} or {'up','home','new','hidden','filter'}
+        local index=1; for i,id in ipairs(group) do if id==focus then index=i end end
+        local candidate=group[index+(a==keys.left and -1 or 1)]
+        for _,id in ipairs(order) do if id==candidate then focus=id; break end end
+      elseif e=='char' and focus=='list' and not ctrl() then
+        search=(os.clock()-lastSearch<1 and search or '')..a:lower(); lastSearch=os.clock()
+        for i,item in ipairs(entries) do if item.name:lower():sub(1,#search)==search then select(i); break end end
+      end
+      if e=='mouse_scroll' then focus='list'; select(selected+a*3)
+      elseif e=='mouse_click' and a==1 then
+        for _,hit in ipairs(hits) do
+          if b>=hit.x and b<hit.x+hit.w and c==hit.y then
+            if hit.id=='item' then
+              local twice=lastClick==hit.index and os.clock()-(lastTime or 0)<.4
+              select(hit.index); focus='list'; lastClick,lastTime=hit.index,os.clock()
+              if twice then result=activateItem() end
+            else
+              focus=hit.id
+              if focus=='path' then location.all=true
+              elseif focus=='name' then field.all=true
+              else result=action(focus) end
+            end
+            break
+          end
+        end
+      elseif e=='disk' or e=='disk_eject' then refresh() end
+    end)
+    if not success then report(why) end
+    if result~=nil then term.setCursorBlink(false); return result or nil end
+  end
+end
+return M
+]]},
   ["system/font.lua"]={sha256="9ef0391be9dde1d63814be2a36a9f8849665464dd1ed805e2bf3294c65ba4a40",data=[[
 -- Small original 3x5 display font for graphical banners.
 local F={}
@@ -2689,7 +3119,7 @@ function G.form(title)
 end
 return G
 ]]},
-  ["system/kernel.lua"]={sha256="5a172e580ade0581f5376a7cc0c83b8ed95cbd54e0abc2df679ee89fa41624e4",data=[=[
+  ["system/kernel.lua"]={sha256="ad62e5b65f77442e180682c02ef8c2f30066034ce465f33e9d3c6b00071f7bb7",data=[=[
 local K = {}
 local unpack = table.unpack or unpack
 local input = { char=true, key=true, key_up=true, paste=true, mouse_click=true,
@@ -2783,6 +3213,9 @@ function K.new(ctx)
     elseif coroutine.status(p.co) == "dead" then
       self.remove(p.id)
     else p.filter = filter end
+    if p.closeAfterDialog and self.get(p.id) and p.state=='running' then
+      p.closeAfterDialog=nil; self.deliver(p,{'sacabam_close'},true)
+    end
   end
   function self.deliver(p,event,force)
     if p and (force or p.filter == nil or p.filter == event[1] or event[1] == "terminate") then self.resume(p,event) end
@@ -2869,6 +3302,7 @@ function K.new(ctx)
       theme=self.theme,config=function() return ctx.config end,caps=ctx.caps,
       notify=self.notify,launch=function(id,...) return self.launchAt(paths.dir(),id,...) end,saveConfig=self.saveConfig,
       dir=paths.dir,resolve=paths.resolve,setDir=paths.setDir,
+      deferClose=function() p.closeAfterDialog=true end,
       keyDown=function(key) return self.keys[key] == true end,
       setTitle=function(title) p.title=tostring(title) end,
       processes=function()
@@ -2914,11 +3348,11 @@ function K.new(ctx)
       end
       Pixels.draw(b,term,x+1,y,5,3)
     else
-      UI.text(x+1,y,"+---+",t.text,t.desktop)
-      UI.text(x+1,y+1,"| "..item.name:sub(1,1).." |",t.text,t.desktop)
-      UI.text(x+1,y+2,"+---+",t.text,t.desktop)
+      UI.text(x+1,y,"+---+",t.desktopText,t.desktop)
+      UI.text(x+1,y+1,"| "..item.name:sub(1,1).." |",t.desktopText,t.desktop)
+      UI.text(x+1,y+2,"+---+",t.desktopText,t.desktop)
     end
-    UI.text(x,y+3,item.name,selected and t.onAccent or t.text,selected and t.accent or t.desktop,9)
+    UI.text(x,y+3,item.name,selected and t.onAccent or t.desktopText,selected and t.accent or t.desktop,9)
   end
   function self.render()
     local previous=term.current(); term.redirect(self.frame)
@@ -2927,7 +3361,7 @@ function K.new(ctx)
     if ctx.config.mode=="basic" and ctx.config.wallpaper then
       -- Sparse stippling gives the desktop its own texture on monochrome screens.
       for y=2,self.height-1,2 do
-        for x=2+(math.floor(y/2)%2)*2,self.width,4 do UI.text(x,y,".",t.muted,t.desktop) end
+        for x=2+(math.floor(y/2)%2)*2,self.width,4 do UI.text(x,y,".",t.wallpaperFar,t.desktop) end
       end
     end
     if ctx.config.mode=="render" and ctx.config.wallpaper then
@@ -2935,16 +3369,16 @@ function K.new(ctx)
         local b=Pixels.new(self.width*2,(self.height-2)*3,t.desktop)
         for x=1,b.w do
           local ridge=math.floor(b.h*.56+math.sin(x/15)*7+math.sin(x/7)*3)
-          for y=math.max(1,ridge),b.h do b.set(x,y,colors.cyan) end
+          for y=math.max(1,ridge),b.h do b.set(x,y,t.wallpaperFar) end
           local front=math.floor(b.h*.78+math.sin(x/21+2)*6)
-          for y=math.max(1,front),b.h do b.set(x,y,colors.black) end
+          for y=math.max(1,front),b.h do b.set(x,y,t.wallpaperNear) end
         end
         self.wallpaper=b
       end
       Pixels.draw(self.wallpaper,term,1,2)
     end
     local mono=ctx.config.mode=="basic"
-    local barBG,barFG=mono and t.bg or t.accent,mono and t.text or t.onAccent
+    local barBG,barFG=t.bar,t.barText
     UI.text(1,1," CCSacabam",barFG,barBG,self.width)
     local clock=textutils.formatTime(os.time(),ctx.config.clock24)
     UI.text(self.width-#clock,1,clock,barFG,barBG)
@@ -2966,8 +3400,8 @@ function K.new(ctx)
       local frameText=p.id==self.focus and t.frameText or t.inactiveFrameText
       UI.fill(p.x,p.y,p.w,p.h,border)
       local mono=ctx.config.mode=="basic"
-      local titleBG=mono and p.id==self.focus and t.accent or border
-      local titleFG=mono and p.id==self.focus and t.onAccent or frameText
+      local titleBG=p.id==self.focus and t.title or t.inactiveTitle
+      local titleFG=p.id==self.focus and t.titleText or t.inactiveTitleText
       if mono then
         for y=p.y+1,p.y+p.h-2 do
           UI.text(p.x,y,"|",frameText,border); UI.text(p.x+p.w-1,y,"|",frameText,border)
@@ -2976,16 +3410,15 @@ function K.new(ctx)
         UI.text(p.x,p.y+p.h-1,"+"..string.rep("-",p.w-2).."+",frameText,border)
       end
       UI.text(p.x+1,p.y,p.title,titleFG,titleBG,p.w-12)
-      local colorful=ctx.caps.color and ctx.config.mode~="basic"
       local left=p.x+p.w-10
-      UI.text(left,p.y,mono and "[-]" or " - ",colorful and colors.black or titleFG,colorful and colors.yellow or titleBG,3)
-      UI.text(left+3,p.y,mono and "[+]" or " + ",colorful and colors.black or titleFG,colorful and colors.lime or titleBG,3)
-      UI.text(left+6,p.y,mono and "[X]" or " X ",colorful and colors.white or titleFG,colorful and colors.red or titleBG,3)
+      UI.text(left,p.y,mono and "[-]" or " - ",t.controlText,t.minimize,3)
+      UI.text(left+3,p.y,mono and "[+]" or " + ",t.controlText,t.maximize,3)
+      UI.text(left+6,p.y,mono and "[X]" or " X ",t.closeText,t.close,3)
       p.win.setVisible(true); p.win.setVisible(false)
       if not mono then UI.text(p.x+1,p.y+p.h-1,"F3 hide  F4 close  F6 size",frameText,border,p.w-2) end
       if not p.maximized then
-        local gripBG=mono and t.bg or border==colors.gray and colors.black or colors.gray
-        UI.text(p.x+p.w-3,p.y+p.h-1,mono and "../" or "  /",colors.white,gripBG,3)
+        local gripBG=p.id==self.focus and t.resize or t.resizeInactive
+        UI.text(p.x+p.w-3,p.y+p.h-1,mono and "../" or "  /",t.resizeText,gripBG,3)
       end
     end end
     UI.text(1,self.height,"",barFG,barBG,self.width)
@@ -4131,7 +4564,7 @@ function S.complete(lines,language,x,y,document)
 end
 return S
 ]]},
-  ["system/ui.lua"]={sha256="fa9a752940ddd7470d7f3f914f0bd04ba9721019e06b2a7a756ba05825388b6c",data=[[
+  ["system/ui.lua"]={sha256="907b3d9f56c80539e8375bf8f9844dee79a37c94509f29e7a27db9ea6aec9d39",data=[[
 local M = {}
 function M.text(x, y, value, fg, bg, width)
   local w, h = term.getSize()
@@ -4210,6 +4643,11 @@ function M.confirm(api, label)
     end
   end
   return (M.prompt(api, label .. " (type YES)") or ""):upper() == "YES"
+end
+function M.filePicker(api,options)
+  local path,reason=api.load('system/filepicker').choose(api,options)
+  if reason=='close' and api.deferClose then api.deferClose() end
+  return path
 end
 function M.message(api, value)
   api.notify(tostring(value))

@@ -27,7 +27,7 @@ return function(api,path)
   if path then open(path) end
   local function discard() return not dirty or ui.confirm(api,'Discard unsaved drawing?') end
   local function save()
-    local file=ui.prompt(api,'Save sketch',path or api.resolve('untitled.sketch'))
+    local file=ui.filePicker(api,{mode='save',title='Save sketch',path=path or api.resolve('untitled.sketch'),extensions={'sketch'}})
     if not file then return end
     file=api.resolve(file)
     if file~=path and fs.exists(file) and not ui.confirm(api,'Replace existing sketch?') then return end
@@ -74,7 +74,9 @@ return function(api,path)
   end
   local function command(cmd)
     if cmd=='s' then save()
-    elseif cmd=='o' and discard() then local file=ui.prompt(api,'Open sketch',api.dir()..'/'); if file then open(file) end
+    elseif cmd=='o' and discard() then
+      local file=ui.filePicker(api,{mode='open',title='Open sketch',path=path or api.dir(),extensions={'sketch'}})
+      if file then open(file) end
     elseif cmd=='n' and discard() then canvas=pixels.new(80,39,colors.black); dirty=false
     elseif cmd=='d' then demo=not demo; if demo then timer=os.startTimer(.1) elseif timer then os.cancelTimer(timer); timer=nil end
     elseif cmd=='[' then color=color/2; if color<1 then color=32768 end

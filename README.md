@@ -57,6 +57,8 @@ Advanced computers also support clicking, scrolling, dragging title bars, and re
 
 **Settings → Skip typing YES** starts **OFF**. Turn it on to confirm dialogs with Enter or a click; leave it off to keep typing YES.
 
+**Settings → Customisation** changes desktop and wallpaper colors, bars, window backgrounds, text, selections, borders, title bars, window buttons, and resize grips. Use Tab or Left/Right to switch tabs; choose a role, pick a color, and Apply. F5 cancels a color choice; R resets the current theme after confirmation. Dark, light, and basic themes keep separate saved colors. Basic computers show the palette in [grayscale](https://tweaked.cc/module/colors.html). The Customisation controls keep their own readable colors so a low-contrast theme can always be reset.
+
 Included apps: Files with Trash, Editor with undo and search, Code Editor, Terminal, Sketch with a rotating 3D demo, Pistachio, your original Chat+, Callisto, Jupiter, Settings, Tasks, Devices, and Guide. Chat+ is copied into `Programs` and runs as a normal Lua program.
 
 ## Code Editor
@@ -71,6 +73,17 @@ Code Editor highlights **Lua, Peanut, Pistachio, and Cashew**, including multili
 * **Ctrl+Z / Ctrl+Y:** undo / redo. New lines keep the current indentation.
 
 It shares Editor's 128 KiB limit and personal-drive storage. Undo is held in memory; saved source follows the drive's encryption setting.
+
+## File selection
+
+Editor, Code Editor, and Sketch use a file browser for Open and Save As. Jupiter uses it to select a published folder, Files uses it for Go to folder, and Callisto has **File / Ctrl+O** for local pages. Browsing stays inside the same personal filesystem as the apps, including its encryption setting and read-only imports.
+
+* Arrows select; Enter or double-click opens a file/folder. Backspace goes up. Tab and Shift+Tab move between controls. F5 cancels.
+* Use Up/Home, or **Ctrl+L** to edit the location. `.` and `..` resolve against the folder shown in the picker.
+* **Ctrl+N** creates a folder; **Ctrl+H** toggles hidden files. **Ctrl+F** toggles an available file-type filter.
+* Save dialogs have a filename field. Ctrl+A selects its contents. Choosing a filename does not write anything; the app still confirms replacing another file.
+
+Native apps can call `api.ui.filePicker(api, {mode="open", path=api.dir(), title="Open file"})`. Modes are `open`, `save`, and `folder`; optional `extensions={"lua", "pist"}` filters the listing. It returns an absolute path or `nil` on cancellation and leaves the app's working directory unchanged.
 
 ## Programs and the personal drive
 

@@ -77,6 +77,11 @@ function M.confirm(api, label)
   end
   return (M.prompt(api, label .. " (type YES)") or ""):upper() == "YES"
 end
+function M.filePicker(api,options)
+  local path,reason=api.load('system/filepicker').choose(api,options)
+  if reason=='close' and api.deferClose then api.deferClose() end
+  return path
+end
 function M.message(api, value)
   api.notify(tostring(value))
 end

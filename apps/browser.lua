@@ -105,7 +105,7 @@ return function(api,initial)
   local function draw()
     local t=api.theme(); local w,h=term.getSize(); ui.clear(t); controls={}
     ui.text(1,1,' '..url,t.onAccent,t.accent,w)
-    ui.text(1,2,' Back  Home  Address  Bookmark',t.text,t.panel,w)
+    ui.text(1,2,' Back  Home  File  Address  Bookmark',t.text,t.panel,w)
     local items,total=layout(); scroll=math.max(0,math.min(scroll,math.max(0,total-h+4)))
     for _,v in ipairs(items) do
       local isControl=v.kind=='link' or v.kind=='button' or v.kind=='input' or v.kind=='checkbox'
@@ -127,6 +127,11 @@ return function(api,initial)
     ui.text(1,h,status..' | G address  Tab links',t.muted,t.panel,w)
   end
   local function promptAddress() navigate(ui.prompt(api,'Europa address',url=='about:home' and 'europa://' or url)) end
+  local function openFile()
+    local path=ui.filePicker(api,{mode='open',title='Open local page',path=url:sub(1,7)=='file://' and url:sub(8) or api.dir(),
+      extensions={'cashew','pist','txt','peanut'}})
+    if path then navigate('file://'..path) end
+  end
   local function back() local previous=table.remove(history); if previous then navigate(previous,true) end end
   local function bookmark()
     bookmarks[#bookmarks+1]=url
@@ -166,12 +171,13 @@ return function(api,initial)
         elseif a==keys.backspace then
           if selected and selected.kind=='input' and state then state.vars[selected.bind]=tostring(state.vars[selected.bind]):sub(1,-2); state.dispatch(selected.id)
           else back() end
+        elseif a==keys.o and (api.keyDown(keys.leftCtrl) or api.keyDown(keys.rightCtrl)) then openFile()
         elseif a==keys.l and (api.keyDown(keys.leftCtrl) or api.keyDown(keys.rightCtrl)) then promptAddress() end
       elseif e=='char' or e=='paste' then
         if selected and selected.kind=='input' and state then
           state.vars[selected.bind]=(tostring(state.vars[selected.bind])..a:gsub('[%c]','')):sub(1,1024); state.dispatch(selected.id)
         elseif e=='char' then
-          if a=='g' then promptAddress() elseif a=='h' then navigate('about:home') elseif a=='b' then bookmark()
+          if a=='g' then promptAddress() elseif a=='h' then navigate('about:home') elseif a=='b' then bookmark() elseif a=='o' then openFile()
           elseif a=='l' then
             local lines={}; for i,address in ipairs(bookmarks) do lines[#lines+1]=i..' '..address end
             api.notify(table.concat(lines,' | ')); local choice=tonumber(ui.prompt(api,'Bookmark number (1-'..#bookmarks..')'))
@@ -181,7 +187,7 @@ return function(api,initial)
       elseif e=='mouse_scroll' then scroll=scroll+a*3
       elseif e=='mouse_click' then
         if c==1 then promptAddress()
-        elseif c==2 then if b<=6 then back() elseif b<=12 then navigate('about:home') elseif b<=21 then promptAddress() else bookmark() end
+        elseif c==2 then if b<=6 then back() elseif b<=12 then navigate('about:home') elseif b<=18 then openFile() elseif b<=27 then promptAddress() else bookmark() end
         else for i,v in ipairs(controls) do if c==v.screenY and b>=v.x and b<v.x+v.w then focus=i; action(v); break end end end
       end
     end)

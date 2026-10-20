@@ -45,7 +45,7 @@ return function(api,path,options)
     local target=path
     if not target or as then
       local extension=code and ({lua='lua',peanut='peanut',pistachio='pist',cashew='cashew'})[language] or 'txt'
-      target=ui.prompt(api,"Save path",target or api.resolve('untitled.'..extension))
+      target=ui.filePicker(api,{mode='save',title='Save '..(code and 'source' or 'file'),path=target or api.resolve('untitled.'..extension)})
     end
     if not target or target=="" then return false end
     target=api.resolve(target)
@@ -142,7 +142,10 @@ return function(api,path,options)
     popup=nil
     if name=="save" then save(api.keyDown(keys.leftShift) or api.keyDown(keys.rightShift))
     elseif name=="open" then
-      if discard() then local file=ui.prompt(api,"Open path",api.dir()..'/'); if file and file~="" then open(file) end end
+      if discard() then
+        local file=ui.filePicker(api,{mode='open',title='Open '..(code and 'source' or 'file'),path=path or api.dir()})
+        if file then open(file) end
+      end
     elseif name=="find" then find()
     elseif name=="undo" then history(undo,redo)
     elseif name=="redo" then history(redo,undo) end

@@ -340,6 +340,51 @@ test('Settings encryption toggle requires explicit confirmation',function()
   assert(vault.isEncrypted())
   kernel.remove(id)
 end)
+test('Customisation saves desktop, frame and button colours and resets the current profile',function()
+  local id=kernel.launch('settings'); local p=assertRunning(id); local profile=Config.profile(ctx.config)
+  local old=Config.theme(ctx.config).desktop
+  key(keys.right); assert(p.win.getLine(2):find('Customisation',1,true))
+  local selected=1
+  local function change(field,color)
+    local target
+    for i,item in ipairs(Config.colorFields) do if item[1]==field then target=i end end
+    while selected<target do key(keys.down); selected=selected+1 end
+    while selected>target do key(keys.up); selected=selected-1 end
+    key(keys.enter)
+    for i=1,15 do key(keys.left) end
+    local n=0; while 2^n~=color do n=n+1 end
+    for i=1,n do key(keys.right) end
+    key(keys.enter); assertRunning(id)
+  end
+  change('desktop',colors.yellow)
+  eq(kernel.theme().desktop,colors.yellow)
+  eq(cached('system/storage').load('/.system/settings.tbl').customColors[profile].desktop,colors.yellow)
+  kernel.notice=nil; kernel.render(); local _,_,bg=kernel.frame.getLine(2); eq(bg:sub(1,1),colors.toBlit(colors.yellow))
+  change('frame',colors.purple); change('close',colors.orange)
+  kernel.render(); local _,_,title=kernel.frame.getLine(p.y)
+  eq(title:sub(p.x+p.w-3,p.x+p.w-3),colors.toBlit(colors.orange))
+  kernel.remove(id); id=kernel.launch('settings'); p=assertRunning(id); key(keys.tab)
+  eq(kernel.theme().frame,colors.purple); eq(kernel.theme().close,colors.orange)
+  key(keys.enter); key(keys.right); key(keys.f5); eq(kernel.theme().desktop,colors.yellow)
+  kernel.render(); dump('customisation')
+  text('r'); key(keys.enter); eq(kernel.theme().desktop,colors.yellow)
+  text('r'); text('YES'); key(keys.enter); eq(kernel.theme().desktop,old)
+  assert(next(ctx.config.customColors[profile])==nil); kernel.remove(id)
+end)
+test('Custom colours validate palette values, keep presets separate and roll back failed saves',function()
+  local c=Config.normalize({mode='color',theme='dark',customColors={
+    dark={desktop=colors.green,text=3,bogus=colors.blue},light={desktop=colors.pink},basic={desktop=colors.gray}}},
+    {color=true,blit=true})
+  eq(Config.theme(c).desktop,colors.green); assert(c.customColors.dark.text==nil and c.customColors.dark.bogus==nil)
+  c.theme='light'; eq(Config.theme(c).desktop,colors.pink)
+  c.mode='basic'; eq(Config.theme(c).desktop,colors.gray)
+  local before=kernel.theme().desktop; local save=kernel.storage.save
+  local id=kernel.launch('settings'); key(keys.right); key(keys.enter)
+  for i=1,15 do key(keys.left) end
+  kernel.storage.save=function() return nil,'Injected settings write failure' end
+  key(keys.enter); kernel.storage.save=save
+  assertRunning(id); eq(kernel.theme().desktop,before); key(keys.f5); kernel.remove(id)
+end)
 test('Skip typing YES defaults OFF, persists, and enables Enter/click confirmation',function()
   eq(Config.normalize({},caps).skipTypedConfirmation,false)
   local settings=kernel.launch('settings'); text('8'); assert(ctx.config.skipTypedConfirmation)
@@ -451,8 +496,12 @@ local h=assert(fs.open('/Documents/paths/command-complete','w')); h.write(shell.
   kernel.remove(id)
 end)
 local function command(value) kernel.step({'paste',value}); key(keys.enter) end
-local function prompt(initial,value)
-  for i=1,#initial do key(keys.backspace) end
+local function pickerName(value,mode)
+  if mode=='folder' then
+    ctrl(keys.l); kernel.step({'paste',value}); key(keys.enter); ctrl(keys.enter); return
+  end
+  if mode=='open' then key(keys.tab) end
+  ctrl(keys.a)
   kernel.step({'paste',value}); key(keys.enter)
 end
 test('All app launches inherit the calling terminal directory and freeze it per window',function()
@@ -481,19 +530,43 @@ end)
 test('File dialogs and Files navigation resolve paths against their own directory',function()
   local storage=cached('system/storage')
   local id=kernel.launchAt('/Documents/paths','editor'); text('relative save'); ctrl(keys.s)
-  prompt('/Documents/paths/untitled.txt','./child folder/../dialog.txt')
+  pickerName('./child folder/../dialog.txt','save')
   eq(storage.read('/Documents/paths/dialog.txt'),'relative save')
-  ctrl(keys.o); prompt('/Documents/paths/','./dialog.txt'); text('loaded '); ctrl(keys.s)
+  ctrl(keys.o); pickerName('./dialog.txt','open'); text('loaded '); ctrl(keys.s)
   eq(storage.read('/Documents/paths/dialog.txt'),'loaded relative save'); kernel.remove(id)
   id=kernel.launchAt('/Documents/paths','sketch'); text('s')
-  prompt('/Documents/paths/untitled.sketch','./child folder/../drawing.sketch')
+  pickerName('./child folder/../drawing.sketch','save')
   assert(storage.read('/Documents/paths/drawing.sketch')); kernel.remove(id)
   id=kernel.launchAt('/Documents/paths','sketch','./drawing.sketch'); assertRunning(id); kernel.remove(id)
   id=kernel.launchAt('/Documents/paths','files','.'); local files=assertRunning(id)
   -- G opens the location prompt; entering a parent must use the displayed folder.
-  text('g'); prompt('/Documents/paths','./child folder'); eq(files.paths.dir(),'/Documents/paths/child folder')
-  text('g'); prompt('/Documents/paths/child folder','..'); eq(files.paths.dir(),'/Documents/paths')
+  text('g'); pickerName('./child folder','folder'); eq(files.paths.dir(),'/Documents/paths/child folder')
+  text('g'); pickerName('..','folder'); eq(files.paths.dir(),'/Documents/paths')
   kernel.remove(id)
+end)
+test('File pickers browse encrypted files, cancel cleanly and preserve overwrite confirmation',function()
+  local storage=cached('system/storage')
+  assert(storage.write('/Documents/picker/a.txt','alpha')); assert(storage.write('/Documents/picker/b.txt','beta'))
+  local id=kernel.launchAt('/Documents/picker','editor','./a.txt'); local p=assertRunning(id)
+  ctrl(keys.o); key(keys.f5); assertRunning(id); eq(storage.read('/Documents/picker/a.txt'),'alpha')
+  ctrl(keys.o); text('b'); key(keys.enter); text('new '); ctrl(keys.s)
+  eq(storage.read('/Documents/picker/b.txt'),'new beta')
+  local function saveAs()
+    kernel.step({'key',keys.leftShift}); ctrl(keys.s); kernel.step({'key_up',keys.leftShift})
+    pickerName('./a.txt','save')
+  end
+  saveAs(); key(keys.enter); eq(storage.read('/Documents/picker/a.txt'),'alpha')
+  saveAs(); text('YES'); key(keys.enter); eq(storage.read('/Documents/picker/a.txt'),'new beta')
+  assert(not physical.exists('/Documents/picker/a.txt'))
+  ctrl(keys.o); key(keys.f4); assert(not kernel.get(id),'Closing a picker did not close its clean parent window')
+  id=kernel.launch('editor'); text('unsaved'); ctrl(keys.s); key(keys.f4); key(keys.f5); assertRunning(id)
+  key(keys.f4); text('YES'); key(keys.enter); assert(not kernel.get(id))
+end)
+test('Callisto chooses local pages through a file browser',function()
+  local id=kernel.launchAt('/Sites/welcome','browser'); local p=assertRunning(id)
+  ctrl(keys.o); text('index'); key(keys.enter); eq(p.title,'Callisto - Your first site')
+  ctrl(keys.o); key(keys.f5); eq(p.title,'Callisto - Your first site')
+  ctrl(keys.o); key(keys.f4); assert(not kernel.get(id))
 end)
 test('Pistachio programs and Peanut load/save share the inherited working directory',function()
   local storage=cached('system/storage')
@@ -516,7 +589,7 @@ test('Europa launchers, Jupiter folder edits and Callisto local pages share shel
     command('europa host eater.com '..path); local app=assertRunning(kernel.focus); eq(app.app,'server')
     assert(app.win.getLine(5):find('Folder: /Sites/welcome',1,true))
     assert(app.win.getLine(10):find('Home: index.cashew',1,true))
-    text('r'); prompt('/Sites/welcome','../welcome')
+    text('r'); pickerName('../welcome','folder')
     assert(app.win.getLine(5):find('Folder: /Sites/welcome',1,true))
     kernel.remove(app.id); kernel.focusTask(terminal)
   end

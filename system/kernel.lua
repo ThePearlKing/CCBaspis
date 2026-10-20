@@ -91,6 +91,9 @@ function K.new(ctx)
     elseif coroutine.status(p.co) == "dead" then
       self.remove(p.id)
     else p.filter = filter end
+    if p.closeAfterDialog and self.get(p.id) and p.state=='running' then
+      p.closeAfterDialog=nil; self.deliver(p,{'sacabam_close'},true)
+    end
   end
   function self.deliver(p,event,force)
     if p and (force or p.filter == nil or p.filter == event[1] or event[1] == "terminate") then self.resume(p,event) end
@@ -177,6 +180,7 @@ function K.new(ctx)
       theme=self.theme,config=function() return ctx.config end,caps=ctx.caps,
       notify=self.notify,launch=function(id,...) return self.launchAt(paths.dir(),id,...) end,saveConfig=self.saveConfig,
       dir=paths.dir,resolve=paths.resolve,setDir=paths.setDir,
+      deferClose=function() p.closeAfterDialog=true end,
       keyDown=function(key) return self.keys[key] == true end,
       setTitle=function(title) p.title=tostring(title) end,
       processes=function()
@@ -222,11 +226,11 @@ function K.new(ctx)
       end
       Pixels.draw(b,term,x+1,y,5,3)
     else
-      UI.text(x+1,y,"+---+",t.text,t.desktop)
-      UI.text(x+1,y+1,"| "..item.name:sub(1,1).." |",t.text,t.desktop)
-      UI.text(x+1,y+2,"+---+",t.text,t.desktop)
+      UI.text(x+1,y,"+---+",t.desktopText,t.desktop)
+      UI.text(x+1,y+1,"| "..item.name:sub(1,1).." |",t.desktopText,t.desktop)
+      UI.text(x+1,y+2,"+---+",t.desktopText,t.desktop)
     end
-    UI.text(x,y+3,item.name,selected and t.onAccent or t.text,selected and t.accent or t.desktop,9)
+    UI.text(x,y+3,item.name,selected and t.onAccent or t.desktopText,selected and t.accent or t.desktop,9)
   end
   function self.render()
     local previous=term.current(); term.redirect(self.frame)
@@ -235,7 +239,7 @@ function K.new(ctx)
     if ctx.config.mode=="basic" and ctx.config.wallpaper then
       -- Sparse stippling gives the desktop its own texture on monochrome screens.
       for y=2,self.height-1,2 do
-        for x=2+(math.floor(y/2)%2)*2,self.width,4 do UI.text(x,y,".",t.muted,t.desktop) end
+        for x=2+(math.floor(y/2)%2)*2,self.width,4 do UI.text(x,y,".",t.wallpaperFar,t.desktop) end
       end
     end
     if ctx.config.mode=="render" and ctx.config.wallpaper then
@@ -243,16 +247,16 @@ function K.new(ctx)
         local b=Pixels.new(self.width*2,(self.height-2)*3,t.desktop)
         for x=1,b.w do
           local ridge=math.floor(b.h*.56+math.sin(x/15)*7+math.sin(x/7)*3)
-          for y=math.max(1,ridge),b.h do b.set(x,y,colors.cyan) end
+          for y=math.max(1,ridge),b.h do b.set(x,y,t.wallpaperFar) end
           local front=math.floor(b.h*.78+math.sin(x/21+2)*6)
-          for y=math.max(1,front),b.h do b.set(x,y,colors.black) end
+          for y=math.max(1,front),b.h do b.set(x,y,t.wallpaperNear) end
         end
         self.wallpaper=b
       end
       Pixels.draw(self.wallpaper,term,1,2)
     end
     local mono=ctx.config.mode=="basic"
-    local barBG,barFG=mono and t.bg or t.accent,mono and t.text or t.onAccent
+    local barBG,barFG=t.bar,t.barText
     UI.text(1,1," CCSacabam",barFG,barBG,self.width)
     local clock=textutils.formatTime(os.time(),ctx.config.clock24)
     UI.text(self.width-#clock,1,clock,barFG,barBG)
@@ -274,8 +278,8 @@ function K.new(ctx)
       local frameText=p.id==self.focus and t.frameText or t.inactiveFrameText
       UI.fill(p.x,p.y,p.w,p.h,border)
       local mono=ctx.config.mode=="basic"
-      local titleBG=mono and p.id==self.focus and t.accent or border
-      local titleFG=mono and p.id==self.focus and t.onAccent or frameText
+      local titleBG=p.id==self.focus and t.title or t.inactiveTitle
+      local titleFG=p.id==self.focus and t.titleText or t.inactiveTitleText
       if mono then
         for y=p.y+1,p.y+p.h-2 do
           UI.text(p.x,y,"|",frameText,border); UI.text(p.x+p.w-1,y,"|",frameText,border)
@@ -284,16 +288,15 @@ function K.new(ctx)
         UI.text(p.x,p.y+p.h-1,"+"..string.rep("-",p.w-2).."+",frameText,border)
       end
       UI.text(p.x+1,p.y,p.title,titleFG,titleBG,p.w-12)
-      local colorful=ctx.caps.color and ctx.config.mode~="basic"
       local left=p.x+p.w-10
-      UI.text(left,p.y,mono and "[-]" or " - ",colorful and colors.black or titleFG,colorful and colors.yellow or titleBG,3)
-      UI.text(left+3,p.y,mono and "[+]" or " + ",colorful and colors.black or titleFG,colorful and colors.lime or titleBG,3)
-      UI.text(left+6,p.y,mono and "[X]" or " X ",colorful and colors.white or titleFG,colorful and colors.red or titleBG,3)
+      UI.text(left,p.y,mono and "[-]" or " - ",t.controlText,t.minimize,3)
+      UI.text(left+3,p.y,mono and "[+]" or " + ",t.controlText,t.maximize,3)
+      UI.text(left+6,p.y,mono and "[X]" or " X ",t.closeText,t.close,3)
       p.win.setVisible(true); p.win.setVisible(false)
       if not mono then UI.text(p.x+1,p.y+p.h-1,"F3 hide  F4 close  F6 size",frameText,border,p.w-2) end
       if not p.maximized then
-        local gripBG=mono and t.bg or border==colors.gray and colors.black or colors.gray
-        UI.text(p.x+p.w-3,p.y+p.h-1,mono and "../" or "  /",colors.white,gripBG,3)
+        local gripBG=p.id==self.focus and t.resize or t.resizeInactive
+        UI.text(p.x+p.w-3,p.y+p.h-1,mono and "../" or "  /",t.resizeText,gripBG,3)
       end
     end end
     UI.text(1,self.height,"",barFG,barBG,self.width)

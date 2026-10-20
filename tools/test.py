@@ -23,7 +23,7 @@ def run(name,color=True,width=51,height=19,vanilla=True):
             for folder in ('system','apps','sites','examples'):
                 shutil.copytree(ROOT/folder,computer/'ccsacabam'/folder)
             shutil.copy(ROOT/'chatplus.lua',computer/'ccsacabam/chatplus.lua')
-    script='network.lua' if network else 'fresh.lua' if name.startswith('fresh') else 'setup.lua' if name.startswith('setup') else 'run.lua'
+    script='network.lua' if network else 'fresh.lua' if name.startswith('fresh') else 'setup.lua' if name.startswith('setup') else 'picker.lua' if name.startswith('picker') else 'run.lua'
     command=['craftos','--gui','-d',str(directory),'--mount-ro','/src='+str(ROOT),'--exec',f'shell.run("/src/tests/{script}", "{name}")']
     if network:
         # Each computer has its own host/client startup, including host ID 0.
@@ -60,7 +60,7 @@ def run(name,color=True,width=51,height=19,vanilla=True):
     for test in result['tests']:
         if not test['ok']: print(' FAIL',test['name'],test.get('error'),flush=True)
     success=result['failures']==0
-    if success and not network and not name.startswith('setup'):
+    if success and not network and not name.startswith(('setup','picker')):
         try:
             if name.startswith('fresh'): fresh_oracle(directory/'computer/0')
             else: oracle(directory/'computer/0')
@@ -110,6 +110,7 @@ if __name__=='__main__':
     cases=sys.argv[1:] or ['advanced','basic']
     success=True
     for case in cases:
-        ok,path=run(case,color=case not in ('basic','fresh-basic','setup-basic'),width=20 if case.startswith('setup') else 26 if case=='pocket' else 51,height=10 if case.startswith('setup') else 20 if case=='pocket' else 19)
+        small=case.startswith('setup') or case.startswith('picker-small')
+        ok,path=run(case,color=case!='basic' and not case.endswith('-basic'),width=20 if small else 26 if case=='pocket' else 51,height=10 if small else 20 if case=='pocket' else 19)
         success=success and ok
     raise SystemExit(0 if success else 1)
