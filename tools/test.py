@@ -20,7 +20,7 @@ def run(name,color=True,width=51,height=19,vanilla=True):
             computer=directory/f'computer/{computer_id}'; computer.mkdir(parents=True)
             script_name='network-host.lua' if computer_id==host_id else 'network.lua'
             shutil.copy(ROOT/'tests'/script_name,computer/'startup.lua')
-            for folder in ('system','apps','sites'):
+            for folder in ('system','apps','sites','examples'):
                 shutil.copytree(ROOT/folder,computer/'ccsacabam'/folder)
             shutil.copy(ROOT/'chatplus.lua',computer/'ccsacabam/chatplus.lua')
     script='network.lua' if network else 'fresh.lua' if name.startswith('fresh') else 'setup.lua' if name.startswith('setup') else 'run.lua'

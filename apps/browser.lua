@@ -36,6 +36,16 @@ return function(api,initial)
     if not address or address=='' then return end
     local prior=url
     local ok,err=pcall(function()
+      if address:sub(1,7)=='file://' then
+        address='file://'..api.resolve(address:sub(8))
+      elseif address:sub(1,1)=='/' or address:sub(1,2)=='./' or address:sub(1,3)=='../'
+        or address=='.' or address=='..' or (not address:find('://',1,true)
+          and (address:match('%.cashew$') or address:match('%.pist$'))) then
+        address='file://'..api.resolve(address)
+      end
+      if address:sub(1,7)=='file://' and fs.isDir(address:sub(8)) then
+        address='file://'..api.resolve('index.cashew',address:sub(8))
+      end
       local response
       if address=='about:home' then response={status=200,body=home,mime='text/cashew'}
       else

@@ -1,6 +1,6 @@
 return function(api,program)
   local parent={}; for k,v in pairs(api.shell) do parent[k]=v end
-  parent.dir=function() return api.home end
+  parent.dir=function() return fs.combine('',api.dir()) end
   parent.path=function() return ".:/"..fs.combine(api.home,"Programs")..":"..api.shell.path() end
   local t=api.theme(); term.setBackgroundColor(t.bg); term.setTextColor(t.text); term.clear(); term.setCursorPos(1,1)
   print("CCSacabam / "..(api.isEncrypted() and "encrypted" or "personal").." terminal")
@@ -8,9 +8,7 @@ return function(api,program)
   print("F1 apps | F2 switch | F4 close")
   local function shellTask()
     if program then
-      -- fs.combine returns a root-relative path without a leading slash.
-      -- Files already resolved it: do not resolve it again against shell.dir().
-      local absolute="/"..fs.combine("/",program)
+      local absolute=api.resolve(program)
       os.run({shell=parent,multishell=false},"/rom/programs/shell.lua",'"'..absolute..'"')
       print("Program finished. Press any key."); os.pullEvent("key")
     else os.run({shell=parent,multishell=false},"/rom/programs/shell.lua") end

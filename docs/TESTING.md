@@ -22,6 +22,7 @@ Coverage includes:
 * Wrong passwords, tampered ciphertext, locked handles, failed writes, interrupted-save recovery, password changes, and encryption on/off conversion.
 * A physical-disk scan for a private sentinel and private filename after encrypted operation.
 * Ordinary Lua filesystem and `io` writes, settings, `require`, relative paths, binary handles, and background timers.
+* Shared app working directories: real shell commands, nested shells, `.`/`..`/`./child`, quoted paths, inherited app launches, independent windows, file dialogs, Files navigation, Pistachio data, local browser links, and migration of stock launchers without overwriting user changes.
 * Bundled app startup, Editor saving/undo, Settings confirmation, window movement/resizing/minimizing, event routing, small displays, and crash containment.
 * Code Editor highlighting and completion for all four languages, Lua API members, multiline lexing, embedded scripts, save/undo/redo, and manual language selection on real windows.
 * Files double-click launch of a root-relative Lua path containing spaces, and E opening source in Code Editor.
@@ -29,7 +30,7 @@ Coverage includes:
 * Full-screen standalone setup and production 100,000-iteration encryption: passwordless default boot, enabling encryption in Settings, and installing with encryption already enabled.
 * Minimum-size 20×10 setup on both basic and advanced terminals: keyboard/mouse navigation, Left/Right between Back and Next, cancellation, failure/retry, and masked password validation.
 * Shortcut removal/restoration, preserved application right-click events, contrasting window controls, and the default-OFF Skip typing YES preference.
-* Two-computer modem tests with host IDs 1 and 0 for domains, bare computer-ID addresses, actual Callisto rendering, pages, missing-homepage diagnostics/recovery, 404s, traversal rejection, server shutdown, and Chat+ alongside Jupiter. Only these cases enable emulator peripheral extensions to create the test hardware; the OS uses normal ComputerCraft modem APIs.
+* Two-computer modem tests with host IDs 1 and 0 for domains, bare computer-ID addresses, actual Callisto rendering, pages, missing-homepage diagnostics/recovery, 404s, traversal rejection, server shutdown, and Chat+ alongside Jupiter. Hosts are launched through real terminals using `..` and `.`, then keep serving after the terminal changes directory. Only these cases enable emulator peripheral extensions to create the test hardware; the OS uses normal ComputerCraft modem APIs.
 
 Terminal snapshots are saved as `snapshot-*.json`. These retain text and foreground/background color rows for inspection. `python3 tools/preview.py snapshot.json output.png` renders them with Pillow, preserving the mosaic subpixels and substituting a host monospace font for ordinary text. Test passwords are public fixtures, never credentials for a real installation.
 

@@ -44,7 +44,10 @@ function E.relative(link,current)
   if link:find('://',1,true) then return link end
   if not current or current=='about:home' then return 'europa://'..link end
   local parsed=E.address(current)
-  if parsed.localFile then return 'file://'..fs.combine(fs.getDir(parsed.localFile),link) end
+  if parsed.localFile then
+    local path=link:sub(1,1)=='/' and fs.combine('',link) or fs.combine(fs.getDir(parsed.localFile),link)
+    return 'file:///'..path
+  end
   return 'europa://'..parsed.host..(link:sub(1,1)=='/' and link or '/'..fs.combine(fs.getDir(parsed.path),link))
 end
 function E.serve(root,path)

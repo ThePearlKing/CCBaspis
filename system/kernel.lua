@@ -24,6 +24,7 @@ function K.new(ctx)
   local self = { tasks={}, nextID=0, focus=nil, keys={}, launcher=nil, notice=nil,
     running=true, ctx=ctx, clockTimer=nil, drag=nil }
   local UI, Pixels, Storage = ctx.load("system/ui"), ctx.load("system/pixels"), ctx.load("system/storage")
+  local Paths=ctx.load('system/paths')
   self.ui, self.pixels, self.storage = UI, Pixels, Storage
   local base = ctx.target or term.current()
   self.base = base
@@ -157,7 +158,7 @@ function K.new(ctx)
         if not self.saveConfig() then ctx.config.hiddenShortcuts=previous end
       end}})
   end
-  function self.launch(id,...)
+  function self.launchAt(directory,id,...)
     local item
     for _,v in ipairs(K.catalog) do if v.id == id then item=v end end
     if not item then self.notify("Unknown app: " .. tostring(id)); return end
@@ -170,9 +171,12 @@ function K.new(ctx)
     p.restore={p.x,p.y,p.w,p.h}
     p.win=window.create(self.frame,1,1,10,5,false)
     self.geometry(p)
+    local paths=Paths.context(directory or '/'..fs.combine(ctx.root,'home'))
+    p.paths=paths
     local api={root=ctx.root,home=fs.combine(ctx.root,"home"),id=p.id,ui=UI,pixels=Pixels,storage=Storage,
       theme=self.theme,config=function() return ctx.config end,caps=ctx.caps,
-      notify=self.notify,launch=self.launch,saveConfig=self.saveConfig,
+      notify=self.notify,launch=function(id,...) return self.launchAt(paths.dir(),id,...) end,saveConfig=self.saveConfig,
+      dir=paths.dir,resolve=paths.resolve,setDir=paths.setDir,
       keyDown=function(key) return self.keys[key] == true end,
       setTitle=function(title) p.title=tostring(title) end,
       processes=function()
@@ -193,6 +197,13 @@ function K.new(ctx)
     self.tasks[#self.tasks+1]=p; self.focusTask(p.id)
     self.resume(p,{})
     return p.id
+  end
+  function self.launch(id,...) return self.launchAt(nil,id,...) end
+  function self.forShell(caller)
+    return {version=ctx.configModule.version,
+      launch=function(id,...) return self.launchAt(Paths.resolve(caller.dir()),id,...) end,
+      resolve=function(path) return Paths.resolve(path,caller.dir()) end,
+      dir=function() return Paths.resolve(caller.dir()) end}
   end
   function self.icon(item,x,y,selected)
     local t=self.theme()

@@ -12,6 +12,7 @@ return function(api,path)
     return {format='ccsacabam-sketch-1',width=canvas.w,height=canvas.h,rows=rows}
   end
   local function open(file)
+    file=api.resolve(file)
     local peanut=api.load('system/peanut'); local data,err=peanut.read(file)
     assert(data,err); assert(data.format=='ccsacabam-sketch-1','Not a CCSacabam sketch')
     assert(type(data.width)=='number' and data.width>=1 and data.width<=160 and data.width%1==0,'Invalid width')
@@ -26,8 +27,9 @@ return function(api,path)
   if path then open(path) end
   local function discard() return not dirty or ui.confirm(api,'Discard unsaved drawing?') end
   local function save()
-    local file=ui.prompt(api,'Save sketch',path or fs.combine(api.home,'Pictures/untitled.sketch'))
+    local file=ui.prompt(api,'Save sketch',path or api.resolve('untitled.sketch'))
     if not file then return end
+    file=api.resolve(file)
     if file~=path and fs.exists(file) and not ui.confirm(api,'Replace existing sketch?') then return end
     local ok,err=api.load('system/peanut').write(file,serialize())
     if ok then path=file; dirty=false; api.notify(api.isEncrypted() and 'Sketch saved in encrypted drive.' or 'Sketch saved in personal drive.') else api.notify(err) end
@@ -72,7 +74,7 @@ return function(api,path)
   end
   local function command(cmd)
     if cmd=='s' then save()
-    elseif cmd=='o' and discard() then local file=ui.prompt(api,'Open sketch',api.home..'/Pictures/'); if file then open(file) end
+    elseif cmd=='o' and discard() then local file=ui.prompt(api,'Open sketch',api.dir()..'/'); if file then open(file) end
     elseif cmd=='n' and discard() then canvas=pixels.new(80,39,colors.black); dirty=false
     elseif cmd=='d' then demo=not demo; if demo then timer=os.startTimer(.1) elseif timer then os.cancelTimer(timer); timer=nil end
     elseif cmd=='[' then color=color/2; if color<1 then color=32768 end

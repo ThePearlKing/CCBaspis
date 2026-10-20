@@ -9,6 +9,7 @@ assert(vault.create('network fixture password','network test',mod('system/login'
 local vfs=vault.filesystem('/ccsacabam/home')
 vfs.copy('/ccsacabam/sites/welcome','/Sites/welcome')
 vfs.copy('/ccsacabam/chatplus.lua','/Programs/chatplus.lua')
+vfs.copy('/ccsacabam/examples/europa.lua','/Programs/europa.lua')
 local env=mod('system/session').environment(vfs,_ENV); local cache={}
 local function cached(name)
   if not cache[name] then cache[name]=assert(env.loadfile('/ccsacabam/'..name..'.lua'))() end
@@ -18,7 +19,17 @@ local Config=mod('system/config'); local caps=Config.capabilities()
 local kernel=cached('system/kernel').new({root='/ccsacabam',load=cached,configModule=Config,
   config=Config.normalize({mode='color',welcome=false},caps),caps=caps,target=term.current(),shell=shell,
   isEncrypted=vault.isEncrypted})
-local server=kernel.launch('server',domain,'/Sites/welcome')
+env.ccsacabam={launch=kernel.launch,forShell=kernel.forShell}
+local function command(value)
+  kernel.step({'paste',value}); kernel.step({'key',keys.enter,false}); kernel.step({'key_up',keys.enter})
+end
+local launcher=kernel.launch('terminal')
+vfs.makeDir('/Sites/welcome/nested')
+command(os.getComputerID()==0 and 'cd /Sites/welcome' or 'cd /Sites/welcome/nested')
+command('europa host '..domain..(os.getComputerID()==0 and ' .' or ' ..'))
+local server=kernel.focus
+assert(kernel.get(server).app=='server','Shell did not launch Jupiter')
+kernel.focusTask(launcher); command('cd /Pictures'); kernel.focusTask(server)
 kernel.step({'key',keys.enter,false}); kernel.step({'key_up',keys.enter})
 local chat=kernel.launch('terminal')
 for c in ('chatplus host test-room'):gmatch('.') do kernel.step({'char',c}) end
@@ -33,6 +44,7 @@ parallel.waitForAny(function() kernel.run() end,function()
       for y=1,p.h-2 do lines[#lines+1]=p.win.getLine(y) end
       rednet.send(sender,{server=kernel.get(server).state,chat=kernel.get(chat).state,
         home=kernel.get(server).win.getLine(10),request=kernel.get(server).win.getLine(11),
+        folder=kernel.get(server).win.getLine(5),
         terminal=table.concat(lines,'\n'),
         private=vfs.exists('/.chatplus') and not physical.exists('/.chatplus'),
         encrypted=raw:sub(1,4)=='SCV1' and not raw:find('server.cfg',1,true)},protocol)

@@ -1,6 +1,6 @@
 -- CCSacabam 1.0.0: standalone offline installer
 local package={version="1.0.0",files={
-  ["apps/browser.lua"]={sha256="9b7c646cf69dc37aea9d5d59b81d8470d3902ea1d1e6a7686925e84c59562a1b",data=[=[
+  ["apps/browser.lua"]={sha256="9023175a78279392b21fe6542bd79a7c469bbb5cd24ef184d5a1c4fdd00cb2ea",data=[=[
 return function(api,initial)
   local ui=api.ui; local E=api.load('system/europa'); local C=api.load('system/cashew'); local P=api.load('system/pistachio')
   local peanut=api.load('system/peanut'); local G=api.load('system/ganymede')
@@ -39,6 +39,16 @@ return function(api,initial)
     if not address or address=='' then return end
     local prior=url
     local ok,err=pcall(function()
+      if address:sub(1,7)=='file://' then
+        address='file://'..api.resolve(address:sub(8))
+      elseif address:sub(1,1)=='/' or address:sub(1,2)=='./' or address:sub(1,3)=='../'
+        or address=='.' or address=='..' or (not address:find('://',1,true)
+          and (address:match('%.cashew$') or address:match('%.pist$'))) then
+        address='file://'..api.resolve(address)
+      end
+      if address:sub(1,7)=='file://' and fs.isDir(address:sub(8)) then
+        address='file://'..api.resolve('index.cashew',address:sub(8))
+      end
       local response
       if address=='about:home' then response={status=200,body=home,mime='text/cashew'}
       else
@@ -230,7 +240,7 @@ return function(api)
   end
 end
 ]]},
-  ["apps/editor.lua"]={sha256="ef4745494aac6c69c74d535c130eee54be033043bb27dc6c1fa7dfd4ec85e4e4",data=[[
+  ["apps/editor.lua"]={sha256="7852af8f00192611ef71d920105db5bae56b93b0babf53b969f3771ed8bffbdf",data=[[
 return function(api,path,options)
   local ui=api.ui
   local code=options and options.code
@@ -262,6 +272,7 @@ return function(api,path,options)
   end
   local function discard() return not dirty() or ui.confirm(api,"Discard unsaved changes?") end
   local function open(file)
+    file=api.resolve(file)
     if fs.isDir(file) then api.notify("That is a folder."); return end
     local raw=""
     if fs.exists(file) then
@@ -277,9 +288,10 @@ return function(api,path,options)
     local target=path
     if not target or as then
       local extension=code and ({lua='lua',peanut='peanut',pistachio='pist',cashew='cashew'})[language] or 'txt'
-      target=ui.prompt(api,"Save path",target or fs.combine(api.home,(code and "Programs/untitled." or "Documents/untitled.")..extension))
+      target=ui.prompt(api,"Save path",target or api.resolve('untitled.'..extension))
     end
     if not target or target=="" then return false end
+    target=api.resolve(target)
     if target~=path and fs.exists(target) and not ui.confirm(api,"Replace "..fs.getName(target).."?") then return false end
     local ok,err=api.storage.write(target,contents())
     if ok then
@@ -373,7 +385,7 @@ return function(api,path,options)
     popup=nil
     if name=="save" then save(api.keyDown(keys.leftShift) or api.keyDown(keys.rightShift))
     elseif name=="open" then
-      if discard() then local file=ui.prompt(api,"Open path",api.home.."/Documents/"); if file and file~="" then open(file) end end
+      if discard() then local file=ui.prompt(api,"Open path",api.dir()..'/'); if file and file~="" then open(file) end end
     elseif name=="find" then find()
     elseif name=="undo" then history(undo,redo)
     elseif name=="redo" then history(redo,undo) end
@@ -440,21 +452,22 @@ return function(api,path,options)
   end
 end
 ]]},
-  ["apps/files.lua"]={sha256="4521f46fd992bb2945d47ee7cde7fc6ce6304849c996299860b9127ea5cc644e",data=[[
+  ["apps/files.lua"]={sha256="289149e58e380b0344c1a5c820bbe8d13c41b2defc5e3bd874b7d0fce7391b1f",data=[[
 return function(api,start)
-  local ui=api.ui; local dir=start or api.home
+  local ui=api.ui; local dir=api.resolve(start or api.dir())
   local selection,scroll=1,0; local entries={}; local clip; local showHidden=false
-  local trash=fs.combine(api.home,".Trash")
+  local trash='/'..fs.combine(api.home,".Trash")
   local function edit(path)
     local language=api.load('system/syntax').language(path)
     api.launch(language and 'code' or 'editor',path)
   end
   local function refresh()
-    if not fs.isDir(dir) then dir=api.home end
+    if not fs.isDir(dir) then dir='/'..api.home end
+    api.setDir(dir)
     entries={}
     for _,name in ipairs(fs.list(dir)) do
       if showHidden or name:sub(1,1)~="." or dir==trash then
-        local path=fs.combine(dir,name); local label=name
+        local path=api.resolve(name,dir); local label=name
         if dir==trash then local meta=api.storage.load(fs.combine(path,"info.tbl"),{}); label=meta.original and fs.getName(meta.original) or name end
         entries[#entries+1]={name=name,label=label,path=path,folder=fs.isDir(path)}
       end
@@ -464,7 +477,8 @@ return function(api,start)
   end
   local function selected() return entries[selection] end
   local function navigate(path)
-    if fs.isDir(path) then dir=fs.combine("",path); selection,scroll=1,0; refresh() else api.notify("Folder not found.") end
+    path=api.resolve(path)
+    if fs.isDir(path) then dir=path; selection,scroll=1,0; refresh() else api.notify("Folder not found.") end
   end
   local function restore()
     local item=selected(); if not item then return end
@@ -487,7 +501,7 @@ return function(api,start)
     local name=ui.prompt(api,folder and "New folder name" or "New file name")
     if not name then return end
     if not api.storage.name(name) then api.notify("Use a name without slashes."); return end
-    local path=fs.combine(dir,name)
+    local path=api.resolve(name,dir)
     if fs.exists(path) then api.notify("That name already exists."); return end
     if folder then fs.makeDir(path) else local ok,err=api.storage.write(path,""); if not ok then error(err) end; edit(path) end
     refresh()
@@ -495,8 +509,8 @@ return function(api,start)
   local function action(key)
     local item=selected()
     if key=="open" then open()
-    elseif key=="up" then navigate(fs.getDir(dir))
-    elseif key=="home" then navigate(api.home)
+    elseif key=="up" then navigate('..')
+    elseif key=="home" then navigate('/'..api.home)
     elseif key=="location" then local path=ui.prompt(api,"Go to folder",dir); if path then navigate(path) end
     elseif key=="new" then new(false)
     elseif key=="folder" then new(true)
@@ -515,7 +529,7 @@ return function(api,start)
     elseif key=="trash" and item then
       if dir==trash then
         if ui.confirm(api,"Permanently delete "..item.label.."?") then fs.delete(item.path); refresh() end
-      elseif not fs.isReadOnly(item.path) and item.path~="" and item.path~=api.home and not api.storage.within(item.path,trash) then
+      elseif not fs.isReadOnly(item.path) and item.path~='/' and item.path~='/'..api.home and not api.storage.within(item.path,trash) then
         if not ui.confirm(api,"Move "..item.label.." to Trash?") then return end
         fs.makeDir(trash)
         local slot=api.storage.unique(trash,"item-"..tostring(math.floor(os.clock()*1000)))
@@ -532,7 +546,7 @@ return function(api,start)
   local hits={}
   local function draw()
     local t=api.theme(); local w,h=term.getSize(); ui.clear(t)
-    ui.text(1,1,"/"..dir,t.onAccent,t.accent,w)
+    ui.text(1,1,dir,t.onAccent,t.accent,w)
     hits={}; local col=1
     for _,button in ipairs(toolbar) do
       local label=" "..button[1].." "
@@ -624,10 +638,10 @@ return function(api)
   end
 end
 ]]},
-  ["apps/pistachio.lua"]={sha256="c7a7d6bf6cf5bcd0f207d647ae70504af37d5d7ec3a3485de9e9c1410ff0160f",data=[[
+  ["apps/pistachio.lua"]={sha256="2db925be9dbe3d11f650fadaf40407295eb489db86df1f1ac96b20e8ed6e290c",data=[[
 return function(api,path)
   local ui=api.ui
-  path=path or fs.combine(api.home,'Programs/counter.pist')
+  path=api.resolve(path or '/'..fs.combine(api.home,'Programs/counter.pist'))
   local source,err=api.storage.read(path); assert(source,err)
   local lang=api.load('system/pistachio'); local peanut=api.load('system/peanut')
   local state=lang.runtime(lang.parse(source),api,peanut); state.initialize()
@@ -713,11 +727,15 @@ return function(api)
   end
 end
 ]]},
-  ["apps/server.lua"]={sha256="8dd3b9df23226f1309873168c550778eaa450de9387c6a01ca3401179aab041d",data=[[
+  ["apps/server.lua"]={sha256="f76658e917af5da1b1d6b8fda0c10bd84af34806febaa8a566e05cd3616b3367",data=[[
 return function(api,domain,root)
   local ui=api.ui; local E=api.load('system/europa'); local server
   domain=domain or 'computer-'..os.getComputerID()..'.cc'
-  root=root or '/Sites/welcome'; local message='Offline. Choose a domain and site folder.'
+  root=api.resolve(root or '/Sites/welcome'); local message='Offline. Choose a domain and site folder.'
+  local function chooseFolder()
+    local value=ui.prompt(api,'Published folder',root)
+    if value then root=api.resolve(value) end
+  end
   local function hasHome()
     local path=fs.combine(root,'index.cashew')
     return fs.exists(path) and not fs.isDir(path)
@@ -747,10 +765,10 @@ return function(api,domain,root)
       elseif e=='key' and a==keys.enter then start()
       elseif e=='char' then
         if a=='d' and not server then domain=ui.prompt(api,'Domain name',domain) or domain
-        elseif a=='r' and not server then root=ui.prompt(api,'Published folder',root) or root end
+        elseif a=='r' and not server then chooseFolder() end
       elseif e=='mouse_click' then
         if c==3 and not server then domain=ui.prompt(api,'Domain name',domain) or domain
-        elseif c==5 and not server then root=ui.prompt(api,'Published folder',root) or root
+        elseif c==5 and not server then chooseFolder()
         elseif c==7 then start() end
       end
     end)
@@ -828,7 +846,7 @@ return function(api)
   end
 end
 ]]},
-  ["apps/sketch.lua"]={sha256="de307d851c100c9c22c83ea8fdd8e345205e75dd1ad86e5d96795b6d7a021eff",data=[=[
+  ["apps/sketch.lua"]={sha256="9d288cd0ac9783e3e04e9d069a7b72b6dcf657175b6a86d1f81873b6efecc813",data=[=[
 return function(api,path)
   local ui,pixels=api.ui,api.pixels
   local hex='0123456789abcdef'; local color=colors.cyan; local cx,cy=1,1
@@ -843,6 +861,7 @@ return function(api,path)
     return {format='ccsacabam-sketch-1',width=canvas.w,height=canvas.h,rows=rows}
   end
   local function open(file)
+    file=api.resolve(file)
     local peanut=api.load('system/peanut'); local data,err=peanut.read(file)
     assert(data,err); assert(data.format=='ccsacabam-sketch-1','Not a CCSacabam sketch')
     assert(type(data.width)=='number' and data.width>=1 and data.width<=160 and data.width%1==0,'Invalid width')
@@ -857,8 +876,9 @@ return function(api,path)
   if path then open(path) end
   local function discard() return not dirty or ui.confirm(api,'Discard unsaved drawing?') end
   local function save()
-    local file=ui.prompt(api,'Save sketch',path or fs.combine(api.home,'Pictures/untitled.sketch'))
+    local file=ui.prompt(api,'Save sketch',path or api.resolve('untitled.sketch'))
     if not file then return end
+    file=api.resolve(file)
     if file~=path and fs.exists(file) and not ui.confirm(api,'Replace existing sketch?') then return end
     local ok,err=api.load('system/peanut').write(file,serialize())
     if ok then path=file; dirty=false; api.notify(api.isEncrypted() and 'Sketch saved in encrypted drive.' or 'Sketch saved in personal drive.') else api.notify(err) end
@@ -903,7 +923,7 @@ return function(api,path)
   end
   local function command(cmd)
     if cmd=='s' then save()
-    elseif cmd=='o' and discard() then local file=ui.prompt(api,'Open sketch',api.home..'/Pictures/'); if file then open(file) end
+    elseif cmd=='o' and discard() then local file=ui.prompt(api,'Open sketch',api.dir()..'/'); if file then open(file) end
     elseif cmd=='n' and discard() then canvas=pixels.new(80,39,colors.black); dirty=false
     elseif cmd=='d' then demo=not demo; if demo then timer=os.startTimer(.1) elseif timer then os.cancelTimer(timer); timer=nil end
     elseif cmd=='[' then color=color/2; if color<1 then color=32768 end
@@ -938,10 +958,10 @@ return function(api,path)
   end
 end
 ]=]},
-  ["apps/terminal.lua"]={sha256="a1ad5a976b0d1023c12cea7a48f62607cc2e7a1fe736f2a4fc198de4777e2b3b",data=[[
+  ["apps/terminal.lua"]={sha256="03ba59170d37c35911f6a758e375fc021bee56eee1fb5215228f96e92d58d252",data=[[
 return function(api,program)
   local parent={}; for k,v in pairs(api.shell) do parent[k]=v end
-  parent.dir=function() return api.home end
+  parent.dir=function() return fs.combine('',api.dir()) end
   parent.path=function() return ".:/"..fs.combine(api.home,"Programs")..":"..api.shell.path() end
   local t=api.theme(); term.setBackgroundColor(t.bg); term.setTextColor(t.text); term.clear(); term.setCursorPos(1,1)
   print("CCSacabam / "..(api.isEncrypted() and "encrypted" or "personal").." terminal")
@@ -949,9 +969,7 @@ return function(api,program)
   print("F1 apps | F2 switch | F4 close")
   local function shellTask()
     if program then
-      -- fs.combine returns a root-relative path without a leading slash.
-      -- Files already resolved it: do not resolve it again against shell.dir().
-      local absolute="/"..fs.combine("/",program)
+      local absolute=api.resolve(program)
       os.run({shell=parent,multishell=false},"/rom/programs/shell.lua",'"'..absolute..'"')
       print("Program finished. Press any key."); os.pullEvent("key")
     else os.run({shell=parent,multishell=false},"/rom/programs/shell.lua") end
@@ -964,7 +982,7 @@ return function(api,program)
   end)
 end
 ]]},
-  ["boot.lua"]={sha256="f9a30ab0f647beefa6c97849117416fb4fe524d54fe8f92fb50e150a929a385c",data=[[
+  ["boot.lua"]={sha256="a48ced6783e82a3c91d834531746e0239b13bf06eaba1f1cabe44b4a6364f787",data=[[
 -- Entry point: login, encrypted personal drive, then the desktop session.
 local args={...}
 local root=fs.getDir(shell.getRunningProgram())
@@ -1007,13 +1025,14 @@ local function main()
         if not env.fs.exists("/Sites/welcome") then env.fs.copy(fs.combine(root,"sites/welcome"),"/Sites/welcome") end
         assert(module("system/storage").write(fs.combine(root,"home/.examples-installed"),"1"))
       end
+      module('system/programs').update(root,module('system/storage'),module('system/crypto'))
       local ctx={root=root,load=module,config=config,configModule=configModule,caps=caps,target=original,shell=shell,
         password=login.password,isEncrypted=vault.isEncrypted,
         setEncryption=function(enabled,password,entropy) return vault.setEncryption(enabled,password,entropy,login.progress) end,
         cryptoProgress=login.progress,
         changePassword=function(password,entropy) return vault.changePassword(password,entropy,login.progress) end}
       local kernel=module("system/kernel").new(ctx)
-      env.ccsacabam={launch=kernel.launch,version=configModule.version}
+      env.ccsacabam={launch=kernel.launch,forShell=kernel.forShell,version=configModule.version}
       if config.welcome then kernel.launch("help") end
       return kernel.run()
     end
@@ -2122,10 +2141,10 @@ local restored = assert(peanut.read(path))
 print('Saved and read encrypted Peanut data:')
 print(peanut.encode(restored,true))
 ]]},
-  ["examples/pistachio.lua"]={sha256="70badd04b0c3bdb0e7568a6afaf5e984e1fd06723ddc3e10947877940eef97f8",data=[[
+  ["examples/pistachio.lua"]={sha256="92e87c7f222b57e2c9d527c4f90ba7694d08f249a9f5b8f054e21a8cfc7f9912",data=[[
 local path = ...
 if not path then print('Usage: pistachio <file.pist>'); return end
-assert(ccsacabam,'Run this command inside CCSacabam').launch('pistachio',shell.resolve(path))
+assert(ccsacabam,'Run this command inside CCSacabam').launch('pistachio',path)
 ]]},
   ["examples/sealed-note.pist"]={sha256="8974158b3668272dcb76e12fc7f10b52ed12175adfe7a8dfd61f73bbdceca4ca",data=[[
 # Only the encrypted envelope is saved, even if drive encryption is OFF.
@@ -2445,7 +2464,7 @@ function C.equal(a,b)
 end
 return C
 ]]},
-  ["system/europa.lua"]={sha256="8e294e0d2ab8d7b71df22105756df6aa7d7127f2ada22f9fffe79cfa7f755c17",data=[[
+  ["system/europa.lua"]={sha256="dbba63b79d6be2626ceaa2e14aed61c4dfb081e650284845b0efaeddc60fed7b",data=[[
 -- Europa: small request/response networking over normal ComputerCraft Rednet.
 local E={protocol='ccsacabam.europa.v1',maxBody=32768}
 local hosts={}; local serial=0
@@ -2492,7 +2511,10 @@ function E.relative(link,current)
   if link:find('://',1,true) then return link end
   if not current or current=='about:home' then return 'europa://'..link end
   local parsed=E.address(current)
-  if parsed.localFile then return 'file://'..fs.combine(fs.getDir(parsed.localFile),link) end
+  if parsed.localFile then
+    local path=link:sub(1,1)=='/' and fs.combine('',link) or fs.combine(fs.getDir(parsed.localFile),link)
+    return 'file:///'..path
+  end
   return 'europa://'..parsed.host..(link:sub(1,1)=='/' and link or '/'..fs.combine(fs.getDir(parsed.path),link))
 end
 function E.serve(root,path)
@@ -2667,7 +2689,7 @@ function G.form(title)
 end
 return G
 ]]},
-  ["system/kernel.lua"]={sha256="ae5dc7418426854d96806d28ce106eb8c22062203d16b85641c5d83c5bfa0253",data=[=[
+  ["system/kernel.lua"]={sha256="5a172e580ade0581f5376a7cc0c83b8ed95cbd54e0abc2df679ee89fa41624e4",data=[=[
 local K = {}
 local unpack = table.unpack or unpack
 local input = { char=true, key=true, key_up=true, paste=true, mouse_click=true,
@@ -2694,6 +2716,7 @@ function K.new(ctx)
   local self = { tasks={}, nextID=0, focus=nil, keys={}, launcher=nil, notice=nil,
     running=true, ctx=ctx, clockTimer=nil, drag=nil }
   local UI, Pixels, Storage = ctx.load("system/ui"), ctx.load("system/pixels"), ctx.load("system/storage")
+  local Paths=ctx.load('system/paths')
   self.ui, self.pixels, self.storage = UI, Pixels, Storage
   local base = ctx.target or term.current()
   self.base = base
@@ -2827,7 +2850,7 @@ function K.new(ctx)
         if not self.saveConfig() then ctx.config.hiddenShortcuts=previous end
       end}})
   end
-  function self.launch(id,...)
+  function self.launchAt(directory,id,...)
     local item
     for _,v in ipairs(K.catalog) do if v.id == id then item=v end end
     if not item then self.notify("Unknown app: " .. tostring(id)); return end
@@ -2840,9 +2863,12 @@ function K.new(ctx)
     p.restore={p.x,p.y,p.w,p.h}
     p.win=window.create(self.frame,1,1,10,5,false)
     self.geometry(p)
+    local paths=Paths.context(directory or '/'..fs.combine(ctx.root,'home'))
+    p.paths=paths
     local api={root=ctx.root,home=fs.combine(ctx.root,"home"),id=p.id,ui=UI,pixels=Pixels,storage=Storage,
       theme=self.theme,config=function() return ctx.config end,caps=ctx.caps,
-      notify=self.notify,launch=self.launch,saveConfig=self.saveConfig,
+      notify=self.notify,launch=function(id,...) return self.launchAt(paths.dir(),id,...) end,saveConfig=self.saveConfig,
+      dir=paths.dir,resolve=paths.resolve,setDir=paths.setDir,
       keyDown=function(key) return self.keys[key] == true end,
       setTitle=function(title) p.title=tostring(title) end,
       processes=function()
@@ -2863,6 +2889,13 @@ function K.new(ctx)
     self.tasks[#self.tasks+1]=p; self.focusTask(p.id)
     self.resume(p,{})
     return p.id
+  end
+  function self.launch(id,...) return self.launchAt(nil,id,...) end
+  function self.forShell(caller)
+    return {version=ctx.configModule.version,
+      launch=function(id,...) return self.launchAt(Paths.resolve(caller.dir()),id,...) end,
+      resolve=function(path) return Paths.resolve(path,caller.dir()) end,
+      dir=function() return Paths.resolve(caller.dir()) end}
   end
   function self.icon(item,x,y,selected)
     local t=self.theme()
@@ -3272,6 +3305,37 @@ function L.unlock(vault,options)
 end
 return L
 ]]},
+  ["system/paths.lua"]={sha256="1e4842930e9ff1f07e1631f31739675d428072a09d0b5af497c88e99ff12bebd",data=[[
+-- Working directories belong to a window or shell, never to the shared fs API.
+local M={}
+function M.resolve(path,base)
+  assert(type(path)=='string','Path must be a string')
+  path=path:gsub('\\','/')
+  local parts={}
+  local function append(value)
+    for part in value:gmatch('[^/]+') do
+      if part=='..' then table.remove(parts)
+      elseif part~='.' then parts[#parts+1]=part end
+    end
+  end
+  if path:sub(1,1)~='/' then append((base or '/'):gsub('\\','/')) end
+  append(path)
+  return '/'..table.concat(parts,'/')
+end
+function M.context(directory)
+  local cwd=M.resolve(directory or '/')
+  local context={}
+  function context.dir() return cwd end
+  function context.resolve(path,base) return M.resolve(path,base or cwd) end
+  function context.setDir(path)
+    local resolved=context.resolve(path)
+    assert(fs.isDir(resolved),'Not a directory: '..resolved)
+    cwd=resolved
+  end
+  return context
+end
+return M
+]]},
   ["system/peanut.lua"]={sha256="0e78b4c13bc932752e004b9b08e2964b5a40604e4fe1c66c44f70636e97c05bf",data=[[
 -- Peanut 1: JSON data plus comments, identifier keys, '=' and trailing commas.
 -- No code evaluation. Lua: local peanut = require('peanut')
@@ -3423,7 +3487,7 @@ end
 P.parse=P.decode; P.stringify=P.encode
 return P
 ]]},
-  ["system/pistachio.lua"]={sha256="4efa843a2fd7f4bd46a7cd8a00b6b4eae3e0847bc7694544f4cb6e344444cc9b",data=[[
+  ["system/pistachio.lua"]={sha256="d9b13b5b6f066fd26554f39bc0c944b9575246486e826ba863bd0db99aef9552",data=[[
 -- Pistachio Script: parsed application language, never evaluated as Lua.
 local P={version='1.0'}
 local function fail(line,message) error('Pistachio line '..tostring(line)..': '..message,0) end
@@ -3662,8 +3726,8 @@ function P.runtime(ast,api,peanut)
           elseif n.op=='app' then state.title=tostring(eval(n.value))
           elseif n.op=='notify' then api.notify(tostring(eval(n.value)))
           elseif n.op=='call' then assert(state.handlers[n.name],'Unknown function: '..n.name); run(state.handlers[n.name],phase)
-          elseif n.op=='load' then local value,why=peanut.read(tostring(eval(n.value))); assert(value~=nil,why); state.vars[n.name]=value
-          elseif n.op=='save' then assert(peanut.write(tostring(eval(n.value)),state.vars[n.name]))
+          elseif n.op=='load' then local value,why=peanut.read(api.resolve(tostring(eval(n.value)))); assert(value~=nil,why); state.vars[n.name]=value
+          elseif n.op=='save' then assert(peanut.write(api.resolve(tostring(eval(n.value))),state.vars[n.name]))
           elseif n.op=='quit' then state.quit=true end
         end
       end)
@@ -3743,6 +3807,33 @@ function M.draw(b, target, ox, oy, maxW, maxH)
 end
 return M
 ]]},
+  ["system/programs.lua"]={sha256="54a449815afc175218987e816cffaa7870056b1814a9cd2032d0509f307fda92",data=[[
+-- Refresh shipped launchers after an upgrade without replacing user edits.
+local M={}
+local legacy={
+  ['pistachio.lua']='70badd04b0c3bdb0e7568a6afaf5e984e1fd06723ddc3e10947877940eef97f8',
+  ['europa.lua']='26e0c24b08490d6cfe4cafd29179052fdc70d584b2d7cd26c8fd543dc069d815',
+}
+function M.update(root,storage,crypto)
+  local record=fs.combine(root,'home/.system/bundled-commands.tbl')
+  local previous=storage.load(record,{})
+  local nextHashes={}; local changed=false
+  for name,oldHash in pairs(legacy) do
+    local source=assert(storage.read(fs.combine(root,'examples/'..name)))
+    local hash=crypto.hex(crypto.sha256(source))
+    local destination=fs.combine(root,'home/Programs/'..name)
+    local current=storage.read(destination)
+    local currentHash=current and crypto.hex(crypto.sha256(current))
+    if not fs.exists(destination) or (currentHash and (currentHash==oldHash or currentHash==previous[name])) then
+      if current~=source then assert(storage.write(destination,source)) end
+    end
+    nextHashes[name]=hash
+    if previous[name]~=hash then changed=true end
+  end
+  if changed then assert(storage.save(record,nextHashes)) end
+end
+return M
+]]},
   ["system/seal.lua"]={sha256="7e7268aa2d3609cd92827b7d50a9e5a991c378df0977fd35f29d92e05250eef5",data=[[
 -- Password-encrypted messages for native Pistachio programs. No drive key access.
 local S={iterations=100000,maxPlain=32768}
@@ -3777,7 +3868,7 @@ function S.new(C,progress)
 end
 return S
 ]]},
-  ["system/session.lua"]={sha256="56152c52a064e1aa91c6ed778780316fc7bc262c6852a474dbfdec42b9cac3c9",data=[[
+  ["system/session.lua"]={sha256="10dedd07bae75e976e3b764091b64b1e16060d456913ed2efcf65857c6687c8a",data=[[
 -- A normal CraftOS program environment routed through the encrypted filesystem.
 -- This is compatibility plumbing, not a security sandbox for untrusted Lua.
 local M={}
@@ -3786,7 +3877,15 @@ function M.environment(vfs,parent)
   local env={fs=vfs}
   setmetatable(env,{__index=parent})
   env._G=env
-  env.load=function(chunk,name,mode,target) return hostLoad(chunk,name,mode or "t",target or env) end
+  env.load=function(chunk,name,mode,target)
+    -- CraftOS creates a fresh environment with its own shell for each program.
+    -- Bind launches there, while the caller's actual working directory exists.
+    if target and rawget(target,'shell') and not rawget(target,'ccsacabam')
+      and env.ccsacabam and env.ccsacabam.forShell then
+      target.ccsacabam=env.ccsacabam.forShell(target.shell)
+    end
+    return hostLoad(chunk,name,mode or "t",target or env)
+  end
   env.loadstring=function(chunk,name) return env.load(chunk,name) end
   env.loadfile=function(path,mode,target)
     if type(mode)=="table" then target,mode=mode,nil end

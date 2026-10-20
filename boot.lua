@@ -40,13 +40,14 @@ local function main()
         if not env.fs.exists("/Sites/welcome") then env.fs.copy(fs.combine(root,"sites/welcome"),"/Sites/welcome") end
         assert(module("system/storage").write(fs.combine(root,"home/.examples-installed"),"1"))
       end
+      module('system/programs').update(root,module('system/storage'),module('system/crypto'))
       local ctx={root=root,load=module,config=config,configModule=configModule,caps=caps,target=original,shell=shell,
         password=login.password,isEncrypted=vault.isEncrypted,
         setEncryption=function(enabled,password,entropy) return vault.setEncryption(enabled,password,entropy,login.progress) end,
         cryptoProgress=login.progress,
         changePassword=function(password,entropy) return vault.changePassword(password,entropy,login.progress) end}
       local kernel=module("system/kernel").new(ctx)
-      env.ccsacabam={launch=kernel.launch,version=configModule.version}
+      env.ccsacabam={launch=kernel.launch,forShell=kernel.forShell,version=configModule.version}
       if config.welcome then kernel.launch("help") end
       return kernel.run()
     end

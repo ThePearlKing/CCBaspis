@@ -29,6 +29,7 @@ return function(api,path,options)
   end
   local function discard() return not dirty() or ui.confirm(api,"Discard unsaved changes?") end
   local function open(file)
+    file=api.resolve(file)
     if fs.isDir(file) then api.notify("That is a folder."); return end
     local raw=""
     if fs.exists(file) then
@@ -44,9 +45,10 @@ return function(api,path,options)
     local target=path
     if not target or as then
       local extension=code and ({lua='lua',peanut='peanut',pistachio='pist',cashew='cashew'})[language] or 'txt'
-      target=ui.prompt(api,"Save path",target or fs.combine(api.home,(code and "Programs/untitled." or "Documents/untitled.")..extension))
+      target=ui.prompt(api,"Save path",target or api.resolve('untitled.'..extension))
     end
     if not target or target=="" then return false end
+    target=api.resolve(target)
     if target~=path and fs.exists(target) and not ui.confirm(api,"Replace "..fs.getName(target).."?") then return false end
     local ok,err=api.storage.write(target,contents())
     if ok then
@@ -140,7 +142,7 @@ return function(api,path,options)
     popup=nil
     if name=="save" then save(api.keyDown(keys.leftShift) or api.keyDown(keys.rightShift))
     elseif name=="open" then
-      if discard() then local file=ui.prompt(api,"Open path",api.home.."/Documents/"); if file and file~="" then open(file) end end
+      if discard() then local file=ui.prompt(api,"Open path",api.dir()..'/'); if file and file~="" then open(file) end end
     elseif name=="find" then find()
     elseif name=="undo" then history(undo,redo)
     elseif name=="redo" then history(redo,undo) end

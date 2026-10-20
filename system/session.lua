@@ -6,7 +6,15 @@ function M.environment(vfs,parent)
   local env={fs=vfs}
   setmetatable(env,{__index=parent})
   env._G=env
-  env.load=function(chunk,name,mode,target) return hostLoad(chunk,name,mode or "t",target or env) end
+  env.load=function(chunk,name,mode,target)
+    -- CraftOS creates a fresh environment with its own shell for each program.
+    -- Bind launches there, while the caller's actual working directory exists.
+    if target and rawget(target,'shell') and not rawget(target,'ccsacabam')
+      and env.ccsacabam and env.ccsacabam.forShell then
+      target.ccsacabam=env.ccsacabam.forShell(target.shell)
+    end
+    return hostLoad(chunk,name,mode or "t",target or env)
+  end
   env.loadstring=function(chunk,name) return env.load(chunk,name) end
   env.loadfile=function(path,mode,target)
     if type(mode)=="table" then target,mode=mode,nil end

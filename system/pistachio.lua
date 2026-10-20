@@ -236,8 +236,8 @@ function P.runtime(ast,api,peanut)
           elseif n.op=='app' then state.title=tostring(eval(n.value))
           elseif n.op=='notify' then api.notify(tostring(eval(n.value)))
           elseif n.op=='call' then assert(state.handlers[n.name],'Unknown function: '..n.name); run(state.handlers[n.name],phase)
-          elseif n.op=='load' then local value,why=peanut.read(tostring(eval(n.value))); assert(value~=nil,why); state.vars[n.name]=value
-          elseif n.op=='save' then assert(peanut.write(tostring(eval(n.value)),state.vars[n.name]))
+          elseif n.op=='load' then local value,why=peanut.read(api.resolve(tostring(eval(n.value)))); assert(value~=nil,why); state.vars[n.name]=value
+          elseif n.op=='save' then assert(peanut.write(api.resolve(tostring(eval(n.value))),state.vars[n.name]))
           elseif n.op=='quit' then state.quit=true end
         end
       end)

@@ -63,6 +63,8 @@ end
 
 ## Expressions
 
+Program paths and `load`/`save` filenames resolve against the app's working directory, inherited from the launching terminal or Files window. `.` and `..` work, and absolute paths begin with `/`. For example, from `/Programs/demo`, `pistachio ./main.pist` can `load data "./settings.peanut"` and `save data "../result.peanut"`. Changing another terminal's directory does not move a running program's files.
+
 Numbers, strings, `true`, `false`, `null`, parentheses, field access (`data.title`), and array indexing (`data.items[1]`) are supported. Operators are `+ - * / %`, string concatenation `..`, comparisons `== != < > <= >=`, and short-circuiting `and or not`. Arithmetic and comparisons follow Lua value types. Quoted strings interpolate `{variable}` values; use `..` for other expressions.
 
 Built-in values:

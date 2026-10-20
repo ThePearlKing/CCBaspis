@@ -1,6 +1,6 @@
 return function(api,path)
   local ui=api.ui
-  path=path or fs.combine(api.home,'Programs/counter.pist')
+  path=api.resolve(path or '/'..fs.combine(api.home,'Programs/counter.pist'))
   local source,err=api.storage.read(path); assert(source,err)
   local lang=api.load('system/pistachio'); local peanut=api.load('system/peanut')
   local state=lang.runtime(lang.parse(source),api,peanut); state.initialize()

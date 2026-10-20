@@ -1,17 +1,18 @@
 return function(api,start)
-  local ui=api.ui; local dir=start or api.home
+  local ui=api.ui; local dir=api.resolve(start or api.dir())
   local selection,scroll=1,0; local entries={}; local clip; local showHidden=false
-  local trash=fs.combine(api.home,".Trash")
+  local trash='/'..fs.combine(api.home,".Trash")
   local function edit(path)
     local language=api.load('system/syntax').language(path)
     api.launch(language and 'code' or 'editor',path)
   end
   local function refresh()
-    if not fs.isDir(dir) then dir=api.home end
+    if not fs.isDir(dir) then dir='/'..api.home end
+    api.setDir(dir)
     entries={}
     for _,name in ipairs(fs.list(dir)) do
       if showHidden or name:sub(1,1)~="." or dir==trash then
-        local path=fs.combine(dir,name); local label=name
+        local path=api.resolve(name,dir); local label=name
         if dir==trash then local meta=api.storage.load(fs.combine(path,"info.tbl"),{}); label=meta.original and fs.getName(meta.original) or name end
         entries[#entries+1]={name=name,label=label,path=path,folder=fs.isDir(path)}
       end
@@ -21,7 +22,8 @@ return function(api,start)
   end
   local function selected() return entries[selection] end
   local function navigate(path)
-    if fs.isDir(path) then dir=fs.combine("",path); selection,scroll=1,0; refresh() else api.notify("Folder not found.") end
+    path=api.resolve(path)
+    if fs.isDir(path) then dir=path; selection,scroll=1,0; refresh() else api.notify("Folder not found.") end
   end
   local function restore()
     local item=selected(); if not item then return end
@@ -44,7 +46,7 @@ return function(api,start)
     local name=ui.prompt(api,folder and "New folder name" or "New file name")
     if not name then return end
     if not api.storage.name(name) then api.notify("Use a name without slashes."); return end
-    local path=fs.combine(dir,name)
+    local path=api.resolve(name,dir)
     if fs.exists(path) then api.notify("That name already exists."); return end
     if folder then fs.makeDir(path) else local ok,err=api.storage.write(path,""); if not ok then error(err) end; edit(path) end
     refresh()
@@ -52,8 +54,8 @@ return function(api,start)
   local function action(key)
     local item=selected()
     if key=="open" then open()
-    elseif key=="up" then navigate(fs.getDir(dir))
-    elseif key=="home" then navigate(api.home)
+    elseif key=="up" then navigate('..')
+    elseif key=="home" then navigate('/'..api.home)
     elseif key=="location" then local path=ui.prompt(api,"Go to folder",dir); if path then navigate(path) end
     elseif key=="new" then new(false)
     elseif key=="folder" then new(true)
@@ -72,7 +74,7 @@ return function(api,start)
     elseif key=="trash" and item then
       if dir==trash then
         if ui.confirm(api,"Permanently delete "..item.label.."?") then fs.delete(item.path); refresh() end
-      elseif not fs.isReadOnly(item.path) and item.path~="" and item.path~=api.home and not api.storage.within(item.path,trash) then
+      elseif not fs.isReadOnly(item.path) and item.path~='/' and item.path~='/'..api.home and not api.storage.within(item.path,trash) then
         if not ui.confirm(api,"Move "..item.label.." to Trash?") then return end
         fs.makeDir(trash)
         local slot=api.storage.unique(trash,"item-"..tostring(math.floor(os.clock()*1000)))
@@ -89,7 +91,7 @@ return function(api,start)
   local hits={}
   local function draw()
     local t=api.theme(); local w,h=term.getSize(); ui.clear(t)
-    ui.text(1,1,"/"..dir,t.onAccent,t.accent,w)
+    ui.text(1,1,dir,t.onAccent,t.accent,w)
     hits={}; local col=1
     for _,button in ipairs(toolbar) do
       local label=" "..button[1].." "

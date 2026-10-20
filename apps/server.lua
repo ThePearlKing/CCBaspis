@@ -1,7 +1,11 @@
 return function(api,domain,root)
   local ui=api.ui; local E=api.load('system/europa'); local server
   domain=domain or 'computer-'..os.getComputerID()..'.cc'
-  root=root or '/Sites/welcome'; local message='Offline. Choose a domain and site folder.'
+  root=api.resolve(root or '/Sites/welcome'); local message='Offline. Choose a domain and site folder.'
+  local function chooseFolder()
+    local value=ui.prompt(api,'Published folder',root)
+    if value then root=api.resolve(value) end
+  end
   local function hasHome()
     local path=fs.combine(root,'index.cashew')
     return fs.exists(path) and not fs.isDir(path)
@@ -31,10 +35,10 @@ return function(api,domain,root)
       elseif e=='key' and a==keys.enter then start()
       elseif e=='char' then
         if a=='d' and not server then domain=ui.prompt(api,'Domain name',domain) or domain
-        elseif a=='r' and not server then root=ui.prompt(api,'Published folder',root) or root end
+        elseif a=='r' and not server then chooseFolder() end
       elseif e=='mouse_click' then
         if c==3 and not server then domain=ui.prompt(api,'Domain name',domain) or domain
-        elseif c==5 and not server then root=ui.prompt(api,'Published folder',root) or root
+        elseif c==5 and not server then chooseFolder()
         elseif c==7 then start() end
       end
     end)
