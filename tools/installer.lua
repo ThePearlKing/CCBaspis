@@ -59,7 +59,7 @@ function I.install(package,options)
     local mode=options.mode or (term.isColor() and 'color' or 'basic')
     if not term.isColor() then mode='basic' end
     assert(mode=='basic' or mode=='color' or mode=='render','Unknown display mode')
-    writeFile(stage..'/config/display.tbl',textutils.serialize({mode=mode,welcome=true}))
+    writeFile(stage..'/config/display.tbl',textutils.serialize({mode=mode,welcome=true,encrypt=options.encrypt==true}))
     for _,path in ipairs({'/startup.lua','/startup'}) do
       if fs.exists(path) and not startupRestore[path] and not (path=='/startup.lua' and not fs.isDir(path) and readFile(path):find('CCSacabam managed startup',1,true)) then
         startupRestore[path]=backup..'/'..fs.getName(path)
@@ -90,16 +90,16 @@ function I.install(package,options)
   return {target=target,backup=backup,bytes=total}
 end
 function I.run(package,args)
-  assert(bit32 and window and term.blit,'CCSacabam needs CC: Tweaked or a compatible modern ComputerCraft runtime.')
+  assert(bit32 and window and term.blit and fs.exists('/rom/modules/main/cc/require.lua'),'CCSacabam needs modern CC: Tweaked with cc.require.')
   local w,h=term.getSize(); assert(w>=20 and h>=10,'Display must be at least 20x10.')
-  local mode=term.isColor() and 'color' or 'basic'
-  if args and args[1]=='--yes' then mode=args[2] or mode
+  local mode=term.isColor() and 'color' or 'basic'; local encrypt=false
+  if args and args[1]=='--yes' then mode=args[2] or mode; encrypt=args[3]=='--encrypt'
   else
     term.setBackgroundColor(colors.black); term.setTextColor(colors.white); term.clear(); term.setCursorPos(1,1)
     print('CCSacabam installer\n')
     print('Installs to /ccsacabam. Existing files are preserved.')
     print('Existing startup programs are backed up.')
-    print('Create your encrypted drive and passphrase at first boot.\n')
+    print('Create your personal drive and passphrase at first boot.\n')
     if term.isColor() then
       print('Display mode:')
       print('1 Basic: monochrome, keyboard controls')
@@ -108,11 +108,19 @@ function I.run(package,args)
       write('Choose 1, 2, or 3: '); local choice=read()
       mode=choice=='1' and 'basic' or choice=='3' and 'render' or 'color'
     else print('Basic computer detected: monochrome mode.') end
+    if not fs.exists(I.target..'/vault/data.scv') then
+      print('\nEncryption is OFF by default.')
+      print('Fine to leave off on a private computer.')
+      print('On a shared server, try encryption: it is the main security feature for saved files.')
+      print('Without it, login still works, but files are readable outside CCSacabam.')
+      write('Enable encryption? [y/N]: '); local choice=read():lower()
+      encrypt=choice=='y' or choice=='yes'
+    else print('The existing drive keeps its encryption setting.') end
     write('\nPress Enter to install, or type cancel: ')
     if read()~='' then print('Cancelled.'); return false end
   end
   print('Checking package and staging files...')
-  local ok,result=pcall(I.install,package,{mode=mode})
+  local ok,result=pcall(I.install,package,{mode=mode,encrypt=encrypt})
   if not ok then printError(result); return false end
   print('CCSacabam installed. Backup: '..result.backup)
   print('Run /ccsacabam/boot.lua or reboot to sign in.')

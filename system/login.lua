@@ -11,7 +11,7 @@ function L.password(label,subtitle)
     local py=math.min(h-3,y+1)
     term.setCursorPos(2,py); term.write("> "..string.rep("*",math.min(#value,w-5)))
     term.setCursorBlink(true)
-    term.setCursorPos(2,h-1); term.write(("Enter: unlock / Esc: leave"):sub(1,w-2))
+    term.setCursorPos(2,h-1); term.write(("Enter: unlock / F5: leave"):sub(1,w-2))
     term.setCursorPos(math.min(w,4+#value),py)
   end
   draw()
@@ -21,7 +21,7 @@ function L.password(label,subtitle)
     if e=="char" or e=="paste" then value=value..a:gsub("[%c]",""):sub(1,256-#value)
     elseif e=="key" and a==keys.backspace then value=value:sub(1,-2)
     elseif e=="key" and a==keys.enter then term.setCursorBlink(false); return value,table.concat(entropy,";")
-    elseif e=="terminate" or (e=="key" and a==keys.escape) then term.setCursorBlink(false); return nil end
+    elseif e=="terminate" or (e=="key" and a==keys.f5) then term.setCursorBlink(false); return nil end
     draw()
   end
 end
@@ -33,12 +33,15 @@ function L.progress(n,total)
   os.queueEvent("ccsacabam_crypto_yield")
   os.pullEvent("ccsacabam_crypto_yield")
 end
-function L.unlock(vault)
+function L.unlock(vault,options)
+  local encrypted=options and options.encrypt==true
   local message
   while true do
     if not vault.exists() then
-      local password,entropy=L.password("Create your encrypted personal drive",{
-        "Use a passphrase of 12+ characters.","There is no password reset or back door.",message or "Keep a copy of your password somewhere safe."})
+      local password,entropy=L.password("Create your personal drive",{
+        "Use a passphrase of 12+ characters.",
+        encrypted and "Encryption ON: saved files are protected." or "Encryption OFF: login only; files are readable.",
+        message or "There is no password reset. Keep it safe."})
       if not password then return false end
       if #password<12 then message="Passphrase must have at least 12 characters."
       else
@@ -46,14 +49,14 @@ function L.unlock(vault)
         if not again then return false end
         if password~=again then message="Passphrases did not match."
         else
-          local ok,err=vault.create(password,entropy,L.progress)
+          local ok,err=vault.create(password,entropy,L.progress,encrypted)
           password,again=nil,nil
           if ok then return true end
           message=err
         end
       end
     else
-      local password=L.password("Unlock your personal drive",{message or "Your files are encrypted while locked."})
+      local password=L.password("Unlock your personal drive",{message or (vault.isEncrypted() and "Your files are encrypted while locked." or "Encryption OFF. Files are readable outside the OS.")})
       if not password then return false end
       local ok,err=vault.unlock(password,L.progress)
       password=nil

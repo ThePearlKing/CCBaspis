@@ -225,7 +225,7 @@ return function(api)
   end
 end
 ]]},
-  ["apps/editor.lua"]={sha256="5ab549dfb35e7a175b9f73a2e81edb23722608a7acfef874351c9ad49546600e",data=[[
+  ["apps/editor.lua"]={sha256="7797dc4962ad70df50debeef870ef874f851d8db91478ab4b721c37a4ccc80c5",data=[[
 return function(api,path)
   local ui=api.ui
   local lines={""}; local x,y,top,left=1,1,1,0
@@ -257,7 +257,7 @@ return function(api,path)
     if not target or target=="" then return false end
     if target~=path and fs.exists(target) and not ui.confirm(api,"Replace "..fs.getName(target).."?") then return false end
     local ok,err=api.storage.write(target,contents())
-    if ok then path=target; saved=contents(); api.notify("Saved in encrypted drive.") else api.notify(err) end
+    if ok then path=target; saved=contents(); api.notify(api.isEncrypted() and "Saved in encrypted drive." or "Saved in personal drive.") else api.notify(err) end
     return ok
   end
   local function insert(value)
@@ -498,22 +498,25 @@ return function(api,start)
   end
 end
 ]]},
-  ["apps/help.lua"]={sha256="c2ef450f4afdfa07dc9f370649b79646271b7d18fb95aee9d3700abda96ab453",data=[[
+  ["apps/help.lua"]={sha256="ee9c13536e3200088e5ee6288e2f7d58161442a357e23ca7ad4f5466ace44770",data=[[
 return function(api)
   local ui=api.ui; local scroll=0
   local content={
     "Welcome to CCSacabam", "Your workspace, on any computer.", "",
     "WINDOWS", "F1: app launcher (type to search)","F2: cycle running apps", "F3: minimize current window", "F4: close current window",
-    "F6: maximize / restore", "F7: move window with arrow keys", "F8: resize window with arrow keys", "Enter finishes; Esc cancels move/resize.",
-    "F9: lock encrypted drive", "F10: exit to CraftOS", "",
+    "F6: maximize / restore", "F7: move window with arrow keys", "F8: resize window with arrow keys", "Enter finishes; F5 cancels move/resize.",
+    "F9: lock the session", "F10: exit to CraftOS", "",
     "Advanced: drag title bars to move. Drag the bottom-right corner to resize. Click _ / + / X to minimize, maximize or close.", "",
-    "FILES & PROGRAMS", "Double-click or Enter opens a file. Lua and Pistachio programs run in windows. E edits the selected file. N creates a file, D a folder. C/X/V copy, cut, paste. Delete moves to encrypted Trash; T opens Trash. Enter restores a trashed item.","",
+    "FILES & PROGRAMS", "Double-click or Enter opens a file. Lua and Pistachio programs run in windows. E edits the selected file. N creates a file, D a folder. C/X/V copy, cut, paste. Delete moves to Trash; T opens Trash. Enter restores a trashed item.","",
     "EDITOR", "Ctrl+S save, Ctrl+Shift+S save as.","Ctrl+O open, Ctrl+N new, Ctrl+F find.","Ctrl+Z undo, Ctrl+Y redo.","",
-    "PERSONAL DRIVE", "The password decrypts your files into memory. Names, content, temporary files and Trash are encrypted on disk. Normal filesystem paths in apps use this drive. /rom and the installed OS are read-only; /host shows your existing physical files for importing.",
-    "Save before locking or exiting. Unsaved app buffers are discarded. There is no password reset. Back up the vault/data.scv file while locked.","",
+    "PERSONAL DRIVE", "Encryption starts OFF. Fine to leave off on a private computer. On a shared server, try encryption: it is CCSacabam's main security feature for saved files. Without encryption, login still works, but files are readable outside the OS.",
+    "Enable or disable encryption in Settings. When ON, names, content, temporary files and Trash are encrypted on disk. Normal filesystem paths in apps use this drive. /rom and the installed OS are read-only; /host shows existing physical files for importing.",
+    "Save before locking or exiting. Unsaved app buffers are discarded. There is no password reset. Back up vault/data.scv while signed out. Enabling encryption does not erase older plaintext copies or backups.","",
     "PISTACHIO SCRIPT", "Open Pistachio from the launcher for a sample visual app. Examples are in Programs. Edit a .pist file with E in Files, then open it to run. Tab selects controls; Enter activates buttons. The same program works with monochrome and color displays.","",
-    "CHAT+", "Chat+ is pre-installed. Open it from the launcher or type chatplus in Terminal. It requires a modem for hosting or joining. Its network traffic follows Chat+'s own protocol; vault encryption protects local files only.","",
-    "RECOVERY", "Run boot.lua --basic for a monochrome session. A failed app does not close other apps; open Tasks to inspect it. The encrypted system log is in /.system/system.log.",
+    "DATA & ENCRYPTION", "Peanut is the data format: comments, objects, arrays, strings and numbers. Lua uses require('peanut'). Ganymede provides Lua UI controls. Pistachio seal(text, password) and unseal(data, password) protect individual messages even with drive encryption off. Try Programs/sealed-note.pist.","",
+    "EUROPA NETWORK", "Callisto browses sites; Jupiter hosts them. Attach a modem, open Jupiter, choose a domain and press Enter to start. Visit europa://workshop.cc/ or europa://123/ in Callisto. Sites use index.cashew and can contain Pistachio events. The sample is in /Sites/welcome. Preview file:///Sites/welcome/index.cashew without a modem. Network traffic is public, not encrypted.","",
+    "CHAT+", "Chat+ is pre-installed. Open it from the launcher or type chatplus in Terminal. It requires a modem for hosting or joining. Its network traffic follows Chat+'s own protocol; drive encryption protects local files only.","",
+    "RECOVERY", "Run boot.lua --basic for a monochrome session. A failed app does not close other apps; open Tasks to inspect it. The system log follows the drive encryption setting and is in /.system/system.log.",
     "ComputerCraft programs share a Lua machine. Only run trusted code. The vault is encryption at rest, not protection against modified OS code or a server administrator inspecting live memory."
   }
   while true do
@@ -534,7 +537,7 @@ return function(api)
   end
 end
 ]]},
-  ["apps/pistachio.lua"]={sha256="7db496e6bca19a03e440b768363ffadd14ebf1d1743e1f74af4ff041a65364ea",data=[[
+  ["apps/pistachio.lua"]={sha256="c7a7d6bf6cf5bcd0f207d647ae70504af37d5d7ec3a3485de9e9c1410ff0160f",data=[[
 return function(api,path)
   local ui=api.ui
   path=path or fs.combine(api.home,'Programs/counter.pist')
@@ -542,6 +545,7 @@ return function(api,path)
   local lang=api.load('system/pistachio'); local peanut=api.load('system/peanut')
   local state=lang.runtime(lang.parse(source),api,peanut); state.initialize()
   local timers={}
+  api.onExit(function() for id in pairs(timers) do os.cancelTimer(id) end end)
   for _,timer in ipairs(state.timers) do timers[os.startTimer(timer.interval)]=timer end
   local controls={}; local focus=1
   local function draw()
@@ -571,7 +575,7 @@ return function(api,path)
   local function activate(control)
     if not control then return end
     if control.kind=='checkbox' then state.vars[control.bind]=not state.vars[control.bind] end
-    if control.kind~='input' then state.dispatch(control.id) end
+    if control.kind~='input' and control.kind~='password' then state.dispatch(control.id) end
   end
   while not state.quit do
     draw(); local e,a,b,c=os.pullEventRaw()
@@ -584,9 +588,9 @@ return function(api,path)
         local backwards=api.keyDown(keys.leftShift) or api.keyDown(keys.rightShift)
         focus=((focus-1+(backwards and -1 or 1))%math.max(1,#controls))+1
       elseif a==keys.enter then activate(control)
-      elseif a==keys.space and control and control.kind~='input' then activate(control)
-      elseif a==keys.backspace and control and control.kind=='input' then state.vars[control.bind]=tostring(state.vars[control.bind]):sub(1,-2); state.dispatch(control.id) end
-    elseif (e=='char' or e=='paste') and control and control.kind=='input' then
+      elseif a==keys.space and control and control.kind~='input' and control.kind~='password' then activate(control)
+      elseif a==keys.backspace and control and (control.kind=='input' or control.kind=='password') then state.vars[control.bind]=tostring(state.vars[control.bind]):sub(1,-2); state.dispatch(control.id) end
+    elseif (e=='char' or e=='paste') and control and (control.kind=='input' or control.kind=='password') then
       state.vars[control.bind]=(tostring(state.vars[control.bind])..a:gsub('[%c]','')):sub(1,1024); state.dispatch(control.id)
     elseif e=='mouse_click' then
       for i,v in ipairs(controls) do if b>=v.x and b<v.x+v.w and c==v.y then focus=i; activate(v); break end end
@@ -660,13 +664,14 @@ return function(api,domain,root)
   end
 end
 ]]},
-  ["apps/settings.lua"]={sha256="b677c5acfbf8dca90aa3959201c4f33860123c735b650afc693c0669dce81ea8",data=[[
+  ["apps/settings.lua"]={sha256="7b4fa51fc732f91a2dc1719a66b77b3aeef25606af148a72d4fda12e38c857d7",data=[[
 return function(api)
   local ui=api.ui; local selected=1; local offset=0
   local function options()
     local c=api.config()
     return {"Display: "..c.mode,"Theme: "..c.theme,"Wallpaper: "..tostring(c.wallpaper),
       "Welcome guide: "..tostring(c.welcome),"Lock personal drive","Change passphrase",
+      "Encryption: "..(api.isEncrypted() and "ON" or "OFF"),
       "Exit to CraftOS","Restart computer","Shut down computer"}
   end
   local function choose(n)
@@ -685,7 +690,15 @@ return function(api)
         if again~=password then api.notify("Passphrases did not match.")
         else local ok,err=api.changePassword(password,entropy); api.notify(ok and "Passphrase changed." or err) end
       end
-    elseif n==7 then api.requestExit("exit") elseif n==8 then api.requestExit("reboot") elseif n==9 then api.requestExit("shutdown") end
+    elseif n==7 then
+      local enabled=not api.isEncrypted()
+      local prompt=enabled and "Encrypt? Old backups stay plain."
+        or "Decrypt? Files become readable."
+      if ui.confirm(api,prompt) then
+        local ok,err=api.setEncryption(enabled)
+        api.notify(ok and (enabled and "Encryption enabled." or "Encryption disabled.") or err)
+      end
+    elseif n==8 then api.requestExit("exit") elseif n==9 then api.requestExit("reboot") elseif n==10 then api.requestExit("shutdown") end
     if n<=4 then api.saveConfig() end
   end
   while true do
@@ -696,7 +709,7 @@ return function(api)
     for row=1,rows do local i=row+offset
       if items[i] then ui.text(1,row+1,(selected==i and "> " or "  ")..i.." "..items[i],selected==i and t.onAccent or t.text,selected==i and t.accent or t.bg,w) end
     end
-    ui.text(1,h-1,"Saved files are encrypted automatically.",t.muted,t.bg,w)
+    ui.text(1,h-1,api.isEncrypted() and "Saved files are encrypted." or "Private PC? Off is fine. Shared server? Try ON.",t.muted,t.bg,w)
     ui.text(1,h,"Arrows + Enter / click / number",t.text,t.panel,w)
     local e,a,b,c=os.pullEventRaw()
     if e=="sacabam_close" or e=="terminate" then return
@@ -709,7 +722,7 @@ return function(api)
   end
 end
 ]]},
-  ["apps/sketch.lua"]={sha256="39b51c024a24417db90f4be2aec915491d628336f5cfff38df172a580a1d3715",data=[=[
+  ["apps/sketch.lua"]={sha256="de307d851c100c9c22c83ea8fdd8e345205e75dd1ad86e5d96795b6d7a021eff",data=[=[
 return function(api,path)
   local ui,pixels=api.ui,api.pixels
   local hex='0123456789abcdef'; local color=colors.cyan; local cx,cy=1,1
@@ -742,7 +755,7 @@ return function(api,path)
     if not file then return end
     if file~=path and fs.exists(file) and not ui.confirm(api,'Replace existing sketch?') then return end
     local ok,err=api.load('system/peanut').write(file,serialize())
-    if ok then path=file; dirty=false; api.notify('Sketch saved in encrypted drive.') else api.notify(err) end
+    if ok then path=file; dirty=false; api.notify(api.isEncrypted() and 'Sketch saved in encrypted drive.' or 'Sketch saved in personal drive.') else api.notify(err) end
   end
   local function cube(w,h)
     local b=pixels.new(w,h,colors.black); local points={}; local scale=math.min(w,h)*0.29
@@ -819,13 +832,13 @@ return function(api,path)
   end
 end
 ]=]},
-  ["apps/terminal.lua"]={sha256="2f7c31e6ccecf0618865f0e7f5b1b0800be96b77bd6f6e80ca0912c64a835c21",data=[[
+  ["apps/terminal.lua"]={sha256="ff397b396f38531881e47ca4b814bbd39eae62eb1601fdcce4fdaf4f17ab4607",data=[[
 return function(api,program)
   local parent={}; for k,v in pairs(api.shell) do parent[k]=v end
   parent.dir=function() return api.home end
-  parent.path=function() return ".:"..fs.combine(api.home,"Programs")..":"..api.shell.path() end
+  parent.path=function() return ".:/"..fs.combine(api.home,"Programs")..":"..api.shell.path() end
   local t=api.theme(); term.setBackgroundColor(t.bg); term.setTextColor(t.text); term.clear(); term.setCursorPos(1,1)
-  print("CCSacabam encrypted terminal")
+  print("CCSacabam / "..(api.isEncrypted() and "encrypted" or "personal").." terminal")
   print("Save files in /"..api.home)
   print("F1 apps | F2 switch | F4 close")
   local function shellTask()
@@ -842,7 +855,7 @@ return function(api,program)
   end)
 end
 ]]},
-  ["boot.lua"]={sha256="98483b00e6eaefed3408e3d1a6c71fba0d943589af9fa194ecdb575d599cab8b",data=[[
+  ["boot.lua"]={sha256="ca94e7bd49cad4dcc16d9238822c5947cf423c7d24905d2ee57ab6291b1c5ed2",data=[[
 -- Entry point: login, encrypted personal drive, then the desktop session.
 local args={...}
 local root=fs.getDir(shell.getRunningProgram())
@@ -852,7 +865,7 @@ local physicalEnv=_ENV
 local activeVault
 local function main()
   local function physicalModule(name) return assert(loadfile(fs.combine(root,name..".lua"),"t",physicalEnv))() end
-  assert(window and window.create and term.blit and bit32,"CCSacabam needs CC: Tweaked / ComputerCraft with blit, window and bit32.")
+  assert(window and window.create and term.blit and bit32 and fs.exists('/rom/modules/main/cc/require.lua'),"CCSacabam needs modern CC: Tweaked with blit, window, bit32 and cc.require.")
   local configModule=physicalModule("system/config")
   local storage=physicalModule("system/storage")
   local caps=configModule.capabilities(original)
@@ -864,7 +877,8 @@ local function main()
   vault.recoverPending()
   local login=physicalModule("system/login")
   local session=physicalModule("system/session")
-  while login.unlock(vault) do
+  local defaults=storage.load(fs.combine(root,"config/display.tbl"),{})
+  while login.unlock(vault,defaults) do
     local function desktop()
       local env=session.environment(vault.filesystem(fs.combine(root,"home")),physicalEnv)
       local cache={}
@@ -872,7 +886,6 @@ local function main()
         if not cache[name] then cache[name]=assert(env.loadfile(fs.combine(root,name..".lua")))() end
         return cache[name]
       end
-      local defaults=storage.load(fs.combine(root,"config/display.tbl"),{})
       local config=configModule.normalize(module("system/storage").load(fs.combine(root,"home/.system/settings.tbl"),defaults),caps)
       if args[1]=="--basic" then config.mode="basic" end
       if not env.fs.exists(fs.combine(root,"home/.examples-installed")) then
@@ -886,7 +899,8 @@ local function main()
         assert(module("system/storage").write(fs.combine(root,"home/.examples-installed"),"1"))
       end
       local ctx={root=root,load=module,config=config,configModule=configModule,caps=caps,target=original,shell=shell,
-        password=login.password,
+        password=login.password,isEncrypted=vault.isEncrypted,setEncryption=vault.setEncryption,
+        cryptoProgress=login.progress,
         changePassword=function(password,entropy) return vault.changePassword(password,entropy,login.progress) end}
       local kernel=module("system/kernel").new(ctx)
       env.ccsacabam={launch=kernel.launch,version=configModule.version}
@@ -911,11 +925,11 @@ if fs.exists(originalDir) and fs.isDir(originalDir) then shell.setDir(originalDi
 if not ok then
   print("CCSacabam could not continue:")
   printError(tostring(err))
-  print("The personal drive is locked.")
+  print("The personal drive is closed.")
   print("Try: "..fs.combine(root,"boot.lua").." --basic")
   return false
 end
-print("CCSacabam closed. Your personal drive is locked.")
+print("CCSacabam closed. Personal drive signed out.")
 return true
 ]]},
   ["chatplus.lua"]={sha256="a80ee463acddf7e00fa2a7476a55bde634d5726650ae455a9e8f030851fe454d",data=[[
@@ -2003,6 +2017,42 @@ local path = ...
 if not path then print('Usage: pistachio <file.pist>'); return end
 assert(ccsacabam,'Run this command inside CCSacabam').launch('pistachio',shell.resolve(path))
 ]]},
+  ["examples/sealed-note.pist"]={sha256="8974158b3668272dcb76e12fc7f10b52ed12175adfe7a8dfd61f73bbdceca4ca",data=[[
+# Only the encrypted envelope is saved, even if drive encryption is OFF.
+# Keep the passphrase yourself; it is never saved by this example.
+app "Pistachio / Sealed note"
+let message = ""
+let passphrase = ""
+let status = "Enter a note and a 12+ character passphrase."
+label caption 2 2 (width-2) "Note:"
+input messagebox 2 3 (width-2) message
+label passwordcaption 2 4 (width-2) "Passphrase (12+ characters):"
+password passwordbox 2 5 (width-2) passphrase
+button encrypt 2 7 15 "Seal & save"
+button decrypt 19 7 15 "Open note"
+label result 2 9 (width-2) status
+on encrypt
+  if len(passphrase) >= 12
+    set envelope = seal(message, passphrase)
+    save envelope "/Documents/sealed-note.peanut"
+    set message = ""
+    set passphrase = ""
+    set status = "Encrypted note saved. Passphrase cleared."
+  else
+    set status = "Use at least 12 characters."
+  end
+end
+on decrypt
+  if len(passphrase) >= 12
+    load envelope "/Documents/sealed-note.peanut"
+    set message = unseal(envelope, passphrase)
+    set passphrase = ""
+    set status = "Note decrypted into this window only."
+  else
+    set status = "Enter your note's passphrase first."
+  end
+end
+]]},
   ["sites/welcome/about.cashew"]={sha256="6a1c3347dc8f6ec27c51a813c3030452f5f5d6bb855438be47942c8a7b19b580",data=[[
 <cashew title="About Europa">
 <h1>SMALL WEB, BIG MOONS</h1>
@@ -2030,7 +2080,7 @@ assert(ccsacabam,'Run this command inside CCSacabam').launch('pistachio',shell.r
   </script>
 </cashew>
 ]]},
-  ["system/cashew.lua"]={sha256="566cf6d01994f354f140e98ee8bb2dc4b75a204a1c89c92f7ae82b2c828e0277",data=[[
+  ["system/cashew.lua"]={sha256="fcff3d140862daacdec4594499e5e2bd2e5c6be5ce48200572bca7d35eb70e76",data=[[
 -- Cashew: a deliberately small HTML-like document format with Pistachio events.
 local C={}
 local allowed={cashew=true,html=true,head=true,body=true,main=true,div=true,title=true,h1=true,h2=true,p=true,
@@ -2096,20 +2146,29 @@ function C.parse(source)
   return doc
 end
 function C.text(node,variables)
-  local parts={}
+  local parts={}; local size=0
   local function walk(n)
     if n.tag=='text' then parts[#parts+1]=n.text else for _,child in ipairs(n.children or {}) do walk(child) end end
   end
   walk(node)
   return (table.concat(parts):gsub('{([%a_][%w_]*)}',function(key)
-    local value=variables and variables[key]; return value==nil and '{'..key..'}' or tostring(value)
+    local value=variables and variables[key]; local part=value==nil and '{'..key..'}' or tostring(value)
+    size=size+#part; assert(size<=131072,'Rendered text exceeds 128 KiB'); return part
   end))
 end
 function C.safeScript(ast)
+  local functions={str=true,num=true,len=true,min=true,max=true,abs=true,floor=true,round=true,
+    peanut=true,encode=true,upper=true,lower=true}
+  local function expression(node)
+    if type(node)~='table' then return end
+    if node.tag=='call' then assert(functions[node.name],'Web pages cannot call '..node.name) end
+    for _,value in pairs(node) do if type(value)=='table' then expression(value) end end
+  end
   local safe={let=true,set=true,on=true,['function']=true,['if']=true,['repeat']=true,every=true,notify=true,call=true,quit=true,app=true,
     label=true,button=true,input=true,checkbox=true,progress=true,banner=true,panel=true}
   for _,node in ipairs(ast) do
     assert(safe[node.op],'Web pages cannot use '..node.op)
+    for _,name in ipairs({'value','x','y','width','height'}) do expression(node[name]) end
     if node.body then C.safeScript(node.body) end
     if node.other then C.safeScript(node.other) end
   end
@@ -2412,7 +2471,7 @@ function F.draw(buffer,x,y,text,color)
 end
 return F
 ]]},
-  ["system/ganymede.lua"]={sha256="8987ac6bd0813015c2a502b8bd20593401d78151dfd85f5a77b3aa6a8a291719",data=[[
+  ["system/ganymede.lua"]={sha256="1534835d0157cf9f7ec973c92ad51028691b82594195fa4bdcf212969a415017",data=[[
 -- Ganymede: the portable UI toolkit. Draws into the current program's window.
 local G={version='1.0'}
 function G.theme()
@@ -2434,7 +2493,8 @@ function G.control(v,t,active)
     local pad=math.floor((inner-#text)/2)
     text=(active and '>' or '[')..string.rep(' ',pad)..text..string.rep(' ',inner-#text-pad)..(active and '<' or ']')
   elseif v.kind=='checkbox' then text=(v.value and '[x] ' or '[ ] ')..v.id
-  elseif v.kind=='input' then text=text:sub(-math.max(1,v.w)) end
+  elseif v.kind=='input' then text=text:sub(-math.max(1,v.w))
+  elseif v.kind=='password' then text=string.rep('*',math.min(#text,math.max(1,v.w))) end
   G.text(v.x,v.y,text,active and t.onAccent or t.text,active and t.accent or t.panel,v.w)
 end
 function G.form(title)
@@ -2446,6 +2506,7 @@ function G.form(title)
   function form.label(id,x,y,width,text) return add('label',id,x,y,width,text) end
   function form.button(id,x,y,width,text,fn) return add('button',id,x,y,width,text,fn) end
   function form.input(id,x,y,width,text,fn) return add('input',id,x,y,width,text or '',fn) end
+  function form.password(id,x,y,width,text,fn) return add('password',id,x,y,width,text or '',fn) end
   function form.checkbox(id,x,y,width,value,fn) return add('checkbox',id,x,y,width,value or false,fn) end
   function form.get(id) for _,v in ipairs(form.widgets) do if v.id==id then return v.value end end end
   function form.set(id,value) for _,v in ipairs(form.widgets) do if v.id==id then v.value=value; return end end end
@@ -2465,16 +2526,16 @@ function G.form(title)
       local function click(item)
         if not item then return end
         if item.kind=='checkbox' then item.value=not item.value end
-        if item.kind~='input' and item.callback then item.callback(form,item) end
+        if item.kind~='input' and item.kind~='password' and item.callback then item.callback(form,item) end
       end
       if e=='terminate' or e=='sacabam_close' then return
       elseif e=='key_up' and (a==keys.leftShift or a==keys.rightShift) then shift=false
       elseif e=='key' then
         if a==keys.leftShift or a==keys.rightShift then shift=true
         elseif a==keys.tab then form.focus=((form.focus-1+(shift and -1 or 1))%math.max(1,#controls))+1
-        elseif a==keys.enter or (a==keys.space and v and v.kind~='input') then click(v)
-        elseif a==keys.backspace and v and v.kind=='input' then v.value=tostring(v.value):sub(1,-2); if v.callback then v.callback(form,v) end end
-      elseif (e=='char' or e=='paste') and v and v.kind=='input' then
+        elseif a==keys.enter or (a==keys.space and v and v.kind~='input' and v.kind~='password') then click(v)
+        elseif a==keys.backspace and v and (v.kind=='input' or v.kind=='password') then v.value=tostring(v.value):sub(1,-2); if v.callback then v.callback(form,v) end end
+      elseif (e=='char' or e=='paste') and v and (v.kind=='input' or v.kind=='password') then
         v.value=(tostring(v.value)..a:gsub('[%c]','')):sub(1,4096); if v.callback then v.callback(form,v) end
       elseif e=='mouse_click' then
         for i,item in ipairs(controls) do if b>=item.x and b<item.x+item.w and c==item.y then form.focus=i; click(item); break end end
@@ -2485,7 +2546,7 @@ function G.form(title)
 end
 return G
 ]]},
-  ["system/kernel.lua"]={sha256="e74d974985420b68896fe6a012988ee9424793aa0a200432a90fbe19d1768a03",data=[=[
+  ["system/kernel.lua"]={sha256="c00a8d6e185b6a76aa91406af90d971eeccd3802298923fb514e7baabe109246",data=[=[
 local K = {}
 local unpack = table.unpack or unpack
 local input = { char=true, key=true, key_up=true, paste=true, mouse_click=true,
@@ -2581,8 +2642,8 @@ function K.new(ctx)
   function self.geometry(p)
     if p.maximized then p.x,p.y,p.w,p.h = 1,2,self.width,self.height-2
     else
-      p.w = math.max(8,math.min(p.w,self.width))
-      p.h = math.max(4,math.min(p.h,self.height-2))
+      p.w = math.min(self.width,math.max(20,p.w))
+      p.h = math.min(self.height-2,math.max(8,p.h))
       p.x = math.max(1,math.min(p.x,self.width-p.w+1))
       p.y = math.max(2,math.min(p.y,self.height-p.h))
     end
@@ -2645,6 +2706,8 @@ function K.new(ctx)
       kill=function(id) if id~=p.id then self.remove(id) end end,
       requestExit=function(action) self.power=action or "exit" end,
       shell=ctx.shell,password=ctx.password,changePassword=ctx.changePassword,load=ctx.load,
+      isEncrypted=ctx.isEncrypted or function() return true end,setEncryption=ctx.setEncryption,
+      cryptoProgress=ctx.cryptoProgress,
       onExit=function(fn) p.cleanup=p.cleanup or {}; p.cleanup[#p.cleanup+1]=fn end}
     local args={...}
     p.co=coroutine.create(function() app(api,unpack(args)) end)
@@ -2752,15 +2815,15 @@ function K.new(ctx)
           menu.hits[my+1+row]=v.id
         end
       end
-      UI.text(mx+1,my+mh-1,"Arrows / Enter / Esc",t.muted,t.panel,mw-2)
+      UI.text(mx+1,my+mh-1,"Arrows / Enter / F5",t.muted,t.panel,mw-2)
     end
     if self.transform then
-      UI.text(1,self.height-1," "..self.transform.mode..": arrows | Enter done | Esc cancel",t.text,t.panel,self.width)
+      UI.text(1,self.height-1," "..self.transform.mode..": arrows | Enter done | F5 cancel",t.text,t.panel,self.width)
     end
     if self.power then
       UI.fill(2,math.max(2,math.floor(self.height/2)-1),self.width-2,4,t.panel)
       UI.text(3,math.max(2,math.floor(self.height/2)-1),"Close apps? Unsaved work may be lost.",t.text,t.panel,self.width-4)
-      UI.text(3,math.max(2,math.floor(self.height/2)-1)+2,"Enter: "..self.power.."  Esc: cancel",t.text,t.panel,self.width-4)
+      UI.text(3,math.max(2,math.floor(self.height/2)-1)+2,"Enter: "..self.power.."  F5: cancel",t.text,t.panel,self.width-4)
     end
     self.frame.setVisible(true); self.frame.setVisible(false)
     local p=self.get(self.focus)
@@ -2788,7 +2851,7 @@ function K.new(ctx)
       if not p then self.transform=nil
       elseif name=="key" then
         if e[2]==keys.enter then self.transform=nil
-        elseif e[2]==keys.escape then p.x,p.y,p.w,p.h=unpack(move.before); self.transform=nil
+        elseif e[2]==keys.f5 then p.x,p.y,p.w,p.h=unpack(move.before); self.transform=nil
         else
           local dx=e[2]==keys.left and -1 or e[2]==keys.right and 1 or 0
           local dy=e[2]==keys.up and -1 or e[2]==keys.down and 1 or 0
@@ -2798,14 +2861,14 @@ function K.new(ctx)
       end
     elseif self.power and input[name] then
       if name=="key" and e[2]==keys.enter then self.running=false; self.action=self.power
-      elseif name=="key" and e[2]==keys.escape then self.power=nil end
+      elseif name=="key" and e[2]==keys.f5 then self.power=nil end
     elseif name=="key" and e[2]==keys.f1 then
       self.launcher=self.launcher and nil or {query="",index=1}
     elseif self.launcher and input[name] then
       local m=self.launcher
       if name=="char" then m.query=m.query..e[2]; m.index=1
       elseif name=="key" then
-        if e[2]==keys.escape then self.launcher=nil
+        if e[2]==keys.f5 then self.launcher=nil
         elseif e[2]==keys.backspace then m.query=m.query:sub(1,-2); m.index=1
         elseif e[2]==keys.up then m.index=math.max(1,m.index-1)
         elseif e[2]==keys.down then m.index=math.min(#(m.matches or {}),m.index+1)
@@ -2901,7 +2964,7 @@ function K.new(ctx)
 end
 return K
 ]=]},
-  ["system/login.lua"]={sha256="58d5f09be51ed929b74e19561a66f9920fa9ecda779bae66c807525b2bb9820b",data=[[
+  ["system/login.lua"]={sha256="2f7cedb5c3c0a6912664446035a57b5c6e21697faef74564766d40895c9ae752",data=[[
 local L={}
 function L.password(label,subtitle)
   local value,entropy="",{}
@@ -2915,7 +2978,7 @@ function L.password(label,subtitle)
     local py=math.min(h-3,y+1)
     term.setCursorPos(2,py); term.write("> "..string.rep("*",math.min(#value,w-5)))
     term.setCursorBlink(true)
-    term.setCursorPos(2,h-1); term.write(("Enter: unlock / Esc: leave"):sub(1,w-2))
+    term.setCursorPos(2,h-1); term.write(("Enter: unlock / F5: leave"):sub(1,w-2))
     term.setCursorPos(math.min(w,4+#value),py)
   end
   draw()
@@ -2925,7 +2988,7 @@ function L.password(label,subtitle)
     if e=="char" or e=="paste" then value=value..a:gsub("[%c]",""):sub(1,256-#value)
     elseif e=="key" and a==keys.backspace then value=value:sub(1,-2)
     elseif e=="key" and a==keys.enter then term.setCursorBlink(false); return value,table.concat(entropy,";")
-    elseif e=="terminate" or (e=="key" and a==keys.escape) then term.setCursorBlink(false); return nil end
+    elseif e=="terminate" or (e=="key" and a==keys.f5) then term.setCursorBlink(false); return nil end
     draw()
   end
 end
@@ -2937,12 +3000,15 @@ function L.progress(n,total)
   os.queueEvent("ccsacabam_crypto_yield")
   os.pullEvent("ccsacabam_crypto_yield")
 end
-function L.unlock(vault)
+function L.unlock(vault,options)
+  local encrypted=options and options.encrypt==true
   local message
   while true do
     if not vault.exists() then
-      local password,entropy=L.password("Create your encrypted personal drive",{
-        "Use a passphrase of 12+ characters.","There is no password reset or back door.",message or "Keep a copy of your password somewhere safe."})
+      local password,entropy=L.password("Create your personal drive",{
+        "Use a passphrase of 12+ characters.",
+        encrypted and "Encryption ON: saved files are protected." or "Encryption OFF: login only; files are readable.",
+        message or "There is no password reset. Keep it safe."})
       if not password then return false end
       if #password<12 then message="Passphrase must have at least 12 characters."
       else
@@ -2950,14 +3016,14 @@ function L.unlock(vault)
         if not again then return false end
         if password~=again then message="Passphrases did not match."
         else
-          local ok,err=vault.create(password,entropy,L.progress)
+          local ok,err=vault.create(password,entropy,L.progress,encrypted)
           password,again=nil,nil
           if ok then return true end
           message=err
         end
       end
     else
-      local password=L.password("Unlock your personal drive",{message or "Your files are encrypted while locked."})
+      local password=L.password("Unlock your personal drive",{message or (vault.isEncrypted() and "Your files are encrypted while locked." or "Encryption OFF. Files are readable outside the OS.")})
       if not password then return false end
       local ok,err=vault.unlock(password,L.progress)
       password=nil
@@ -3120,7 +3186,7 @@ end
 P.parse=P.decode; P.stringify=P.encode
 return P
 ]]},
-  ["system/pistachio.lua"]={sha256="2edbebcd341e1d21eb72e43f97354241b1434e2da3116b7b218c3b1a052fb69b",data=[[
+  ["system/pistachio.lua"]={sha256="4efa843a2fd7f4bd46a7cd8a00b6b4eae3e0847bc7694544f4cb6e344444cc9b",data=[[
 -- Pistachio Script: parsed application language, never evaluated as Lua.
 local P={version='1.0'}
 local function fail(line,message) error('Pistachio line '..tostring(line)..': '..message,0) end
@@ -3243,11 +3309,11 @@ function P.parse(source)
           node.name,rest=rest:match('^([%a_][%w_]*)%s*=%s*(.+)$')
           if not node.name then fail(line,'Use '..op..' name = expression') end
           node.value=expr(rest)
-        elseif op=='label' or op=='button' or op=='input' or op=='checkbox' or op=='progress' or op=='banner' then
+        elseif op=='label' or op=='button' or op=='input' or op=='password' or op=='checkbox' or op=='progress' or op=='banner' then
           local id,x,y,w,text=rest:match('^([%a_][%w_]*)%s+(%S+)%s+(%S+)%s+(%S+)%s+(.+)$')
           if not id then fail(line,'Use '..op..' id x y width expression') end
           node.name,node.x,node.y,node.width,node.value=id,expr(x),expr(y),expr(w),expr(text)
-          if op=='input' or op=='checkbox' then
+          if op=='input' or op=='password' or op=='checkbox' then
             if not text:match('^[%a_][%w_]*$') then fail(line,op..' needs a variable name') end
             node.bind=text
           end
@@ -3278,13 +3344,32 @@ function P.parse(source)
 end
 function P.runtime(ast,api,peanut)
   local state={vars={},handlers={},timers={},widgets={},quit=false,title='Pistachio',budget=10000,focus=1}
+  local function bounded(value)
+    assert(type(value)~='string' or #value<=131072,'String exceeds 128 KiB')
+    return value
+  end
   local builtins={str=tostring,num=function(v) return tonumber(v) or 0 end,len=function(v) return #v end,
     min=math.min,max=math.max,abs=math.abs,floor=math.floor,round=function(n) return math.floor(n+0.5) end,
     peanut=peanut.decode,encode=peanut.encode,upper=string.upper,lower=string.lower}
+  local box
+  local function crypto()
+    assert(api.load,'Encryption functions are available only to native programs')
+    if not box then box=api.load('system/seal').new(api.load('system/crypto'),api.cryptoProgress) end
+    return box
+  end
+  builtins.seal=function(text,passphrase) return crypto().seal(text,passphrase) end
+  builtins.unseal=function(data,passphrase) return crypto().unseal(data,passphrase) end
   local eval
   eval=function(n)
+    state.budget=state.budget-1; assert(state.budget>=0,'Expression limit reached')
     if n.tag=='literal' then
-      if type(n.value)=='string' then return (n.value:gsub('{([%a_][%w_]*)}',function(k) local v=state.vars[k]; return v==nil and '{'..k..'}' or tostring(v) end)) end
+      if type(n.value)=='string' then
+        local size=0
+        return bounded((n.value:gsub('{([%a_][%w_]*)}',function(k)
+          local v=state.vars[k]; local part=v==nil and '{'..k..'}' or tostring(v)
+          size=size+#part; assert(size<=131072,'String exceeds 128 KiB'); return part
+        end)))
+      end
       return n.value
     elseif n.tag=='variable' then
       if n.name=='advanced' then return api.caps.color elseif n.name=='color' then return api.config().mode~='basic'
@@ -3298,19 +3383,20 @@ function P.runtime(ast,api,peanut)
       if n.op=='not' then return not eval(n.child) else return -eval(n.child) end
     elseif n.tag=='call' then
       local fn=builtins[n.name]; if not fn then error('Unknown function: '..n.name,0) end
-      local args={}; for i,v in ipairs(n.args) do args[i]=eval(v) end; return fn((table.unpack or unpack)(args))
+      local args={}; for i,v in ipairs(n.args) do args[i]=eval(v) end; return bounded(fn((table.unpack or unpack)(args)))
     elseif n.tag=='binary' then
       local a=eval(n.left)
       if n.op=='and' then return a and eval(n.right) elseif n.op=='or' then return a or eval(n.right) end
       local b=eval(n.right); local op=n.op
       if op=='+' then return a+b elseif op=='-' then return a-b elseif op=='*' then return a*b
       elseif op=='/' then assert(b~=0,'Division by zero'); return a/b elseif op=='%' then assert(b~=0,'Division by zero'); return a%b
-      elseif op=='..' then return tostring(a)..tostring(b) elseif op=='==' then return a==b elseif op=='!=' then return a~=b
+      elseif op=='..' then a,b=tostring(a),tostring(b); assert(#a+#b<=131072,'String exceeds 128 KiB'); return a..b
+      elseif op=='==' then return a==b elseif op=='!=' then return a~=b
       elseif op=='<' then return a<b elseif op=='>' then return a>b elseif op=='<=' then return a<=b elseif op=='>=' then return a>=b end
     end
   end
   state.eval=eval
-  local visual={label=true,button=true,input=true,checkbox=true,progress=true,banner=true,panel=true}
+  local visual={label=true,button=true,input=true,password=true,checkbox=true,progress=true,banner=true,panel=true}
   local run
   run=function(nodes,phase)
     for _,n in ipairs(nodes) do
@@ -3420,7 +3506,41 @@ function M.draw(b, target, ox, oy, maxW, maxH)
 end
 return M
 ]]},
-  ["system/session.lua"]={sha256="38cfcd40a9b14c26a30c88fa67f27ff46eed892c86281704a090de03b2969560",data=[[
+  ["system/seal.lua"]={sha256="7e7268aa2d3609cd92827b7d50a9e5a991c378df0977fd35f29d92e05250eef5",data=[[
+-- Password-encrypted messages for native Pistachio programs. No drive key access.
+local S={iterations=100000,maxPlain=32768}
+function S.new(C,progress)
+  local serial=0; local box={}
+  local function password(value)
+    assert(type(value)=='string' and #value>=12 and #value<=256,'Use a passphrase of 12..256 characters')
+  end
+  local function key(master,label) return C.hmac(master,'Pistachio seal v1 '..label) end
+  function box.seal(text,passphrase)
+    assert(type(text)=='string' and #text<=S.maxPlain,'seal needs text of at most 32 KiB')
+    password(passphrase); serial=serial+1
+    local timing=tostring(os.epoch and os.epoch('utc') or os.time())..':'..os.clock()..':'..os.getComputerID()..':'..serial
+    local salt=C.sha256('Pistachio salt:'..timing)
+    local master=C.pbkdf2(passphrase,salt,S.iterations,progress)
+    local nonce=C.hmac(key(master,'nonce'),C.sha256(text)..timing):sub(1,12)
+    local body='PCS1'..salt..C.be(S.iterations)..nonce..C.chacha20(key(master,'encryption'),nonce,text)
+    return 'pistachio1:'..C.hex(body..C.hmac(key(master,'authentication'),body))
+  end
+  function box.unseal(envelope,passphrase)
+    password(passphrase)
+    assert(type(envelope)=='string' and envelope:sub(1,11)=='pistachio1:' and #envelope<=11+(S.maxPlain+84)*2,'Invalid sealed message')
+    local raw=C.unhex(envelope:sub(12))
+    assert(#raw>=84 and raw:sub(1,4)=='PCS1','Invalid sealed message')
+    local iterations=C.number(raw,37)
+    assert(iterations>=10000 and iterations<=2000000,'Unsupported key derivation parameters')
+    local master=C.pbkdf2(passphrase,raw:sub(5,36),iterations,progress)
+    assert(C.equal(C.hmac(key(master,'authentication'),raw:sub(1,-33)),raw:sub(-32)),'Wrong password or damaged sealed message')
+    return C.chacha20(key(master,'encryption'),raw:sub(41,52),raw:sub(53,-33))
+  end
+  return box
+end
+return S
+]]},
+  ["system/session.lua"]={sha256="56152c52a064e1aa91c6ed778780316fc7bc262c6852a474dbfdec42b9cac3c9",data=[[
 -- A normal CraftOS program environment routed through the encrypted filesystem.
 -- This is compatibility plumbing, not a security sandbox for untrusted Lua.
 local M={}
@@ -3458,7 +3578,7 @@ function M.environment(vfs,parent)
   end
   env.os.unloadAPI=function(name) env[name]=nil end
   -- These ROM APIs close over fs: reload them so they use the encrypted drive.
-  for _,name in ipairs({"io","settings","paintutils","help"}) do
+  for _,name in ipairs({"fs","io","settings","paintutils","help"}) do
     local apiEnv=setmetatable({},{__index=env})
     local chunk=env.loadfile("/rom/apis/"..name..".lua","t",apiEnv)
     if chunk then chunk(); env[name]=apiEnv end
@@ -3474,7 +3594,7 @@ function M.environment(vfs,parent)
 end
 return M
 ]]},
-  ["system/storage.lua"]={sha256="7a414b34dac0c19bbe4e24db3e3fd87b9fc6243aa1f4ea2ff3fcd36b9e619c55",data=[[
+  ["system/storage.lua"]={sha256="f02a3773774699dd7563b8f5bd9bd2ca2d4af1620edd4fcd65d4bc3e7ce7510b",data=[[
 -- File writes keep the previous contents until the replacement is ready.
 local M = {}
 function M.read(path)
@@ -3503,7 +3623,9 @@ function M.write(path, value)
     assert(M.read(temp) == value, "Write verification failed")
     if fs.exists(path) then fs.move(path, backup); moved = true end
     fs.move(temp, path)
-    if moved then fs.delete(backup) end
+    -- The replacement is committed now. Cleanup failure must not tell callers
+    -- to roll back their encryption keys while the new image is already live.
+    if moved then pcall(fs.delete,backup) end
   end)
   if not ok then
     if moved and not fs.exists(path) and fs.exists(backup) then pcall(fs.move, backup, path) end
@@ -3535,7 +3657,7 @@ function M.name(name)
 end
 return M
 ]]},
-  ["system/ui.lua"]={sha256="0d87760d2c5297cb0bca92fa11ef4d24fdb3ebebd4507fd50d8e266d79c1e00f",data=[[
+  ["system/ui.lua"]={sha256="786afd22a25b740a87715852f3c088d6709e819d629643e8e368f04836c0ab94",data=[[
 local M = {}
 function M.text(x, y, value, fg, bg, width)
   local w, h = term.getSize()
@@ -3578,15 +3700,16 @@ function M.prompt(api, label, initial)
   local value = initial or ""
   while true do
     local t, w, h = api.theme(), term.getSize()
-    M.fill(1, math.max(1,h-2),w,3,t.panel)
-    M.text(2,h-2,label,t.text,t.panel,w-2)
+    local lines=M.wrap(label,math.max(1,w-2)); local count=math.min(#lines,h-2)
+    M.fill(1,h-count-1,w,count+2,t.panel)
+    for i=1,count do M.text(2,h-count-2+i,lines[i],t.text,t.panel,w-2) end
     M.text(2,h-1,"> " .. value:sub(-math.max(1,w-5)),t.text,t.bg,w-2)
-    M.text(2,h,"Enter: accept   Esc: cancel",t.muted,t.panel,w-2)
+    M.text(2,h,"Enter: accept   F5: cancel",t.muted,t.panel,w-2)
     local e,a = os.pullEventRaw()
     if e == "char" or e == "paste" then value = value .. a:gsub("[%c]", ""):sub(1,512-#value)
     elseif e == "key" then
       if a == keys.enter then return value
-      elseif a == keys.escape then return nil
+      elseif a == keys.f5 then return nil
       elseif a == keys.backspace then value = value:sub(1,-2) end
     elseif e == "sacabam_close" or e == "terminate" then return nil end
   end
@@ -3599,20 +3722,25 @@ function M.message(api, value)
 end
 return M
 ]]},
-  ["system/vault.lua"]={sha256="6168a0ed3478565fccfe5c9b7d047e51520d4155209ff85e013df47162efa17e",data=[[
--- Only encrypted envelopes are ever written to the physical filesystem.
+  ["system/vault.lua"]={sha256="8a10ebf9305531143e42edee6929febd72578d848e3e3f9df414cd04c49e24e3",data=[[
+-- Personal drive: authenticated envelopes, with optional encryption at rest.
 local V={ iterations=100000, limit=196608 }
 local physical=fs
 function V.new(crypto,storage,path)
-  local self={path=path,open=false,files=nil,key=nil,salt=nil,iterations=nil,serial=0}
+  local self={path=path,open=false,files=nil,key=nil,salt=nil,iterations=nil,serial=0,encrypted=true}
   local function keyFor(label) return crypto.hmac(self.key,"CCSacabam v1 "..label) end
   local function header(raw)
-    assert(type(raw)=="string" and #raw>=88 and raw:sub(1,4)=="SCV1","Not a CCSacabam vault")
+    assert(type(raw)=="string" and #raw>=88 and (raw:sub(1,4)=="SCV1" or raw:sub(1,4)=="SCP1"),"Not a CCSacabam personal drive")
     local iterations=crypto.number(raw,37)
     assert(iterations>=10000 and iterations<=2000000,"Unsupported key derivation parameters")
-    return raw:sub(5,36),iterations,raw:sub(41,52),raw:sub(53,-33),raw:sub(-32)
+    return raw:sub(5,36),iterations,raw:sub(41,52),raw:sub(53,-33),raw:sub(-32),raw:sub(1,4)=="SCV1"
   end
   function self.exists() return physical.exists(path) end
+  function self.isEncrypted()
+    if self.open then return self.encrypted end
+    local h=physical.open(path,"rb"); if not h then return false end
+    local magic=h.read(4); h.close(); return magic=="SCV1"
+  end
   function self.recoverPending()
     -- A power interruption can leave the old or new encrypted envelope beside
     -- the main file. Restore the last committed copy, and retain other copies.
@@ -3631,14 +3759,14 @@ function V.new(crypto,storage,path)
   end
   function self.unlock(password,progress)
     local raw,err=storage.read(path); if not raw then return nil,err end
-    local ok,salt,iterations,nonce,cipher,tag=pcall(header,raw)
+    local ok,salt,iterations,nonce,cipher,tag,encrypted=pcall(header,raw)
     if not ok then return nil,tostring(salt) end
     local master=crypto.pbkdf2(password,salt,iterations,progress)
     local macKey=crypto.hmac(master,"CCSacabam v1 authentication")
     if not crypto.equal(crypto.hmac(macKey,raw:sub(1,-33)),tag) then
       return nil,"Wrong password or damaged vault."
     end
-    local plain=crypto.chacha20(crypto.hmac(master,"CCSacabam v1 encryption"),nonce,cipher)
+    local plain=encrypted and crypto.chacha20(crypto.hmac(master,"CCSacabam v1 encryption"),nonce,cipher) or cipher
     local decoded=storage and textutils.unserialize(plain)
     if type(decoded)~="table" or decoded[""]~=true then return nil,"Invalid vault filesystem" end
     for name,value in pairs(decoded) do
@@ -3647,6 +3775,7 @@ function V.new(crypto,storage,path)
       end
     end
     self.key,self.salt,self.iterations,self.files,self.open=master,salt,iterations,decoded,true
+    self.encrypted=encrypted
     return true
   end
   function self.persist()
@@ -3658,21 +3787,30 @@ function V.new(crypto,storage,path)
     -- time and a counter, so different contents remain distinct after rollback.
     local timing=tostring(os.epoch and os.epoch("utc") or os.time())..":"..os.clock()..":"..self.serial
     local nonce=crypto.hmac(keyFor("nonce"),crypto.sha256(plain)..timing):sub(1,12)
-    local cipher=crypto.chacha20(keyFor("encryption"),nonce,plain)
-    local body="SCV1"..self.salt..crypto.be(self.iterations)..nonce..cipher
+    local cipher=self.encrypted and crypto.chacha20(keyFor("encryption"),nonce,plain) or plain
+    local body=(self.encrypted and "SCV1" or "SCP1")..self.salt..crypto.be(self.iterations)..nonce..cipher
     return storage.write(path,body..crypto.hmac(keyFor("authentication"),body))
   end
-  function self.create(password,entropy,progress)
+  function self.create(password,entropy,progress,encrypted)
     if self.exists() then return nil,"A vault already exists. Unlock it instead." end
     assert(type(password)=="string" and #password>=12,"Use a passphrase of at least 12 characters")
     self.salt=crypto.sha256("CCSacabam salt:"..tostring(entropy)..":"..tostring(os.getComputerID())..":"..tostring(os.epoch and os.epoch("utc") or os.time())..":"..os.clock())
     self.iterations=V.iterations
+    self.encrypted=encrypted~=false
     self.key=crypto.pbkdf2(password,self.salt,self.iterations,progress)
     self.files={[""]=true,Documents=true,Pictures=true,Programs=true,[".Trash"]=true,[".system"]=true}
     self.open=true
     local ok,err=self.persist()
     if not ok then self.lock(); return nil,err end
     return true
+  end
+  function self.setEncryption(enabled)
+    assert(self.open,"Personal drive is locked")
+    assert(type(enabled)=="boolean","Encryption must be on or off")
+    local previous=self.encrypted; self.encrypted=enabled
+    local ok,err=self.persist()
+    if not ok then self.encrypted=previous end
+    return ok,err
   end
   function self.changePassword(password,entropy,progress)
     assert(self.open,"Drive is locked")
@@ -3730,7 +3868,7 @@ function V.new(crypto,storage,path)
       return physical.isDir(hostPath(path))
     end
     function out.isReadOnly(path) return resolve(path)==nil end
-    function out.getDrive(path) if resolve(path) then return "encrypted" else return physical.getDrive(hostPath(path)) end end
+    function out.getDrive(path) if resolve(path) then return self.encrypted and "encrypted" or "personal" else return physical.getDrive(hostPath(path)) end end
     function out.isDriveRoot(path) return resolve(path)=="" or (resolve(path)==nil and physical.isDriveRoot and physical.isDriveRoot(path)) or false end
     function out.list(path)
       local key=resolve(path)
@@ -3785,7 +3923,7 @@ function V.new(crypto,storage,path)
       self.files[dir]=true
     end
     function out.makeDir(path)
-      local key=assert(resolve(path),"Writes belong on the encrypted personal drive")
+      local key=assert(resolve(path),"Writes belong on the personal drive")
       if self.files[key]==true then return end
       mutate(function() assert(self.files[key]==nil,"File already exists"); parents(key); self.files[key]=true end)
     end
@@ -3839,7 +3977,7 @@ function V.new(crypto,storage,path)
       if mode:sub(1,1)=="r" and self.files[key]==nil then return nil,"No such file" end
       local data=mode:sub(1,1)=="w" and "" or self.files[key] or ""
       local pos=mode:sub(1,1)=="a" and #data or 0
-      local closed,dirty=false,writable and mode:sub(1,1)=="w"
+      local closed,dirty=false,writable and (mode:sub(1,1)=="w" or self.files[key]==nil)
       local h={}
       local function alive() check(); assert(not closed,"File is closed") end
       function h.flush()
@@ -4011,7 +4149,7 @@ function I.install(package,options)
     local mode=options.mode or (term.isColor() and 'color' or 'basic')
     if not term.isColor() then mode='basic' end
     assert(mode=='basic' or mode=='color' or mode=='render','Unknown display mode')
-    writeFile(stage..'/config/display.tbl',textutils.serialize({mode=mode,welcome=true}))
+    writeFile(stage..'/config/display.tbl',textutils.serialize({mode=mode,welcome=true,encrypt=options.encrypt==true}))
     for _,path in ipairs({'/startup.lua','/startup'}) do
       if fs.exists(path) and not startupRestore[path] and not (path=='/startup.lua' and not fs.isDir(path) and readFile(path):find('CCSacabam managed startup',1,true)) then
         startupRestore[path]=backup..'/'..fs.getName(path)
@@ -4042,16 +4180,16 @@ function I.install(package,options)
   return {target=target,backup=backup,bytes=total}
 end
 function I.run(package,args)
-  assert(bit32 and window and term.blit,'CCSacabam needs CC: Tweaked or a compatible modern ComputerCraft runtime.')
+  assert(bit32 and window and term.blit and fs.exists('/rom/modules/main/cc/require.lua'),'CCSacabam needs modern CC: Tweaked with cc.require.')
   local w,h=term.getSize(); assert(w>=20 and h>=10,'Display must be at least 20x10.')
-  local mode=term.isColor() and 'color' or 'basic'
-  if args and args[1]=='--yes' then mode=args[2] or mode
+  local mode=term.isColor() and 'color' or 'basic'; local encrypt=false
+  if args and args[1]=='--yes' then mode=args[2] or mode; encrypt=args[3]=='--encrypt'
   else
     term.setBackgroundColor(colors.black); term.setTextColor(colors.white); term.clear(); term.setCursorPos(1,1)
     print('CCSacabam installer\n')
     print('Installs to /ccsacabam. Existing files are preserved.')
     print('Existing startup programs are backed up.')
-    print('Create your encrypted drive and passphrase at first boot.\n')
+    print('Create your personal drive and passphrase at first boot.\n')
     if term.isColor() then
       print('Display mode:')
       print('1 Basic: monochrome, keyboard controls')
@@ -4060,11 +4198,19 @@ function I.run(package,args)
       write('Choose 1, 2, or 3: '); local choice=read()
       mode=choice=='1' and 'basic' or choice=='3' and 'render' or 'color'
     else print('Basic computer detected: monochrome mode.') end
+    if not fs.exists(I.target..'/vault/data.scv') then
+      print('\nEncryption is OFF by default.')
+      print('Fine to leave off on a private computer.')
+      print('On a shared server, try encryption: it is the main security feature for saved files.')
+      print('Without it, login still works, but files are readable outside CCSacabam.')
+      write('Enable encryption? [y/N]: '); local choice=read():lower()
+      encrypt=choice=='y' or choice=='yes'
+    else print('The existing drive keeps its encryption setting.') end
     write('\nPress Enter to install, or type cancel: ')
     if read()~='' then print('Cancelled.'); return false end
   end
   print('Checking package and staging files...')
-  local ok,result=pcall(I.install,package,{mode=mode})
+  local ok,result=pcall(I.install,package,{mode=mode,encrypt=encrypt})
   if not ok then printError(result); return false end
   print('CCSacabam installed. Backup: '..result.backup)
   print('Run /ccsacabam/boot.lua or reboot to sign in.')

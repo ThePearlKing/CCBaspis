@@ -5,6 +5,7 @@ return function(api,path)
   local lang=api.load('system/pistachio'); local peanut=api.load('system/peanut')
   local state=lang.runtime(lang.parse(source),api,peanut); state.initialize()
   local timers={}
+  api.onExit(function() for id in pairs(timers) do os.cancelTimer(id) end end)
   for _,timer in ipairs(state.timers) do timers[os.startTimer(timer.interval)]=timer end
   local controls={}; local focus=1
   local function draw()
@@ -34,7 +35,7 @@ return function(api,path)
   local function activate(control)
     if not control then return end
     if control.kind=='checkbox' then state.vars[control.bind]=not state.vars[control.bind] end
-    if control.kind~='input' then state.dispatch(control.id) end
+    if control.kind~='input' and control.kind~='password' then state.dispatch(control.id) end
   end
   while not state.quit do
     draw(); local e,a,b,c=os.pullEventRaw()
@@ -47,9 +48,9 @@ return function(api,path)
         local backwards=api.keyDown(keys.leftShift) or api.keyDown(keys.rightShift)
         focus=((focus-1+(backwards and -1 or 1))%math.max(1,#controls))+1
       elseif a==keys.enter then activate(control)
-      elseif a==keys.space and control and control.kind~='input' then activate(control)
-      elseif a==keys.backspace and control and control.kind=='input' then state.vars[control.bind]=tostring(state.vars[control.bind]):sub(1,-2); state.dispatch(control.id) end
-    elseif (e=='char' or e=='paste') and control and control.kind=='input' then
+      elseif a==keys.space and control and control.kind~='input' and control.kind~='password' then activate(control)
+      elseif a==keys.backspace and control and (control.kind=='input' or control.kind=='password') then state.vars[control.bind]=tostring(state.vars[control.bind]):sub(1,-2); state.dispatch(control.id) end
+    elseif (e=='char' or e=='paste') and control and (control.kind=='input' or control.kind=='password') then
       state.vars[control.bind]=(tostring(state.vars[control.bind])..a:gsub('[%c]','')):sub(1,1024); state.dispatch(control.id)
     elseif e=='mouse_click' then
       for i,v in ipairs(controls) do if b>=v.x and b<v.x+v.w and c==v.y then focus=i; activate(v); break end end

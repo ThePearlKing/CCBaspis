@@ -1,0 +1,34 @@
+# Only the encrypted envelope is saved, even if drive encryption is OFF.
+# Keep the passphrase yourself; it is never saved by this example.
+app "Pistachio / Sealed note"
+let message = ""
+let passphrase = ""
+let status = "Enter a note and a 12+ character passphrase."
+label caption 2 2 (width-2) "Note:"
+input messagebox 2 3 (width-2) message
+label passwordcaption 2 4 (width-2) "Passphrase (12+ characters):"
+password passwordbox 2 5 (width-2) passphrase
+button encrypt 2 7 15 "Seal & save"
+button decrypt 19 7 15 "Open note"
+label result 2 9 (width-2) status
+on encrypt
+  if len(passphrase) >= 12
+    set envelope = seal(message, passphrase)
+    save envelope "/Documents/sealed-note.peanut"
+    set message = ""
+    set passphrase = ""
+    set status = "Encrypted note saved. Passphrase cleared."
+  else
+    set status = "Use at least 12 characters."
+  end
+end
+on decrypt
+  if len(passphrase) >= 12
+    load envelope "/Documents/sealed-note.peanut"
+    set message = unseal(envelope, passphrase)
+    set passphrase = ""
+    set status = "Note decrypted into this window only."
+  else
+    set status = "Enter your note's passphrase first."
+  end
+end

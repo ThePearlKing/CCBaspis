@@ -19,7 +19,8 @@ function G.control(v,t,active)
     local pad=math.floor((inner-#text)/2)
     text=(active and '>' or '[')..string.rep(' ',pad)..text..string.rep(' ',inner-#text-pad)..(active and '<' or ']')
   elseif v.kind=='checkbox' then text=(v.value and '[x] ' or '[ ] ')..v.id
-  elseif v.kind=='input' then text=text:sub(-math.max(1,v.w)) end
+  elseif v.kind=='input' then text=text:sub(-math.max(1,v.w))
+  elseif v.kind=='password' then text=string.rep('*',math.min(#text,math.max(1,v.w))) end
   G.text(v.x,v.y,text,active and t.onAccent or t.text,active and t.accent or t.panel,v.w)
 end
 function G.form(title)
@@ -31,6 +32,7 @@ function G.form(title)
   function form.label(id,x,y,width,text) return add('label',id,x,y,width,text) end
   function form.button(id,x,y,width,text,fn) return add('button',id,x,y,width,text,fn) end
   function form.input(id,x,y,width,text,fn) return add('input',id,x,y,width,text or '',fn) end
+  function form.password(id,x,y,width,text,fn) return add('password',id,x,y,width,text or '',fn) end
   function form.checkbox(id,x,y,width,value,fn) return add('checkbox',id,x,y,width,value or false,fn) end
   function form.get(id) for _,v in ipairs(form.widgets) do if v.id==id then return v.value end end end
   function form.set(id,value) for _,v in ipairs(form.widgets) do if v.id==id then v.value=value; return end end end
@@ -50,16 +52,16 @@ function G.form(title)
       local function click(item)
         if not item then return end
         if item.kind=='checkbox' then item.value=not item.value end
-        if item.kind~='input' and item.callback then item.callback(form,item) end
+        if item.kind~='input' and item.kind~='password' and item.callback then item.callback(form,item) end
       end
       if e=='terminate' or e=='sacabam_close' then return
       elseif e=='key_up' and (a==keys.leftShift or a==keys.rightShift) then shift=false
       elseif e=='key' then
         if a==keys.leftShift or a==keys.rightShift then shift=true
         elseif a==keys.tab then form.focus=((form.focus-1+(shift and -1 or 1))%math.max(1,#controls))+1
-        elseif a==keys.enter or (a==keys.space and v and v.kind~='input') then click(v)
-        elseif a==keys.backspace and v and v.kind=='input' then v.value=tostring(v.value):sub(1,-2); if v.callback then v.callback(form,v) end end
-      elseif (e=='char' or e=='paste') and v and v.kind=='input' then
+        elseif a==keys.enter or (a==keys.space and v and v.kind~='input' and v.kind~='password') then click(v)
+        elseif a==keys.backspace and v and (v.kind=='input' or v.kind=='password') then v.value=tostring(v.value):sub(1,-2); if v.callback then v.callback(form,v) end end
+      elseif (e=='char' or e=='paste') and v and (v.kind=='input' or v.kind=='password') then
         v.value=(tostring(v.value)..a:gsub('[%c]','')):sub(1,4096); if v.callback then v.callback(form,v) end
       elseif e=='mouse_click' then
         for i,item in ipairs(controls) do if b>=item.x and b<item.x+item.w and c==item.y then form.focus=i; click(item); break end end

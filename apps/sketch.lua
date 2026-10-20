@@ -30,7 +30,7 @@ return function(api,path)
     if not file then return end
     if file~=path and fs.exists(file) and not ui.confirm(api,'Replace existing sketch?') then return end
     local ok,err=api.load('system/peanut').write(file,serialize())
-    if ok then path=file; dirty=false; api.notify('Sketch saved in encrypted drive.') else api.notify(err) end
+    if ok then path=file; dirty=false; api.notify(api.isEncrypted() and 'Sketch saved in encrypted drive.' or 'Sketch saved in personal drive.') else api.notify(err) end
   end
   local function cube(w,h)
     local b=pixels.new(w,h,colors.black); local points={}; local scale=math.min(w,h)*0.29

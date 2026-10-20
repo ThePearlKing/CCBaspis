@@ -1,16 +1,21 @@
--- Only encrypted envelopes are ever written to the physical filesystem.
+-- Personal drive: authenticated envelopes, with optional encryption at rest.
 local V={ iterations=100000, limit=196608 }
 local physical=fs
 function V.new(crypto,storage,path)
-  local self={path=path,open=false,files=nil,key=nil,salt=nil,iterations=nil,serial=0}
+  local self={path=path,open=false,files=nil,key=nil,salt=nil,iterations=nil,serial=0,encrypted=true}
   local function keyFor(label) return crypto.hmac(self.key,"CCSacabam v1 "..label) end
   local function header(raw)
-    assert(type(raw)=="string" and #raw>=88 and raw:sub(1,4)=="SCV1","Not a CCSacabam vault")
+    assert(type(raw)=="string" and #raw>=88 and (raw:sub(1,4)=="SCV1" or raw:sub(1,4)=="SCP1"),"Not a CCSacabam personal drive")
     local iterations=crypto.number(raw,37)
     assert(iterations>=10000 and iterations<=2000000,"Unsupported key derivation parameters")
-    return raw:sub(5,36),iterations,raw:sub(41,52),raw:sub(53,-33),raw:sub(-32)
+    return raw:sub(5,36),iterations,raw:sub(41,52),raw:sub(53,-33),raw:sub(-32),raw:sub(1,4)=="SCV1"
   end
   function self.exists() return physical.exists(path) end
+  function self.isEncrypted()
+    if self.open then return self.encrypted end
+    local h=physical.open(path,"rb"); if not h then return false end
+    local magic=h.read(4); h.close(); return magic=="SCV1"
+  end
   function self.recoverPending()
     -- A power interruption can leave the old or new encrypted envelope beside
     -- the main file. Restore the last committed copy, and retain other copies.
@@ -29,14 +34,14 @@ function V.new(crypto,storage,path)
   end
   function self.unlock(password,progress)
     local raw,err=storage.read(path); if not raw then return nil,err end
-    local ok,salt,iterations,nonce,cipher,tag=pcall(header,raw)
+    local ok,salt,iterations,nonce,cipher,tag,encrypted=pcall(header,raw)
     if not ok then return nil,tostring(salt) end
     local master=crypto.pbkdf2(password,salt,iterations,progress)
     local macKey=crypto.hmac(master,"CCSacabam v1 authentication")
     if not crypto.equal(crypto.hmac(macKey,raw:sub(1,-33)),tag) then
       return nil,"Wrong password or damaged vault."
     end
-    local plain=crypto.chacha20(crypto.hmac(master,"CCSacabam v1 encryption"),nonce,cipher)
+    local plain=encrypted and crypto.chacha20(crypto.hmac(master,"CCSacabam v1 encryption"),nonce,cipher) or cipher
     local decoded=storage and textutils.unserialize(plain)
     if type(decoded)~="table" or decoded[""]~=true then return nil,"Invalid vault filesystem" end
     for name,value in pairs(decoded) do
@@ -45,6 +50,7 @@ function V.new(crypto,storage,path)
       end
     end
     self.key,self.salt,self.iterations,self.files,self.open=master,salt,iterations,decoded,true
+    self.encrypted=encrypted
     return true
   end
   function self.persist()
@@ -56,21 +62,30 @@ function V.new(crypto,storage,path)
     -- time and a counter, so different contents remain distinct after rollback.
     local timing=tostring(os.epoch and os.epoch("utc") or os.time())..":"..os.clock()..":"..self.serial
     local nonce=crypto.hmac(keyFor("nonce"),crypto.sha256(plain)..timing):sub(1,12)
-    local cipher=crypto.chacha20(keyFor("encryption"),nonce,plain)
-    local body="SCV1"..self.salt..crypto.be(self.iterations)..nonce..cipher
+    local cipher=self.encrypted and crypto.chacha20(keyFor("encryption"),nonce,plain) or plain
+    local body=(self.encrypted and "SCV1" or "SCP1")..self.salt..crypto.be(self.iterations)..nonce..cipher
     return storage.write(path,body..crypto.hmac(keyFor("authentication"),body))
   end
-  function self.create(password,entropy,progress)
+  function self.create(password,entropy,progress,encrypted)
     if self.exists() then return nil,"A vault already exists. Unlock it instead." end
     assert(type(password)=="string" and #password>=12,"Use a passphrase of at least 12 characters")
     self.salt=crypto.sha256("CCSacabam salt:"..tostring(entropy)..":"..tostring(os.getComputerID())..":"..tostring(os.epoch and os.epoch("utc") or os.time())..":"..os.clock())
     self.iterations=V.iterations
+    self.encrypted=encrypted~=false
     self.key=crypto.pbkdf2(password,self.salt,self.iterations,progress)
     self.files={[""]=true,Documents=true,Pictures=true,Programs=true,[".Trash"]=true,[".system"]=true}
     self.open=true
     local ok,err=self.persist()
     if not ok then self.lock(); return nil,err end
     return true
+  end
+  function self.setEncryption(enabled)
+    assert(self.open,"Personal drive is locked")
+    assert(type(enabled)=="boolean","Encryption must be on or off")
+    local previous=self.encrypted; self.encrypted=enabled
+    local ok,err=self.persist()
+    if not ok then self.encrypted=previous end
+    return ok,err
   end
   function self.changePassword(password,entropy,progress)
     assert(self.open,"Drive is locked")
@@ -128,7 +143,7 @@ function V.new(crypto,storage,path)
       return physical.isDir(hostPath(path))
     end
     function out.isReadOnly(path) return resolve(path)==nil end
-    function out.getDrive(path) if resolve(path) then return "encrypted" else return physical.getDrive(hostPath(path)) end end
+    function out.getDrive(path) if resolve(path) then return self.encrypted and "encrypted" or "personal" else return physical.getDrive(hostPath(path)) end end
     function out.isDriveRoot(path) return resolve(path)=="" or (resolve(path)==nil and physical.isDriveRoot and physical.isDriveRoot(path)) or false end
     function out.list(path)
       local key=resolve(path)
@@ -183,7 +198,7 @@ function V.new(crypto,storage,path)
       self.files[dir]=true
     end
     function out.makeDir(path)
-      local key=assert(resolve(path),"Writes belong on the encrypted personal drive")
+      local key=assert(resolve(path),"Writes belong on the personal drive")
       if self.files[key]==true then return end
       mutate(function() assert(self.files[key]==nil,"File already exists"); parents(key); self.files[key]=true end)
     end
@@ -237,7 +252,7 @@ function V.new(crypto,storage,path)
       if mode:sub(1,1)=="r" and self.files[key]==nil then return nil,"No such file" end
       local data=mode:sub(1,1)=="w" and "" or self.files[key] or ""
       local pos=mode:sub(1,1)=="a" and #data or 0
-      local closed,dirty=false,writable and mode:sub(1,1)=="w"
+      local closed,dirty=false,writable and (mode:sub(1,1)=="w" or self.files[key]==nil)
       local h={}
       local function alive() check(); assert(not closed,"File is closed") end
       function h.flush()

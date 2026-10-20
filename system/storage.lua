@@ -26,7 +26,9 @@ function M.write(path, value)
     assert(M.read(temp) == value, "Write verification failed")
     if fs.exists(path) then fs.move(path, backup); moved = true end
     fs.move(temp, path)
-    if moved then fs.delete(backup) end
+    -- The replacement is committed now. Cleanup failure must not tell callers
+    -- to roll back their encryption keys while the new image is already live.
+    if moved then pcall(fs.delete,backup) end
   end)
   if not ok then
     if moved and not fs.exists(path) and fs.exists(backup) then pcall(fs.move, backup, path) end

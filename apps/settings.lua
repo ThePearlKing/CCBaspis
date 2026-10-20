@@ -4,6 +4,7 @@ return function(api)
     local c=api.config()
     return {"Display: "..c.mode,"Theme: "..c.theme,"Wallpaper: "..tostring(c.wallpaper),
       "Welcome guide: "..tostring(c.welcome),"Lock personal drive","Change passphrase",
+      "Encryption: "..(api.isEncrypted() and "ON" or "OFF"),
       "Exit to CraftOS","Restart computer","Shut down computer"}
   end
   local function choose(n)
@@ -22,7 +23,15 @@ return function(api)
         if again~=password then api.notify("Passphrases did not match.")
         else local ok,err=api.changePassword(password,entropy); api.notify(ok and "Passphrase changed." or err) end
       end
-    elseif n==7 then api.requestExit("exit") elseif n==8 then api.requestExit("reboot") elseif n==9 then api.requestExit("shutdown") end
+    elseif n==7 then
+      local enabled=not api.isEncrypted()
+      local prompt=enabled and "Encrypt? Old backups stay plain."
+        or "Decrypt? Files become readable."
+      if ui.confirm(api,prompt) then
+        local ok,err=api.setEncryption(enabled)
+        api.notify(ok and (enabled and "Encryption enabled." or "Encryption disabled.") or err)
+      end
+    elseif n==8 then api.requestExit("exit") elseif n==9 then api.requestExit("reboot") elseif n==10 then api.requestExit("shutdown") end
     if n<=4 then api.saveConfig() end
   end
   while true do
@@ -33,7 +42,7 @@ return function(api)
     for row=1,rows do local i=row+offset
       if items[i] then ui.text(1,row+1,(selected==i and "> " or "  ")..i.." "..items[i],selected==i and t.onAccent or t.text,selected==i and t.accent or t.bg,w) end
     end
-    ui.text(1,h-1,"Saved files are encrypted automatically.",t.muted,t.bg,w)
+    ui.text(1,h-1,api.isEncrypted() and "Saved files are encrypted." or "Private PC? Off is fine. Shared server? Try ON.",t.muted,t.bg,w)
     ui.text(1,h,"Arrows + Enter / click / number",t.text,t.panel,w)
     local e,a,b,c=os.pullEventRaw()
     if e=="sacabam_close" or e=="terminate" then return

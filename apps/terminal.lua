@@ -1,9 +1,9 @@
 return function(api,program)
   local parent={}; for k,v in pairs(api.shell) do parent[k]=v end
   parent.dir=function() return api.home end
-  parent.path=function() return ".:"..fs.combine(api.home,"Programs")..":"..api.shell.path() end
+  parent.path=function() return ".:/"..fs.combine(api.home,"Programs")..":"..api.shell.path() end
   local t=api.theme(); term.setBackgroundColor(t.bg); term.setTextColor(t.text); term.clear(); term.setCursorPos(1,1)
-  print("CCSacabam encrypted terminal")
+  print("CCSacabam / "..(api.isEncrypted() and "encrypted" or "personal").." terminal")
   print("Save files in /"..api.home)
   print("F1 apps | F2 switch | F4 close")
   local function shellTask()

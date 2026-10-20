@@ -35,7 +35,7 @@ function M.environment(vfs,parent)
   end
   env.os.unloadAPI=function(name) env[name]=nil end
   -- These ROM APIs close over fs: reload them so they use the encrypted drive.
-  for _,name in ipairs({"io","settings","paintutils","help"}) do
+  for _,name in ipairs({"fs","io","settings","paintutils","help"}) do
     local apiEnv=setmetatable({},{__index=env})
     local chunk=env.loadfile("/rom/apis/"..name..".lua","t",apiEnv)
     if chunk then chunk(); env[name]=apiEnv end

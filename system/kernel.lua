@@ -93,8 +93,8 @@ function K.new(ctx)
   function self.geometry(p)
     if p.maximized then p.x,p.y,p.w,p.h = 1,2,self.width,self.height-2
     else
-      p.w = math.max(8,math.min(p.w,self.width))
-      p.h = math.max(4,math.min(p.h,self.height-2))
+      p.w = math.min(self.width,math.max(20,p.w))
+      p.h = math.min(self.height-2,math.max(8,p.h))
       p.x = math.max(1,math.min(p.x,self.width-p.w+1))
       p.y = math.max(2,math.min(p.y,self.height-p.h))
     end
@@ -157,6 +157,8 @@ function K.new(ctx)
       kill=function(id) if id~=p.id then self.remove(id) end end,
       requestExit=function(action) self.power=action or "exit" end,
       shell=ctx.shell,password=ctx.password,changePassword=ctx.changePassword,load=ctx.load,
+      isEncrypted=ctx.isEncrypted or function() return true end,setEncryption=ctx.setEncryption,
+      cryptoProgress=ctx.cryptoProgress,
       onExit=function(fn) p.cleanup=p.cleanup or {}; p.cleanup[#p.cleanup+1]=fn end}
     local args={...}
     p.co=coroutine.create(function() app(api,unpack(args)) end)
@@ -264,15 +266,15 @@ function K.new(ctx)
           menu.hits[my+1+row]=v.id
         end
       end
-      UI.text(mx+1,my+mh-1,"Arrows / Enter / Esc",t.muted,t.panel,mw-2)
+      UI.text(mx+1,my+mh-1,"Arrows / Enter / F5",t.muted,t.panel,mw-2)
     end
     if self.transform then
-      UI.text(1,self.height-1," "..self.transform.mode..": arrows | Enter done | Esc cancel",t.text,t.panel,self.width)
+      UI.text(1,self.height-1," "..self.transform.mode..": arrows | Enter done | F5 cancel",t.text,t.panel,self.width)
     end
     if self.power then
       UI.fill(2,math.max(2,math.floor(self.height/2)-1),self.width-2,4,t.panel)
       UI.text(3,math.max(2,math.floor(self.height/2)-1),"Close apps? Unsaved work may be lost.",t.text,t.panel,self.width-4)
-      UI.text(3,math.max(2,math.floor(self.height/2)-1)+2,"Enter: "..self.power.."  Esc: cancel",t.text,t.panel,self.width-4)
+      UI.text(3,math.max(2,math.floor(self.height/2)-1)+2,"Enter: "..self.power.."  F5: cancel",t.text,t.panel,self.width-4)
     end
     self.frame.setVisible(true); self.frame.setVisible(false)
     local p=self.get(self.focus)
@@ -300,7 +302,7 @@ function K.new(ctx)
       if not p then self.transform=nil
       elseif name=="key" then
         if e[2]==keys.enter then self.transform=nil
-        elseif e[2]==keys.escape then p.x,p.y,p.w,p.h=unpack(move.before); self.transform=nil
+        elseif e[2]==keys.f5 then p.x,p.y,p.w,p.h=unpack(move.before); self.transform=nil
         else
           local dx=e[2]==keys.left and -1 or e[2]==keys.right and 1 or 0
           local dy=e[2]==keys.up and -1 or e[2]==keys.down and 1 or 0
@@ -310,14 +312,14 @@ function K.new(ctx)
       end
     elseif self.power and input[name] then
       if name=="key" and e[2]==keys.enter then self.running=false; self.action=self.power
-      elseif name=="key" and e[2]==keys.escape then self.power=nil end
+      elseif name=="key" and e[2]==keys.f5 then self.power=nil end
     elseif name=="key" and e[2]==keys.f1 then
       self.launcher=self.launcher and nil or {query="",index=1}
     elseif self.launcher and input[name] then
       local m=self.launcher
       if name=="char" then m.query=m.query..e[2]; m.index=1
       elseif name=="key" then
-        if e[2]==keys.escape then self.launcher=nil
+        if e[2]==keys.f5 then self.launcher=nil
         elseif e[2]==keys.backspace then m.query=m.query:sub(1,-2); m.index=1
         elseif e[2]==keys.up then m.index=math.max(1,m.index-1)
         elseif e[2]==keys.down then m.index=math.min(#(m.matches or {}),m.index+1)

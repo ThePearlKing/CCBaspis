@@ -120,11 +120,11 @@ function P.parse(source)
           node.name,rest=rest:match('^([%a_][%w_]*)%s*=%s*(.+)$')
           if not node.name then fail(line,'Use '..op..' name = expression') end
           node.value=expr(rest)
-        elseif op=='label' or op=='button' or op=='input' or op=='checkbox' or op=='progress' or op=='banner' then
+        elseif op=='label' or op=='button' or op=='input' or op=='password' or op=='checkbox' or op=='progress' or op=='banner' then
           local id,x,y,w,text=rest:match('^([%a_][%w_]*)%s+(%S+)%s+(%S+)%s+(%S+)%s+(.+)$')
           if not id then fail(line,'Use '..op..' id x y width expression') end
           node.name,node.x,node.y,node.width,node.value=id,expr(x),expr(y),expr(w),expr(text)
-          if op=='input' or op=='checkbox' then
+          if op=='input' or op=='password' or op=='checkbox' then
             if not text:match('^[%a_][%w_]*$') then fail(line,op..' needs a variable name') end
             node.bind=text
           end
@@ -155,13 +155,32 @@ function P.parse(source)
 end
 function P.runtime(ast,api,peanut)
   local state={vars={},handlers={},timers={},widgets={},quit=false,title='Pistachio',budget=10000,focus=1}
+  local function bounded(value)
+    assert(type(value)~='string' or #value<=131072,'String exceeds 128 KiB')
+    return value
+  end
   local builtins={str=tostring,num=function(v) return tonumber(v) or 0 end,len=function(v) return #v end,
     min=math.min,max=math.max,abs=math.abs,floor=math.floor,round=function(n) return math.floor(n+0.5) end,
     peanut=peanut.decode,encode=peanut.encode,upper=string.upper,lower=string.lower}
+  local box
+  local function crypto()
+    assert(api.load,'Encryption functions are available only to native programs')
+    if not box then box=api.load('system/seal').new(api.load('system/crypto'),api.cryptoProgress) end
+    return box
+  end
+  builtins.seal=function(text,passphrase) return crypto().seal(text,passphrase) end
+  builtins.unseal=function(data,passphrase) return crypto().unseal(data,passphrase) end
   local eval
   eval=function(n)
+    state.budget=state.budget-1; assert(state.budget>=0,'Expression limit reached')
     if n.tag=='literal' then
-      if type(n.value)=='string' then return (n.value:gsub('{([%a_][%w_]*)}',function(k) local v=state.vars[k]; return v==nil and '{'..k..'}' or tostring(v) end)) end
+      if type(n.value)=='string' then
+        local size=0
+        return bounded((n.value:gsub('{([%a_][%w_]*)}',function(k)
+          local v=state.vars[k]; local part=v==nil and '{'..k..'}' or tostring(v)
+          size=size+#part; assert(size<=131072,'String exceeds 128 KiB'); return part
+        end)))
+      end
       return n.value
     elseif n.tag=='variable' then
       if n.name=='advanced' then return api.caps.color elseif n.name=='color' then return api.config().mode~='basic'
@@ -175,19 +194,20 @@ function P.runtime(ast,api,peanut)
       if n.op=='not' then return not eval(n.child) else return -eval(n.child) end
     elseif n.tag=='call' then
       local fn=builtins[n.name]; if not fn then error('Unknown function: '..n.name,0) end
-      local args={}; for i,v in ipairs(n.args) do args[i]=eval(v) end; return fn((table.unpack or unpack)(args))
+      local args={}; for i,v in ipairs(n.args) do args[i]=eval(v) end; return bounded(fn((table.unpack or unpack)(args)))
     elseif n.tag=='binary' then
       local a=eval(n.left)
       if n.op=='and' then return a and eval(n.right) elseif n.op=='or' then return a or eval(n.right) end
       local b=eval(n.right); local op=n.op
       if op=='+' then return a+b elseif op=='-' then return a-b elseif op=='*' then return a*b
       elseif op=='/' then assert(b~=0,'Division by zero'); return a/b elseif op=='%' then assert(b~=0,'Division by zero'); return a%b
-      elseif op=='..' then return tostring(a)..tostring(b) elseif op=='==' then return a==b elseif op=='!=' then return a~=b
+      elseif op=='..' then a,b=tostring(a),tostring(b); assert(#a+#b<=131072,'String exceeds 128 KiB'); return a..b
+      elseif op=='==' then return a==b elseif op=='!=' then return a~=b
       elseif op=='<' then return a<b elseif op=='>' then return a>b elseif op=='<=' then return a<=b elseif op=='>=' then return a>=b end
     end
   end
   state.eval=eval
-  local visual={label=true,button=true,input=true,checkbox=true,progress=true,banner=true,panel=true}
+  local visual={label=true,button=true,input=true,password=true,checkbox=true,progress=true,banner=true,panel=true}
   local run
   run=function(nodes,phase)
     for _,n in ipairs(nodes) do

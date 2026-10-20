@@ -63,20 +63,29 @@ function C.parse(source)
   return doc
 end
 function C.text(node,variables)
-  local parts={}
+  local parts={}; local size=0
   local function walk(n)
     if n.tag=='text' then parts[#parts+1]=n.text else for _,child in ipairs(n.children or {}) do walk(child) end end
   end
   walk(node)
   return (table.concat(parts):gsub('{([%a_][%w_]*)}',function(key)
-    local value=variables and variables[key]; return value==nil and '{'..key..'}' or tostring(value)
+    local value=variables and variables[key]; local part=value==nil and '{'..key..'}' or tostring(value)
+    size=size+#part; assert(size<=131072,'Rendered text exceeds 128 KiB'); return part
   end))
 end
 function C.safeScript(ast)
+  local functions={str=true,num=true,len=true,min=true,max=true,abs=true,floor=true,round=true,
+    peanut=true,encode=true,upper=true,lower=true}
+  local function expression(node)
+    if type(node)~='table' then return end
+    if node.tag=='call' then assert(functions[node.name],'Web pages cannot call '..node.name) end
+    for _,value in pairs(node) do if type(value)=='table' then expression(value) end end
+  end
   local safe={let=true,set=true,on=true,['function']=true,['if']=true,['repeat']=true,every=true,notify=true,call=true,quit=true,app=true,
     label=true,button=true,input=true,checkbox=true,progress=true,banner=true,panel=true}
   for _,node in ipairs(ast) do
     assert(safe[node.op],'Web pages cannot use '..node.op)
+    for _,name in ipairs({'value','x','y','width','height'}) do expression(node[name]) end
     if node.body then C.safeScript(node.body) end
     if node.other then C.safeScript(node.other) end
   end

@@ -40,15 +40,16 @@ function M.prompt(api, label, initial)
   local value = initial or ""
   while true do
     local t, w, h = api.theme(), term.getSize()
-    M.fill(1, math.max(1,h-2),w,3,t.panel)
-    M.text(2,h-2,label,t.text,t.panel,w-2)
+    local lines=M.wrap(label,math.max(1,w-2)); local count=math.min(#lines,h-2)
+    M.fill(1,h-count-1,w,count+2,t.panel)
+    for i=1,count do M.text(2,h-count-2+i,lines[i],t.text,t.panel,w-2) end
     M.text(2,h-1,"> " .. value:sub(-math.max(1,w-5)),t.text,t.bg,w-2)
-    M.text(2,h,"Enter: accept   Esc: cancel",t.muted,t.panel,w-2)
+    M.text(2,h,"Enter: accept   F5: cancel",t.muted,t.panel,w-2)
     local e,a = os.pullEventRaw()
     if e == "char" or e == "paste" then value = value .. a:gsub("[%c]", ""):sub(1,512-#value)
     elseif e == "key" then
       if a == keys.enter then return value
-      elseif a == keys.escape then return nil
+      elseif a == keys.f5 then return nil
       elseif a == keys.backspace then value = value:sub(1,-2) end
     elseif e == "sacabam_close" or e == "terminate" then return nil end
   end

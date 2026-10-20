@@ -7,7 +7,7 @@ local physicalEnv=_ENV
 local activeVault
 local function main()
   local function physicalModule(name) return assert(loadfile(fs.combine(root,name..".lua"),"t",physicalEnv))() end
-  assert(window and window.create and term.blit and bit32,"CCSacabam needs CC: Tweaked / ComputerCraft with blit, window and bit32.")
+  assert(window and window.create and term.blit and bit32 and fs.exists('/rom/modules/main/cc/require.lua'),"CCSacabam needs modern CC: Tweaked with blit, window, bit32 and cc.require.")
   local configModule=physicalModule("system/config")
   local storage=physicalModule("system/storage")
   local caps=configModule.capabilities(original)
@@ -19,7 +19,8 @@ local function main()
   vault.recoverPending()
   local login=physicalModule("system/login")
   local session=physicalModule("system/session")
-  while login.unlock(vault) do
+  local defaults=storage.load(fs.combine(root,"config/display.tbl"),{})
+  while login.unlock(vault,defaults) do
     local function desktop()
       local env=session.environment(vault.filesystem(fs.combine(root,"home")),physicalEnv)
       local cache={}
@@ -27,7 +28,6 @@ local function main()
         if not cache[name] then cache[name]=assert(env.loadfile(fs.combine(root,name..".lua")))() end
         return cache[name]
       end
-      local defaults=storage.load(fs.combine(root,"config/display.tbl"),{})
       local config=configModule.normalize(module("system/storage").load(fs.combine(root,"home/.system/settings.tbl"),defaults),caps)
       if args[1]=="--basic" then config.mode="basic" end
       if not env.fs.exists(fs.combine(root,"home/.examples-installed")) then
@@ -41,7 +41,8 @@ local function main()
         assert(module("system/storage").write(fs.combine(root,"home/.examples-installed"),"1"))
       end
       local ctx={root=root,load=module,config=config,configModule=configModule,caps=caps,target=original,shell=shell,
-        password=login.password,
+        password=login.password,isEncrypted=vault.isEncrypted,setEncryption=vault.setEncryption,
+        cryptoProgress=login.progress,
         changePassword=function(password,entropy) return vault.changePassword(password,entropy,login.progress) end}
       local kernel=module("system/kernel").new(ctx)
       env.ccsacabam={launch=kernel.launch,version=configModule.version}
@@ -66,9 +67,9 @@ if fs.exists(originalDir) and fs.isDir(originalDir) then shell.setDir(originalDi
 if not ok then
   print("CCSacabam could not continue:")
   printError(tostring(err))
-  print("The personal drive is locked.")
+  print("The personal drive is closed.")
   print("Try: "..fs.combine(root,"boot.lua").." --basic")
   return false
 end
-print("CCSacabam closed. Your personal drive is locked.")
+print("CCSacabam closed. Personal drive signed out.")
 return true

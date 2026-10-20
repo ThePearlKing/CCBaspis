@@ -29,7 +29,7 @@ return function(api,path)
     if not target or target=="" then return false end
     if target~=path and fs.exists(target) and not ui.confirm(api,"Replace "..fs.getName(target).."?") then return false end
     local ok,err=api.storage.write(target,contents())
-    if ok then path=target; saved=contents(); api.notify("Saved in encrypted drive.") else api.notify(err) end
+    if ok then path=target; saved=contents(); api.notify(api.isEncrypted() and "Saved in encrypted drive." or "Saved in personal drive.") else api.notify(err) end
     return ok
   end
   local function insert(value)
