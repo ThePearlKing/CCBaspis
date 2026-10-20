@@ -515,7 +515,7 @@ test('Europa launchers, Jupiter folder edits and Callisto local pages share shel
   for _,path in ipairs({'.','../welcome','./../welcome','/Sites/welcome'}) do
     command('europa host eater.com '..path); local app=assertRunning(kernel.focus); eq(app.app,'server')
     assert(app.win.getLine(5):find('Folder: /Sites/welcome',1,true))
-    assert(app.win.getLine(10):find('ready',1,true))
+    assert(app.win.getLine(10):find('Home: index.cashew',1,true))
     text('r'); prompt('/Sites/welcome','../welcome')
     assert(app.win.getLine(5):find('Folder: /Sites/welcome',1,true))
     kernel.remove(app.id); kernel.focusTask(terminal)
