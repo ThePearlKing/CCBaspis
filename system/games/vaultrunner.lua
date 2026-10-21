@@ -1,8 +1,8 @@
--- Crumb Raider: perspective raycasting, depth-tested sprites and a carved maze.
+-- Vault Runner: perspective raycasting, depth-tested sprites and a carved maze.
 local M={}
 function M.new(random)
   random=random or math.random
-  local s={map={},x=2.5,y=2.5,angle=0,crumbs={},collected=0,score=0,time=0,showMap=false,size=15}
+  local s={map={},x=2.5,y=2.5,angle=0,crystals={},collected=0,score=0,time=0,showMap=false,size=15}
   for y=1,15 do s.map[y]={}; for x=1,15 do s.map[y][x]=1 end end
   local stack={{2,2}}; s.map[2][2]=0
   while #stack>0 do
@@ -25,18 +25,18 @@ function M.new(random)
     end
   end
   local last=queue[#queue]; s.exit={x=last[1]+.5,y=last[2]+.5,exit=true}
-  for i=1,6 do local p=queue[math.floor(i*(#queue-2)/7)+2]; s.crumbs[i]={x=p[1]+.5,y=p[2]+.5} end
+  for i=1,6 do local p=queue[math.floor(i*(#queue-2)/7)+2]; s.crystals[i]={x=p[1]+.5,y=p[2]+.5} end
   function s.solid(x,y) return not s.map[math.floor(y)] or s.map[math.floor(y)][math.floor(x)]~=0 end
   local function walkable(x,y)
     for _,dx in ipairs({-.18,.18}) do for _,dy in ipairs({-.18,.18}) do if s.solid(x+dx,y+dy) then return false end end end
     return true
   end
   function s.collect()
-    for _,crumb in ipairs(s.crumbs) do
-      if not crumb.taken and (crumb.x-s.x)^2+(crumb.y-s.y)^2<.23 then crumb.taken=true; s.collected=s.collected+1; s.score=s.score+100 end
+    for _,crystal in ipairs(s.crystals) do
+      if not crystal.taken and (crystal.x-s.x)^2+(crystal.y-s.y)^2<.23 then crystal.taken=true; s.collected=s.collected+1; s.score=s.score+100 end
     end
     if s.collected==6 and (s.exit.x-s.x)^2+(s.exit.y-s.y)^2<.23 then
-      s.result='win'; s.score=s.score+math.max(0,1000-math.floor(s.time)); s.message='Six crumbs. One clean getaway.'
+      s.result='win'; s.score=s.score+math.max(0,1000-math.floor(s.time)); s.message='Six crystals. One clean getaway.'
     end
   end
   function s.move(dx,dy)
@@ -79,7 +79,7 @@ function M.new(random)
       local scale=math.max(1,math.floor(math.min(pw/15,(ph-3)/15))); local ox=math.floor((pw-15*scale)/2)
       for y=1,15 do for x=1,15 do b.rect(ox+(x-1)*scale+1,(y-1)*scale+1,scale,scale,s.map[y][x]==1 and colors.gray or colors.black) end end
       local function dot(p,color) b.rect(ox+(math.floor(p.x)-1)*scale+1,(math.floor(p.y)-1)*scale+1,scale,scale,color) end
-      for _,crumb in ipairs(s.crumbs) do if not crumb.taken then dot(crumb,colors.yellow) end end
+      for _,crystal in ipairs(s.crystals) do if not crystal.taken then dot(crystal,colors.yellow) end end
       dot(s.exit,colors.lime); dot(s,colors.white)
     else
       local dirX,dirY=math.cos(s.angle),math.sin(s.angle); local planeX,planeY=-dirY*.66,dirX*.66
@@ -99,7 +99,7 @@ function M.new(random)
           b.set(x,y,ink)
         end
       end
-      local sprites={s.exit}; for _,crumb in ipairs(s.crumbs) do if not crumb.taken then sprites[#sprites+1]=crumb end end
+      local sprites={s.exit}; for _,crystal in ipairs(s.crystals) do if not crystal.taken then sprites[#sprites+1]=crystal end end
       table.sort(sprites,function(a,d) return (a.x-s.x)^2+(a.y-s.y)^2>(d.x-s.x)^2+(d.y-s.y)^2 end)
       local inverse=1/(planeX*dirY-dirX*planeY)
       for _,sprite in ipairs(sprites) do
@@ -117,7 +117,7 @@ function M.new(random)
         end
       end
     end
-    c.drawPixels(b); c.text(1,c.h,'Crumbs '..s.collected..'/6  '..(s.collected==6 and 'Find green exit' or 'M map'))
+    c.drawPixels(b); c.text(1,c.h,'Crystals '..s.collected..'/6  '..(s.collected==6 and 'Find green exit' or 'M map'))
   end
   return s
 end

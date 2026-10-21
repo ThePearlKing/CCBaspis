@@ -497,6 +497,9 @@ test('pmatrix command launches its Pistachio source from another directory and r
 end)
 test('Games upgrade installs ten private-drive launchers and preserves user changes',function()
   local storage=cached('system/storage'); local programs=cached('system/programs')
+  local old="-- Crumb Raider / ADVANCED COMPUTER ONLY\nassert(ccsacabam,'Run this game inside CCSacabam').launch('games','crumb')\n"
+  assert(storage.write('/Games/crumb.lua',old)); programs.update('/ccsacabam',storage,C)
+  assert(not vfs.exists('/Games/crumb.lua'))
   local catalog=cached('system/game_catalog'); eq(#catalog,10)
   for _,entry in ipairs(catalog) do
     eq(storage.read('/Games/'..entry.id..'.lua'),storage.read('/ccsacabam/games/'..entry.id..'.lua'))
@@ -518,11 +521,11 @@ test('Games launch through the shell, relative Games paths, and Files',function(
   key(keys.enter); local game=assertRunning(kernel.focus); eq(game.title,'Lights Out'); key(keys.q)
   for _,p in ipairs({table.unpack(kernel.tasks)}) do if p.app=='terminal' then kernel.remove(p.id) end end
   kernel.remove(files)
-  local id=kernel.launch('games','crumb'); local p=assertRunning(id)
+  local id=kernel.launch('games','vaultrunner'); local p=assertRunning(id)
   if not caps.color then
     local screen=''; for y=1,p.h-2 do screen=screen..p.win.getLine(y)..' ' end
     assert(screen:find('ADVANCED COMPUTER ONLY',1,true)); key(keys.enter)
-  else kernel.notice=nil; kernel.render(); dump('crumb'); key(keys.q) end
+  else kernel.notice=nil; kernel.render(); dump('vaultrunner'); key(keys.q) end
   assert(not kernel.get(id))
 end)
 test('Game completion records stay inside the encrypted personal drive',function()

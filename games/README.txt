@@ -13,7 +13,7 @@ Lights Out - BASIC + ADVANCED
 Sokoban - BASIC + ADVANCED
 Memory - BASIC + ADVANCED
 Breakout - ADVANCED COMPUTER ONLY
-Crumb Raider - ADVANCED COMPUTER ONLY
+Vault Runner - ADVANCED COMPUTER ONLY
 
-Crumb Raider: collect six golden crumbs in a 3D maze,
+Vault Runner: collect six golden crystals in a 3D maze,
 then find the green exit. W/S move, A/D turn, M map.

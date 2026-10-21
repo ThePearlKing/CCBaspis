@@ -129,10 +129,10 @@ local function mazePath(s,tx,ty)
 end
 test('3D mazes have reachable treasures/exits, solid walls and a complete playable win path',function()
   for seed=1,8 do
-    math.randomseed(seed); local s=module('system/games/crumb').new()
+    math.randomseed(seed); local s=module('system/games/vaultrunner').new()
     s.move(-.4,0); s.move(-.4,0); assert(s.x>=2.18 and not s.solid(s.x,s.y))
     s.x,s.y=2.5,2.5
-    local targets={}; for _,p in ipairs(s.crumbs) do targets[#targets+1]=p end; targets[#targets+1]=s.exit
+    local targets={}; for _,p in ipairs(s.crystals) do targets[#targets+1]=p end; targets[#targets+1]=s.exit
     for _,target in ipairs(targets) do
       for _,d in ipairs(mazePath(s,math.floor(target.x),math.floor(target.y))) do for i=1,4 do s.move(d[1]*.25,d[2]*.25) end end
     end
@@ -171,7 +171,7 @@ end
 test('Games launcher lists ten titles, labels advanced-only games and launches selection',function()
   start(); snapshot('games'); event('key',keys['end'],false)
   local text=snapshot(); assert(text:find('ADVANCED',1,true) and text:find('COMPUTER',1,true) and text:find('ONLY',1,true))
-  event('key',keys.enter,false); eq(launched,'crumb'); finish()
+  event('key',keys.enter,false); eq(launched,'vaultrunner'); finish()
 end)
 test('Every game opens on real hardware, with basic gating and a small-window prompt',function()
   local vw,vh=view.getSize()
@@ -185,9 +185,9 @@ test('Every game opens on real hardware, with basic gating and a small-window pr
       else
         if entry.timed then for i=1,4 do tick() end end
         snapshot(entry.id); event('key',keys.h,false); event('key',keys.h,false)
-        if entry.id=='crumb' then
+        if entry.id=='vaultrunner' then
           local before=snapshot(); event('key',keys.right,false); assert(snapshot()~=before,'Turning did not change the 3D view')
-          before=snapshot(); event('key',keys.m,false); assert(snapshot()~=before,'Map did not open'); snapshot('crumb-map')
+          before=snapshot(); event('key',keys.m,false); assert(snapshot()~=before,'Map did not open'); snapshot('vaultrunner-map')
         end
       end
       finish()
@@ -211,6 +211,34 @@ test('Completed games save records once and restart without duplicate records',f
   local records=storage.load('/games-fixture/.system/game-records.tbl'); eq(records.lights.wins,1); eq(records.lights.plays,1)
   event('term_resize'); eq(storage.load('/games-fixture/.system/game-records.tbl').lights.plays,1)
   event('key',keys.r,false); event('key',keys.enter,false); eq(storage.load('/games-fixture/.system/game-records.tbl').lights.wins,2)
+  finish(); view.reposition(1,1,w-2,h-4)
+end)
+test('Renamed game replaces only the stock launcher and preserves edited launchers',function()
+  local root='/rename-fixture'; fs.makeDir(root)
+  fs.copy('/src/examples',root..'/examples'); fs.copy('/src/games',root..'/games')
+  local old="-- Crumb Raider / ADVANCED COMPUTER ONLY\nassert(ccsacabam,'Run this game inside CCSacabam').launch('games','crumb')\n"
+  assert(storage.write(root..'/home/Games/crumb.lua',old))
+  local programs=module('system/programs'); local crypto=module('system/crypto')
+  programs.update(root,storage,crypto)
+  assert(not fs.exists(root..'/home/Games/crumb.lua'))
+  eq(storage.read(root..'/home/Games/vaultrunner.lua'),storage.read('/src/games/vaultrunner.lua'))
+  local edited=old..'-- my changes\n'
+  assert(storage.write(root..'/home/Games/crumb.lua',edited))
+  programs.update(root,storage,crypto); eq(storage.read(root..'/home/Games/crumb.lua'),edited)
+end)
+test('Old game links open Vault Runner and prior completion records carry forward',function()
+  view.reposition(1,1,49,18)
+  local path='/games-fixture/.system/game-records.tbl'
+  local records=storage.load(path,{}); records.crumb={wins=2,plays=3,best=5000}
+  assert(storage.save(path,records)); start('crumb')
+  assert(snapshot():find('Vault Runner',1,true))
+  if native.isColor() then
+    assert(snapshot():find('Best 5000',1,true))
+    local s=states['system/games/vaultrunner']; s.x,s.y=s.exit.x,s.exit.y; s.collected=6; s.collect()
+    event('term_resize'); local updated=storage.load(path)
+    eq(updated.vaultrunner.wins,3); eq(updated.vaultrunner.plays,4); eq(updated.vaultrunner.best,5000)
+    eq(updated.lights.wins,2)
+  else assert(snapshot():find('ADVANCED COMPUTER ONLY',1,true)) end
   finish(); view.reposition(1,1,w-2,h-4)
 end)
 os.startTimer,os.cancelTimer=startTimer,cancelTimer

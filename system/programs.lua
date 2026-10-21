@@ -31,6 +31,14 @@ function M.update(root,storage,crypto)
     nextHashes[name]=hash
     if previous[name]~=hash then changed=true end
   end
+  -- Retire the old stock launcher only after its replacement was installed.
+  -- Edited launchers keep working through the catalog's legacy ID alias.
+  local retired=fs.combine(root,'home/Games/crumb.lua')
+  local old=storage.read(retired)
+  if fs.exists(fs.combine(root,'home/Games/vaultrunner.lua')) and old
+    and crypto.hex(crypto.sha256(old))=='6a28f78a4b32bb05d1902885559c5085f565fc39ca43106315ee4496c394b7ad' then
+    fs.delete(retired)
+  end
   if changed then assert(storage.save(record,nextHashes)) end
 end
 return M

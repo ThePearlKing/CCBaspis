@@ -1,0 +1,997 @@
+{
+  "installer_sha256": "ad130c3d7c39ac699933cb0b88c58f81341f476f18dc1f223ecc85d2916d74f7",
+  "scope": "Vault Runner rename, stock and edited launcher upgrade compatibility, legacy game links and saved records; all game behavior across five display configurations; full advanced integration suite.",
+  "prior_full_suite": "validation.json",
+  "cases": {
+    "advanced": {
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "screen": [
+        51,
+        19
+      ],
+      "complete": true,
+      "color": true,
+      "tests": [
+        {
+          "ok": true,
+          "name": "Lua syntax: src/apps/browser.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/apps/chatplus.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/apps/code.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/apps/customisation.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/apps/devices.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/apps/editor.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/apps/files.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/apps/games.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/apps/help.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/apps/pistachio.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/apps/processes.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/apps/server.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/apps/settings.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/apps/sketch.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/apps/terminal.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/boot.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/chatplus.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/examples/europa.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/examples/games.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/examples/ganymede-demo.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/examples/peanut-demo.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/examples/pistachio.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/examples/pmatrix.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/blocks.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/breakout.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/lights.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/memory.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/merge.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/mines.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/pong.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/snake.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/sokoban.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/games/vaultrunner.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/install.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/manifest.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/cashew.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/config.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/crypto.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/europa.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/filepicker.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/font.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/game.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/game_catalog.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/blocks.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/breakout.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/lights.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/memory.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/merge.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/mines.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/pong.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/snake.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/sokoban.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/games/vaultrunner.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/ganymede.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/kernel.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/login.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/paths.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/peanut.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/pistachio.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/pixels.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/programs.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/seal.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/session.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/storage.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/syntax.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/ui.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/vault.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/system/wallpaper.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tests/fresh.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tests/games.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tests/network-host.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tests/network.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tests/picker.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tests/probe.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tests/run.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tests/setup.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tests/visual.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tools/installer.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/tools/setup.lua"
+        },
+        {
+          "ok": true,
+          "name": "Lua syntax: src/uninstall.lua"
+        },
+        {
+          "ok": true,
+          "name": "SHA256 empty and abc"
+        },
+        {
+          "ok": true,
+          "name": "HMAC RFC4231"
+        },
+        {
+          "ok": true,
+          "name": "PBKDF2 SHA256 4096 rounds"
+        },
+        {
+          "ok": true,
+          "name": "ChaCha20 RFC8439 block"
+        },
+        {
+          "ok": true,
+          "name": "Installer preserves files and startup backups"
+        },
+        {
+          "ok": true,
+          "name": "Installer rejects corrupt payload"
+        },
+        {
+          "ok": true,
+          "name": "Installer rolls back a failed startup swap"
+        },
+        {
+          "ok": true,
+          "name": "Create encrypted vault"
+        },
+        {
+          "ok": true,
+          "name": "Normal root and relative paths write only ciphertext"
+        },
+        {
+          "ok": true,
+          "name": "Filesystem handles, binary seek, rename, copy, find"
+        },
+        {
+          "ok": true,
+          "name": "Vault authentication rejects wrong passwords and tampering"
+        },
+        {
+          "ok": true,
+          "name": "Locked handles cannot read"
+        },
+        {
+          "ok": true,
+          "name": "Persistence failure keeps previous data"
+        },
+        {
+          "ok": true,
+          "name": "Interrupted encrypted writes recover without plaintext"
+        },
+        {
+          "ok": true,
+          "name": "Safe writer refuses to overwrite a directory"
+        },
+        {
+          "ok": true,
+          "name": "Encryption OFF removes login and keys; enabling creates a password"
+        },
+        {
+          "ok": true,
+          "name": "Failed encryption conversion preserves the previous mode and disk image"
+        },
+        {
+          "ok": true,
+          "name": "Legacy plaintext drives open without a password and migrate on save"
+        },
+        {
+          "ok": true,
+          "name": "Password change invalidates the old password and preserves files"
+        },
+        {
+          "ok": true,
+          "name": "Cleanup failure after a save keeps the committed image authoritative"
+        },
+        {
+          "ok": true,
+          "name": "Standard Lua environment with io, settings and require"
+        },
+        {
+          "ok": true,
+          "name": "Peanut round trips data, null, escapes and empty arrays"
+        },
+        {
+          "ok": true,
+          "name": "Peanut rejects malformed, duplicate and executable input"
+        },
+        {
+          "ok": true,
+          "name": "Code lexer handles four languages, multiline comments/strings and embedded scripts"
+        },
+        {
+          "ok": true,
+          "name": "Code completion knows APIs, variables and tags and skips strings/comments"
+        },
+        {
+          "ok": true,
+          "name": "Pistachio seal/unseal authenticate, reject tampering and work without drive encryption"
+        },
+        {
+          "ok": true,
+          "name": "Pistachio expressions, handlers, conditionals and loops"
+        },
+        {
+          "ok": true,
+          "name": "Pistachio rejects unknown statements and limits recursive handlers"
+        },
+        {
+          "ok": true,
+          "name": "Cashew parses HTML-like pages and Pistachio handlers"
+        },
+        {
+          "ok": true,
+          "name": "Cashew rejects file access, Lua, and malformed markup"
+        },
+        {
+          "ok": true,
+          "name": "Europa domains, numeric addresses, links and traversal protection"
+        },
+        {
+          "ok": true,
+          "name": "Boot every bundled application in a real window"
+        },
+        {
+          "ok": true,
+          "name": "Editor saves encrypted content and supports undo"
+        },
+        {
+          "ok": true,
+          "name": "Code Editor completes and highlights Lua, Peanut, Pistachio and Cashew in real windows"
+        },
+        {
+          "ok": true,
+          "name": "Code Editor member completion, undo/redo and manual language selection"
+        },
+        {
+          "ok": true,
+          "name": "Settings encryption toggle requires explicit confirmation"
+        },
+        {
+          "ok": true,
+          "name": "Customisation saves desktop, frame and button colours and resets the current profile"
+        },
+        {
+          "ok": true,
+          "name": "Custom colours validate palette values, keep presets separate and roll back failed saves"
+        },
+        {
+          "ok": true,
+          "name": "Wallpaper patterns persist from Settings and refresh the desktop cache"
+        },
+        {
+          "ok": true,
+          "name": "Skip typing YES defaults OFF, persists, and enables Enter/click confirmation"
+        },
+        {
+          "ok": true,
+          "name": "Sealed-note visual program masks passwords and saves only ciphertext on a plain drive"
+        },
+        {
+          "ok": true,
+          "name": "Two terminals have isolated shell working directories"
+        },
+        {
+          "ok": true,
+          "name": "Shared paths normalize dots, parents, absolute paths and spaces"
+        },
+        {
+          "ok": true,
+          "name": "Existing installs refresh stock launchers while retaining custom programs"
+        },
+        {
+          "ok": true,
+          "name": "pmatrix command launches its Pistachio source from another directory and returns cleanly"
+        },
+        {
+          "ok": true,
+          "name": "Games upgrade installs ten private-drive launchers and preserves user changes"
+        },
+        {
+          "ok": true,
+          "name": "Games launch through the shell, relative Games paths, and Files"
+        },
+        {
+          "ok": true,
+          "name": "Game completion records stay inside the encrypted personal drive"
+        },
+        {
+          "ok": true,
+          "name": "Shell commands and Lua executables resolve relative and quoted paths"
+        },
+        {
+          "ok": true,
+          "name": "All app launches inherit the calling terminal directory and freeze it per window"
+        },
+        {
+          "ok": true,
+          "name": "File dialogs and Files navigation resolve paths against their own directory"
+        },
+        {
+          "ok": true,
+          "name": "File pickers browse encrypted files, cancel cleanly and preserve overwrite confirmation"
+        },
+        {
+          "ok": true,
+          "name": "Callisto chooses local pages through a file browser"
+        },
+        {
+          "ok": true,
+          "name": "Pistachio programs and Peanut load/save share the inherited working directory"
+        },
+        {
+          "ok": true,
+          "name": "Europa launchers, Jupiter folder edits and Callisto local pages share shell paths"
+        },
+        {
+          "ok": true,
+          "name": "Unmodified Lua programs use fs, io, require and settings"
+        },
+        {
+          "ok": true,
+          "name": "Files double-click runs a root-relative Lua path with spaces"
+        },
+        {
+          "ok": true,
+          "name": "Background programs receive timers without receiving another window keyboard input"
+        },
+        {
+          "ok": true,
+          "name": "Callisto renders Cashew and activates a Pistachio button"
+        },
+        {
+          "ok": true,
+          "name": "Pistachio keyboard and window manager controls"
+        },
+        {
+          "ok": true,
+          "name": "Window mouse coordinates, dragging and resizing"
+        },
+        {
+          "ok": true,
+          "name": "Desktop shortcut menus remove only shortcuts and persist the choice"
+        },
+        {
+          "ok": true,
+          "name": "Window buttons have distinct colors; right click preserves app coordinates"
+        },
+        {
+          "ok": true,
+          "name": "Desktop works at pocket and minimum display sizes"
+        },
+        {
+          "ok": true,
+          "name": "Application crash is contained and logged in encrypted drive"
+        },
+        {
+          "ok": true,
+          "name": "Same apps render in basic mode and color mode"
+        },
+        {
+          "ok": true,
+          "name": "Upgrade preserves encrypted vault byte for byte"
+        },
+        {
+          "ok": true,
+          "name": "Real boot login, lock, wrong password and logout"
+        },
+        {
+          "ok": true,
+          "name": "Uninstaller restores original startup without deleting vault"
+        }
+      ],
+      "failures": 0
+    },
+    "games": {
+      "failures": 0,
+      "color": true,
+      "tests": [
+        {
+          "ok": true,
+          "name": "Render is the advanced default; basic and explicit choices are retained"
+        },
+        {
+          "ok": true,
+          "name": "Snake grows, rejects reversals and ends on wall/self collisions"
+        },
+        {
+          "ok": true,
+          "name": "Pong paddles stay on court, bounce the ball, and first to seven wins"
+        },
+        {
+          "ok": true,
+          "name": "Blocks clears completed rows, rotates legally and detects top-out"
+        },
+        {
+          "ok": true,
+          "name": "Mines guarantees a safe opening, honours flags and detects wins/losses"
+        },
+        {
+          "ok": true,
+          "name": "2048 merges once per move, keeps no-op boards unchanged and detects endings"
+        },
+        {
+          "ok": true,
+          "name": "Lights Out has a solvable board and awards a win when every light is off"
+        },
+        {
+          "ok": true,
+          "name": "All four Sokoban levels are solvable; pushing, undo and progression work"
+        },
+        {
+          "ok": true,
+          "name": "Memory prevents duplicate flips and completes all eight pairs"
+        },
+        {
+          "ok": true,
+          "name": "Breakout launches, bounces, breaks bricks and handles last brick/last life"
+        },
+        {
+          "ok": true,
+          "name": "3D mazes have reachable treasures/exits, solid walls and a complete playable win path"
+        },
+        {
+          "ok": true,
+          "name": "Games launcher lists ten titles, labels advanced-only games and launches selection"
+        },
+        {
+          "ok": true,
+          "name": "Every game opens on real hardware, with basic gating and a small-window prompt"
+        },
+        {
+          "ok": true,
+          "name": "Timed games pause, restart, resize safely and clean up timers on every exit route"
+        },
+        {
+          "ok": true,
+          "name": "Completed games save records once and restart without duplicate records"
+        },
+        {
+          "ok": true,
+          "name": "Renamed game replaces only the stock launcher and preserves edited launchers"
+        },
+        {
+          "ok": true,
+          "name": "Old game links open Vault Runner and prior completion records carry forward"
+        }
+      ],
+      "complete": true,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)"
+    },
+    "games-basic": {
+      "failures": 0,
+      "complete": true,
+      "tests": [
+        {
+          "ok": true,
+          "name": "Render is the advanced default; basic and explicit choices are retained"
+        },
+        {
+          "ok": true,
+          "name": "Snake grows, rejects reversals and ends on wall/self collisions"
+        },
+        {
+          "ok": true,
+          "name": "Pong paddles stay on court, bounce the ball, and first to seven wins"
+        },
+        {
+          "ok": true,
+          "name": "Blocks clears completed rows, rotates legally and detects top-out"
+        },
+        {
+          "ok": true,
+          "name": "Mines guarantees a safe opening, honours flags and detects wins/losses"
+        },
+        {
+          "ok": true,
+          "name": "2048 merges once per move, keeps no-op boards unchanged and detects endings"
+        },
+        {
+          "ok": true,
+          "name": "Lights Out has a solvable board and awards a win when every light is off"
+        },
+        {
+          "ok": true,
+          "name": "All four Sokoban levels are solvable; pushing, undo and progression work"
+        },
+        {
+          "ok": true,
+          "name": "Memory prevents duplicate flips and completes all eight pairs"
+        },
+        {
+          "ok": true,
+          "name": "Breakout launches, bounces, breaks bricks and handles last brick/last life"
+        },
+        {
+          "ok": true,
+          "name": "3D mazes have reachable treasures/exits, solid walls and a complete playable win path"
+        },
+        {
+          "ok": true,
+          "name": "Games launcher lists ten titles, labels advanced-only games and launches selection"
+        },
+        {
+          "ok": true,
+          "name": "Every game opens on real hardware, with basic gating and a small-window prompt"
+        },
+        {
+          "ok": true,
+          "name": "Timed games pause, restart, resize safely and clean up timers on every exit route"
+        },
+        {
+          "ok": true,
+          "name": "Completed games save records once and restart without duplicate records"
+        },
+        {
+          "ok": true,
+          "name": "Renamed game replaces only the stock launcher and preserves edited launchers"
+        },
+        {
+          "ok": true,
+          "name": "Old game links open Vault Runner and prior completion records carry forward"
+        }
+      ],
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "color": false
+    },
+    "games-pocket": {
+      "complete": true,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "color": true,
+      "failures": 0,
+      "tests": [
+        {
+          "name": "Render is the advanced default; basic and explicit choices are retained",
+          "ok": true
+        },
+        {
+          "name": "Snake grows, rejects reversals and ends on wall/self collisions",
+          "ok": true
+        },
+        {
+          "name": "Pong paddles stay on court, bounce the ball, and first to seven wins",
+          "ok": true
+        },
+        {
+          "name": "Blocks clears completed rows, rotates legally and detects top-out",
+          "ok": true
+        },
+        {
+          "name": "Mines guarantees a safe opening, honours flags and detects wins/losses",
+          "ok": true
+        },
+        {
+          "name": "2048 merges once per move, keeps no-op boards unchanged and detects endings",
+          "ok": true
+        },
+        {
+          "name": "Lights Out has a solvable board and awards a win when every light is off",
+          "ok": true
+        },
+        {
+          "name": "All four Sokoban levels are solvable; pushing, undo and progression work",
+          "ok": true
+        },
+        {
+          "name": "Memory prevents duplicate flips and completes all eight pairs",
+          "ok": true
+        },
+        {
+          "name": "Breakout launches, bounces, breaks bricks and handles last brick/last life",
+          "ok": true
+        },
+        {
+          "name": "3D mazes have reachable treasures/exits, solid walls and a complete playable win path",
+          "ok": true
+        },
+        {
+          "name": "Games launcher lists ten titles, labels advanced-only games and launches selection",
+          "ok": true
+        },
+        {
+          "name": "Every game opens on real hardware, with basic gating and a small-window prompt",
+          "ok": true
+        },
+        {
+          "name": "Timed games pause, restart, resize safely and clean up timers on every exit route",
+          "ok": true
+        },
+        {
+          "name": "Completed games save records once and restart without duplicate records",
+          "ok": true
+        },
+        {
+          "name": "Renamed game replaces only the stock launcher and preserves edited launchers",
+          "ok": true
+        },
+        {
+          "name": "Old game links open Vault Runner and prior completion records carry forward",
+          "ok": true
+        }
+      ]
+    },
+    "games-small": {
+      "color": true,
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "tests": [
+        {
+          "name": "Render is the advanced default; basic and explicit choices are retained",
+          "ok": true
+        },
+        {
+          "name": "Snake grows, rejects reversals and ends on wall/self collisions",
+          "ok": true
+        },
+        {
+          "name": "Pong paddles stay on court, bounce the ball, and first to seven wins",
+          "ok": true
+        },
+        {
+          "name": "Blocks clears completed rows, rotates legally and detects top-out",
+          "ok": true
+        },
+        {
+          "name": "Mines guarantees a safe opening, honours flags and detects wins/losses",
+          "ok": true
+        },
+        {
+          "name": "2048 merges once per move, keeps no-op boards unchanged and detects endings",
+          "ok": true
+        },
+        {
+          "name": "Lights Out has a solvable board and awards a win when every light is off",
+          "ok": true
+        },
+        {
+          "name": "All four Sokoban levels are solvable; pushing, undo and progression work",
+          "ok": true
+        },
+        {
+          "name": "Memory prevents duplicate flips and completes all eight pairs",
+          "ok": true
+        },
+        {
+          "name": "Breakout launches, bounces, breaks bricks and handles last brick/last life",
+          "ok": true
+        },
+        {
+          "name": "3D mazes have reachable treasures/exits, solid walls and a complete playable win path",
+          "ok": true
+        },
+        {
+          "name": "Games launcher lists ten titles, labels advanced-only games and launches selection",
+          "ok": true
+        },
+        {
+          "name": "Every game opens on real hardware, with basic gating and a small-window prompt",
+          "ok": true
+        },
+        {
+          "name": "Timed games pause, restart, resize safely and clean up timers on every exit route",
+          "ok": true
+        },
+        {
+          "name": "Completed games save records once and restart without duplicate records",
+          "ok": true
+        },
+        {
+          "name": "Renamed game replaces only the stock launcher and preserves edited launchers",
+          "ok": true
+        },
+        {
+          "name": "Old game links open Vault Runner and prior completion records carry forward",
+          "ok": true
+        }
+      ],
+      "failures": 0,
+      "complete": true
+    },
+    "games-small-basic": {
+      "host": "ComputerCraft 1.112.0 (CraftOS-PC v2.8.3)",
+      "color": false,
+      "failures": 0,
+      "complete": true,
+      "tests": [
+        {
+          "ok": true,
+          "name": "Render is the advanced default; basic and explicit choices are retained"
+        },
+        {
+          "ok": true,
+          "name": "Snake grows, rejects reversals and ends on wall/self collisions"
+        },
+        {
+          "ok": true,
+          "name": "Pong paddles stay on court, bounce the ball, and first to seven wins"
+        },
+        {
+          "ok": true,
+          "name": "Blocks clears completed rows, rotates legally and detects top-out"
+        },
+        {
+          "ok": true,
+          "name": "Mines guarantees a safe opening, honours flags and detects wins/losses"
+        },
+        {
+          "ok": true,
+          "name": "2048 merges once per move, keeps no-op boards unchanged and detects endings"
+        },
+        {
+          "ok": true,
+          "name": "Lights Out has a solvable board and awards a win when every light is off"
+        },
+        {
+          "ok": true,
+          "name": "All four Sokoban levels are solvable; pushing, undo and progression work"
+        },
+        {
+          "ok": true,
+          "name": "Memory prevents duplicate flips and completes all eight pairs"
+        },
+        {
+          "ok": true,
+          "name": "Breakout launches, bounces, breaks bricks and handles last brick/last life"
+        },
+        {
+          "ok": true,
+          "name": "3D mazes have reachable treasures/exits, solid walls and a complete playable win path"
+        },
+        {
+          "ok": true,
+          "name": "Games launcher lists ten titles, labels advanced-only games and launches selection"
+        },
+        {
+          "ok": true,
+          "name": "Every game opens on real hardware, with basic gating and a small-window prompt"
+        },
+        {
+          "ok": true,
+          "name": "Timed games pause, restart, resize safely and clean up timers on every exit route"
+        },
+        {
+          "ok": true,
+          "name": "Completed games save records once and restart without duplicate records"
+        },
+        {
+          "ok": true,
+          "name": "Renamed game replaces only the stock launcher and preserves edited launchers"
+        },
+        {
+          "ok": true,
+          "name": "Old game links open Vault Runner and prior completion records carry forward"
+        }
+      ]
+    }
+  },
+  "total_checks": 234,
+  "independent_checks": "Python hashlib/hmac/cryptography verified actual envelopes; the advanced suite also scanned physical storage for private plaintext and filenames."
+}

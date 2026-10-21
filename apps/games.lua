@@ -1,7 +1,7 @@
 return function(api,id)
   local catalog=api.load('system/game_catalog'); local ui=api.ui
   if id then
-    for _,entry in ipairs(catalog) do if entry.id==id then return api.load('system/game').run(api,entry) end end
+    for _,entry in ipairs(catalog) do if entry.id==id or entry.legacyId==id then return api.load('system/game').run(api,entry) end end
     api.notify('Unknown game: '..tostring(id)); return
   end
   local selected,offset=1,0

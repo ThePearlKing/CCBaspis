@@ -23,7 +23,7 @@ function M.run(api,entry)
     -- Reload so two windows finishing games cannot overwrite each other's scores.
     local current=api.storage.load(recordPath,{})
     if type(current)~='table' then current={} end
-    local old=current[entry.id]; if type(old)~='table' then old={} end
+    local old=current[entry.id] or (entry.legacyId and current[entry.legacyId]); if type(old)~='table' then old={} end
     current[entry.id]={plays=(tonumber(old.plays) or 0)+1,wins=(tonumber(old.wins) or 0)+(game.result=='win' and 1 or 0),
       best=math.max(tonumber(old.best) or 0,tonumber(game.score) or 0)}
     local ok,err=api.storage.save(recordPath,current)
@@ -50,7 +50,7 @@ function M.run(api,entry)
       ui.text(1,3,'Needs '..entry.w..' x '..entry.h,colors.white,colors.black,w)
       ui.text(1,4,'F6: maximise',colors.white,colors.black,w)
     end
-    local old=records[entry.id]; local best=type(old)=='table' and tonumber(old.best) or 0
+    local old=records[entry.id] or (entry.legacyId and records[entry.legacyId]); local best=type(old)=='table' and tonumber(old.best) or 0
     ui.text(1,1,entry.name..'  '..tostring(game.score or 0)..(w>=36 and '  Best '..tostring(best or 0) or ''),colors.white,colors.gray,w)
     ui.text(1,h,'P pause H help R new Q quit',colors.white,colors.black,w)
     if enough then

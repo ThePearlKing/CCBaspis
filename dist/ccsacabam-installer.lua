@@ -753,11 +753,11 @@ return function(api,start)
   end
 end
 ]]},
-  ["apps/games.lua"]={sha256="d1bc9f9be9b9f36745e947e368799d1bdcd38031c072040365faa2701054ce16",data=[[
+  ["apps/games.lua"]={sha256="adbfacb5e3411bf8f016b436aae91379d1824ac58a43b12a060c7246141ca6f2",data=[[
 return function(api,id)
   local catalog=api.load('system/game_catalog'); local ui=api.ui
   if id then
-    for _,entry in ipairs(catalog) do if entry.id==id then return api.load('system/game').run(api,entry) end end
+    for _,entry in ipairs(catalog) do if entry.id==id or entry.legacyId==id then return api.load('system/game').run(api,entry) end end
     api.notify('Unknown game: '..tostring(id)); return
   end
   local selected,offset=1,0
@@ -798,7 +798,7 @@ return function(api,id)
   end
 end
 ]]},
-  ["apps/help.lua"]={sha256="ea3629fc09ba4a4fdc2ca526249cfe0b17c5401908e1fbdc135b5ab03ddfa256",data=[[
+  ["apps/help.lua"]={sha256="2e22e34c5cbdc33d3249c2c9c1414977baf6f19220db61c349146d4cb534ccb5",data=[[
 return function(api)
   local ui=api.ui; local scroll=0
   local content={
@@ -809,8 +809,8 @@ return function(api)
     "Advanced: drag title bars to move. Drag the bottom-right corner to resize. Click - / + / X to minimize, maximize or close.", "",
     "Right-click a desktop shortcut to open or remove it. Right-click empty desktop to restore shortcuts. Programs remain in Apps.", "Settings: Skip typing YES is OFF by default. Turn it on to confirm prompts with Enter or a click.", "",
     "FILES & PROGRAMS", "Double-click or Enter opens a file. Lua and Pistachio programs run in windows. E edits the selected file. N creates a file, D a folder. C/X/V copy, cut, paste. Delete moves to Trash; T opens Trash. Enter restores a trashed item.","",
-    "GAMES", "Open Games from Apps, type games in Terminal, or open a launcher in /Games. Ten games are installed. Snake, Pong, Blocks, Mines, 2048, Lights Out, Sokoban and Memory support basic computers. Breakout and Crumb Raider are marked ADVANCED COMPUTER ONLY. P pauses, H shows controls, R restarts, Q closes. F6 maximises a game that needs more room. Completed-game records follow the drive encryption setting.",
-    "CRUMB RAIDER", "A first-person 3D maze. Collect six golden crumbs, then find the green exit. W/S or Up/Down move; A/D or Left/Right turn. Z/X strafe. M opens the map. White is you, yellow is a crumb, green is the exit.","",
+    "GAMES", "Open Games from Apps, type games in Terminal, or open a launcher in /Games. Ten games are installed. Snake, Pong, Blocks, Mines, 2048, Lights Out, Sokoban and Memory support basic computers. Breakout and Vault Runner are marked ADVANCED COMPUTER ONLY. P pauses, H shows controls, R restarts, Q closes. F6 maximises a game that needs more room. Completed-game records follow the drive encryption setting.",
+    "VAULT RUNNER", "A first-person 3D maze. Collect six golden crystals, then find the green exit. W/S or Up/Down move; A/D or Left/Right turn. Z/X strafe. M opens the map. White is you, yellow is a crystal, green is the exit.","",
     "EDITOR", "Ctrl+S save, Ctrl+Shift+S save as.","Ctrl+O open, Ctrl+N new, Ctrl+F find.","Ctrl+Z undo, Ctrl+Y redo.","",
     "FILE PICKERS", "Open and Save dialogs browse folders. Arrows select; Enter or double-click opens. Backspace goes up. Tab moves between controls; F5 cancels. Ctrl+L edits the location, Ctrl+N creates a folder, Ctrl+H shows hidden files, and Ctrl+F switches the file-type filter. Name fields accept relative paths. Callisto: File or Ctrl+O opens a local page.","",
     "CUSTOMISATION", "Settings has General and Customisation tabs; use Tab, Left/Right, or click their names. Select a colour role, press Enter, choose a swatch, and Apply. F5 cancels the choice. R resets the current theme. Dark, light, and basic themes keep separate colours. Basic computers display colours as shades of gray.","",
@@ -2520,7 +2520,7 @@ on decrypt
   end
 end
 ]]},
-  ["games/README.txt"]={sha256="e0ed3fb40077f9ccffd0da8d1d71752c4ee1ec3d5645a623cbecf8bc3a044701",data=[[
+  ["games/README.txt"]={sha256="c6fb798b2f9bf0cc7ec6ab7e70ec7cdab9bb193fff1dfbccf025a08c7b4355ef",data=[[
 CCSacabam Games
 
 Open a .lua file to play, or run games in Terminal.
@@ -2536,9 +2536,9 @@ Lights Out - BASIC + ADVANCED
 Sokoban - BASIC + ADVANCED
 Memory - BASIC + ADVANCED
 Breakout - ADVANCED COMPUTER ONLY
-Crumb Raider - ADVANCED COMPUTER ONLY
+Vault Runner - ADVANCED COMPUTER ONLY
 
-Crumb Raider: collect six golden crumbs in a 3D maze,
+Vault Runner: collect six golden crystals in a 3D maze,
 then find the green exit. W/S move, A/D turn, M map.
 ]]},
   ["games/blocks.lua"]={sha256="0c08343de2029c427486f1964180c9b3c86e2e21b32901c05503d1607ee0c214",data=[[
@@ -2548,10 +2548,6 @@ assert(ccsacabam,'Run this game inside CCSacabam').launch('games','blocks')
   ["games/breakout.lua"]={sha256="500612ae5743170459fb67efac1a533e8c3947747a1ef58eaae74534f7ff92af",data=[[
 -- Breakout / ADVANCED COMPUTER ONLY
 assert(ccsacabam,'Run this game inside CCSacabam').launch('games','breakout')
-]]},
-  ["games/crumb.lua"]={sha256="6a28f78a4b32bb05d1902885559c5085f565fc39ca43106315ee4496c394b7ad",data=[[
--- Crumb Raider / ADVANCED COMPUTER ONLY
-assert(ccsacabam,'Run this game inside CCSacabam').launch('games','crumb')
 ]]},
   ["games/lights.lua"]={sha256="9313c1badee88f532f65014f79583511a0335392ec622617d33d402b0feb4219",data=[[
 -- Lights Out / BASIC + ADVANCED
@@ -2580,6 +2576,10 @@ assert(ccsacabam,'Run this game inside CCSacabam').launch('games','snake')
   ["games/sokoban.lua"]={sha256="cc274bd62af8ee56dae80591471c9ea40c6221cc522b39b074e65dadc219d067",data=[[
 -- Sokoban / BASIC + ADVANCED
 assert(ccsacabam,'Run this game inside CCSacabam').launch('games','sokoban')
+]]},
+  ["games/vaultrunner.lua"]={sha256="84471b410de4c6712f7ea3cff3064f65c24fa16e156aef940e2fc460d5cccb45",data=[[
+-- Vault Runner / ADVANCED COMPUTER ONLY
+assert(ccsacabam,'Run this game inside CCSacabam').launch('games','vaultrunner')
 ]]},
   ["sites/welcome/about.cashew"]={sha256="6a1c3347dc8f6ec27c51a813c3030452f5f5d6bb855438be47942c8a7b19b580",data=[[
 <cashew title="About Europa">
@@ -3315,7 +3315,7 @@ function F.draw(buffer,x,y,text,color)
 end
 return F
 ]]},
-  ["system/game.lua"]={sha256="5b08174e61de54cff04be797e8efd8528da41fb74d64da56ff02ea27bc3f4084",data=[[
+  ["system/game.lua"]={sha256="516cbe7ee72fb30a488df49e794596b2699b608fc7fdc98513a2ad82c36a8b84",data=[[
 -- Shared window lifecycle, pause/help, restart and private-drive records.
 local M={}
 function M.run(api,entry)
@@ -3341,7 +3341,7 @@ function M.run(api,entry)
     -- Reload so two windows finishing games cannot overwrite each other's scores.
     local current=api.storage.load(recordPath,{})
     if type(current)~='table' then current={} end
-    local old=current[entry.id]; if type(old)~='table' then old={} end
+    local old=current[entry.id] or (entry.legacyId and current[entry.legacyId]); if type(old)~='table' then old={} end
     current[entry.id]={plays=(tonumber(old.plays) or 0)+1,wins=(tonumber(old.wins) or 0)+(game.result=='win' and 1 or 0),
       best=math.max(tonumber(old.best) or 0,tonumber(game.score) or 0)}
     local ok,err=api.storage.save(recordPath,current)
@@ -3368,7 +3368,7 @@ function M.run(api,entry)
       ui.text(1,3,'Needs '..entry.w..' x '..entry.h,colors.white,colors.black,w)
       ui.text(1,4,'F6: maximise',colors.white,colors.black,w)
     end
-    local old=records[entry.id]; local best=type(old)=='table' and tonumber(old.best) or 0
+    local old=records[entry.id] or (entry.legacyId and records[entry.legacyId]); local best=type(old)=='table' and tonumber(old.best) or 0
     ui.text(1,1,entry.name..'  '..tostring(game.score or 0)..(w>=36 and '  Best '..tostring(best or 0) or ''),colors.white,colors.gray,w)
     ui.text(1,h,'P pause H help R new Q quit',colors.white,colors.black,w)
     if enough then
@@ -3396,7 +3396,7 @@ function M.run(api,entry)
 end
 return M
 ]]},
-  ["system/game_catalog.lua"]={sha256="f196bed6f026cf820602e794a0e10796aef2ad29560efff4f300dc1656aec2c7",data=[[
+  ["system/game_catalog.lua"]={sha256="63b189610d997f997b12899188c3ea98dd60ae2473270429bf7a21846a2db4fa",data=[[
 return {
   {id='snake',name='Snake',detail='Eat, grow, avoid your own tail.',help='Arrows / WASD steer. Eat * without hitting a wall or yourself.',w=18,h=11,timed=true},
   {id='pong',name='Pong',detail='First to seven against the computer.',help='Up/Down or W/S move your paddle. First to seven wins.',w=20,h=11,timed=true},
@@ -3407,7 +3407,7 @@ return {
   {id='sokoban',name='Sokoban',detail='Push crates onto their marks.',help='Arrows / WASD move and push. Z undoes. Put every crate on a dot. Enter starts the next level.',w=18,h=11},
   {id='memory',name='Memory',detail='Find all eight matching pairs.',help='Arrows move. Enter or click flips a card. Enter hides an unmatched pair.',w=18,h=9},
   {id='breakout',name='Breakout',detail='Bounce through a wall of bricks.',help='Left/Right or A/D move. Space launches the ball. Clear all bricks before three balls are lost.',w=22,h=12,timed=true,advanced=true},
-  {id='crumb',name='Crumb Raider',detail='A first-person 3D vault raid.',help='W/S or Up/Down move. Left/Right or A/D turn. Z/X strafe. M map. Collect all golden crumbs, then reach the green exit.',w=22,h=12,timed=true,advanced=true},
+  {id='vaultrunner',legacyId='crumb',name='Vault Runner',detail='A first-person 3D vault raid.',help='W/S or Up/Down move. Left/Right or A/D turn. Z/X strafe. M map. Collect all golden crystals, then reach the green exit.',w=22,h=12,timed=true,advanced=true},
 }
 ]]},
   ["system/games/blocks.lua"]={sha256="40e61fc8591de2268ee1c935c7d15f5733054a47274c5141be69b5fb84c50d5a",data=[=[
@@ -3526,132 +3526,6 @@ function M.new()
 end
 return M
 ]]},
-  ["system/games/crumb.lua"]={sha256="67b04449c8df3f5451f815bcd6ffd90e1b5356685f577818954c822f2f2161f6",data=[=[
--- Crumb Raider: perspective raycasting, depth-tested sprites and a carved maze.
-local M={}
-function M.new(random)
-  random=random or math.random
-  local s={map={},x=2.5,y=2.5,angle=0,crumbs={},collected=0,score=0,time=0,showMap=false,size=15}
-  for y=1,15 do s.map[y]={}; for x=1,15 do s.map[y][x]=1 end end
-  local stack={{2,2}}; s.map[2][2]=0
-  while #stack>0 do
-    local p=stack[#stack]; local options={}
-    for _,d in ipairs({{2,0},{0,2},{-2,0},{0,-2}}) do
-      local x,y=p[1]+d[1],p[2]+d[2]
-      if x>=2 and x<=14 and y>=2 and y<=14 and s.map[y][x]==1 then options[#options+1]={x,y} end
-    end
-    if #options==0 then table.remove(stack)
-    else local n=options[random(1,#options)]; s.map[(p[2]+n[2])/2][(p[1]+n[1])/2]=0; s.map[n[2]][n[1]]=0; stack[#stack+1]=n end
-  end
-  s.angle=s.map[2][3]==0 and 0 or math.pi/2
-  -- Breadth-first order gives reachable, well-spaced treasures and a distant exit.
-  local queue={{2,2}}; local visited={['2:2']=true}; local cursor=1
-  while cursor<=#queue do
-    local p=queue[cursor]; cursor=cursor+1
-    for _,d in ipairs({{1,0},{0,1},{-1,0},{0,-1}}) do
-      local x,y=p[1]+d[1],p[2]+d[2]; local id=x..':'..y
-      if s.map[y] and s.map[y][x]==0 and not visited[id] then visited[id]=true; queue[#queue+1]={x,y} end
-    end
-  end
-  local last=queue[#queue]; s.exit={x=last[1]+.5,y=last[2]+.5,exit=true}
-  for i=1,6 do local p=queue[math.floor(i*(#queue-2)/7)+2]; s.crumbs[i]={x=p[1]+.5,y=p[2]+.5} end
-  function s.solid(x,y) return not s.map[math.floor(y)] or s.map[math.floor(y)][math.floor(x)]~=0 end
-  local function walkable(x,y)
-    for _,dx in ipairs({-.18,.18}) do for _,dy in ipairs({-.18,.18}) do if s.solid(x+dx,y+dy) then return false end end end
-    return true
-  end
-  function s.collect()
-    for _,crumb in ipairs(s.crumbs) do
-      if not crumb.taken and (crumb.x-s.x)^2+(crumb.y-s.y)^2<.23 then crumb.taken=true; s.collected=s.collected+1; s.score=s.score+100 end
-    end
-    if s.collected==6 and (s.exit.x-s.x)^2+(s.exit.y-s.y)^2<.23 then
-      s.result='win'; s.score=s.score+math.max(0,1000-math.floor(s.time)); s.message='Six crumbs. One clean getaway.'
-    end
-  end
-  function s.move(dx,dy)
-    if s.result then return end
-    if walkable(s.x+dx,s.y) then s.x=s.x+dx end
-    if walkable(s.x,s.y+dy) then s.y=s.y+dy end
-    s.collect()
-  end
-  function s.key(key,held)
-    if s.result then return end
-    if key=='left' or key=='a' then s.angle=(s.angle-.17)%(math.pi*2)
-    elseif key=='right' or key=='d' then s.angle=(s.angle+.17)%(math.pi*2)
-    elseif key=='up' or key=='w' then s.move(math.cos(s.angle)*.3,math.sin(s.angle)*.3)
-    elseif key=='down' or key=='s' then s.move(-math.cos(s.angle)*.3,-math.sin(s.angle)*.3)
-    elseif key=='z' then s.move(math.sin(s.angle)*.3,-math.cos(s.angle)*.3)
-    elseif key=='x' then s.move(-math.sin(s.angle)*.3,math.cos(s.angle)*.3)
-    elseif key=='m' and not held then s.showMap=not s.showMap end
-  end
-  function s.tick(dt) if not s.result then s.time=s.time+dt end end
-  function s.ray(dx,dy)
-    local mx,my=math.floor(s.x),math.floor(s.y)
-    local deltaX,deltaY=dx==0 and math.huge or math.abs(1/dx),dy==0 and math.huge or math.abs(1/dy)
-    local stepX,stepY=dx<0 and -1 or 1,dy<0 and -1 or 1
-    local sideX=(dx<0 and s.x-mx or mx+1-s.x)*deltaX
-    local sideY=(dy<0 and s.y-my or my+1-s.y)*deltaY
-    local side,dist
-    for _=1,64 do
-      if sideX<sideY then mx=mx+stepX; dist=sideX; sideX=sideX+deltaX; side=0
-      else my=my+stepY; dist=sideY; sideY=sideY+deltaY; side=1 end
-      if not s.map[my] or s.map[my][mx]~=0 then
-        local hit=side==0 and s.y+dist*dy or s.x+dist*dx
-        return math.max(.05,dist),side,hit%1
-      end
-    end
-    return 64,0,0
-  end
-  function s.draw(c)
-    local pw,ph=c.w*2,c.h*3; local b=c.pixels.new(pw,ph,colors.black)
-    if s.showMap then
-      local scale=math.max(1,math.floor(math.min(pw/15,(ph-3)/15))); local ox=math.floor((pw-15*scale)/2)
-      for y=1,15 do for x=1,15 do b.rect(ox+(x-1)*scale+1,(y-1)*scale+1,scale,scale,s.map[y][x]==1 and colors.gray or colors.black) end end
-      local function dot(p,color) b.rect(ox+(math.floor(p.x)-1)*scale+1,(math.floor(p.y)-1)*scale+1,scale,scale,color) end
-      for _,crumb in ipairs(s.crumbs) do if not crumb.taken then dot(crumb,colors.yellow) end end
-      dot(s.exit,colors.lime); dot(s,colors.white)
-    else
-      local dirX,dirY=math.cos(s.angle),math.sin(s.angle); local planeX,planeY=-dirY*.66,dirX*.66
-      local depth={}
-      for x=1,pw do
-        local camera=(x-.5)*2/pw-1
-        local dist,side,u=s.ray(dirX+planeX*camera,dirY+planeY*camera); depth[x]=dist
-        local height=ph/dist; local top=ph/2-height/2
-        for y=1,ph do
-          local ink
-          if y<top then ink=y<ph*.28 and colors.blue or colors.black
-          elseif y>top+height then ink=(y%3==0) and colors.gray or colors.black
-          else
-            local mortar=math.floor(u*12)%6==0 or math.floor((y-top)/height*12)%4==0
-            ink=mortar and colors.black or dist>6 and colors.gray or side==1 and colors.brown or colors.orange
-          end
-          b.set(x,y,ink)
-        end
-      end
-      local sprites={s.exit}; for _,crumb in ipairs(s.crumbs) do if not crumb.taken then sprites[#sprites+1]=crumb end end
-      table.sort(sprites,function(a,d) return (a.x-s.x)^2+(a.y-s.y)^2>(d.x-s.x)^2+(d.y-s.y)^2 end)
-      local inverse=1/(planeX*dirY-dirX*planeY)
-      for _,sprite in ipairs(sprites) do
-        local rx,ry=sprite.x-s.x,sprite.y-s.y
-        local tx=inverse*(dirY*rx-dirX*ry); local ty=inverse*(-planeY*rx+planeX*ry)
-        if ty>.1 then
-          local size=math.min(ph,ph/ty*.3); local sx=pw/2*(1+tx/ty); local sy=ph/2+ph/ty*.15
-          for x=math.max(1,math.floor(sx-size)),math.min(pw,math.ceil(sx+size)) do
-            if ty<depth[x] then for y=math.max(1,math.floor(sy-size)),math.min(ph,math.ceil(sy+size)) do
-              if math.abs(x-sx)+math.abs(y-sy)<=size then
-                b.set(x,y,sprite.exit and (s.collected==6 and colors.lime or colors.green) or colors.yellow)
-              end
-            end end
-          end
-        end
-      end
-    end
-    c.drawPixels(b); c.text(1,c.h,'Crumbs '..s.collected..'/6  '..(s.collected==6 and 'Find green exit' or 'M map'))
-  end
-  return s
-end
-return M
-]=]},
   ["system/games/lights.lua"]={sha256="b9ccf8633079ae771bc2d174f3cb68b66d977452084a0632efe01a68114e80a5",data=[[
 local M={}
 function M.new(random)
@@ -3960,6 +3834,132 @@ function M.new()
 end
 return M
 ]]},
+  ["system/games/vaultrunner.lua"]={sha256="2186ee0da701b6fd86a0d385b058afddacabe4add4530bc79c9f6c386110dd6f",data=[=[
+-- Vault Runner: perspective raycasting, depth-tested sprites and a carved maze.
+local M={}
+function M.new(random)
+  random=random or math.random
+  local s={map={},x=2.5,y=2.5,angle=0,crystals={},collected=0,score=0,time=0,showMap=false,size=15}
+  for y=1,15 do s.map[y]={}; for x=1,15 do s.map[y][x]=1 end end
+  local stack={{2,2}}; s.map[2][2]=0
+  while #stack>0 do
+    local p=stack[#stack]; local options={}
+    for _,d in ipairs({{2,0},{0,2},{-2,0},{0,-2}}) do
+      local x,y=p[1]+d[1],p[2]+d[2]
+      if x>=2 and x<=14 and y>=2 and y<=14 and s.map[y][x]==1 then options[#options+1]={x,y} end
+    end
+    if #options==0 then table.remove(stack)
+    else local n=options[random(1,#options)]; s.map[(p[2]+n[2])/2][(p[1]+n[1])/2]=0; s.map[n[2]][n[1]]=0; stack[#stack+1]=n end
+  end
+  s.angle=s.map[2][3]==0 and 0 or math.pi/2
+  -- Breadth-first order gives reachable, well-spaced treasures and a distant exit.
+  local queue={{2,2}}; local visited={['2:2']=true}; local cursor=1
+  while cursor<=#queue do
+    local p=queue[cursor]; cursor=cursor+1
+    for _,d in ipairs({{1,0},{0,1},{-1,0},{0,-1}}) do
+      local x,y=p[1]+d[1],p[2]+d[2]; local id=x..':'..y
+      if s.map[y] and s.map[y][x]==0 and not visited[id] then visited[id]=true; queue[#queue+1]={x,y} end
+    end
+  end
+  local last=queue[#queue]; s.exit={x=last[1]+.5,y=last[2]+.5,exit=true}
+  for i=1,6 do local p=queue[math.floor(i*(#queue-2)/7)+2]; s.crystals[i]={x=p[1]+.5,y=p[2]+.5} end
+  function s.solid(x,y) return not s.map[math.floor(y)] or s.map[math.floor(y)][math.floor(x)]~=0 end
+  local function walkable(x,y)
+    for _,dx in ipairs({-.18,.18}) do for _,dy in ipairs({-.18,.18}) do if s.solid(x+dx,y+dy) then return false end end end
+    return true
+  end
+  function s.collect()
+    for _,crystal in ipairs(s.crystals) do
+      if not crystal.taken and (crystal.x-s.x)^2+(crystal.y-s.y)^2<.23 then crystal.taken=true; s.collected=s.collected+1; s.score=s.score+100 end
+    end
+    if s.collected==6 and (s.exit.x-s.x)^2+(s.exit.y-s.y)^2<.23 then
+      s.result='win'; s.score=s.score+math.max(0,1000-math.floor(s.time)); s.message='Six crystals. One clean getaway.'
+    end
+  end
+  function s.move(dx,dy)
+    if s.result then return end
+    if walkable(s.x+dx,s.y) then s.x=s.x+dx end
+    if walkable(s.x,s.y+dy) then s.y=s.y+dy end
+    s.collect()
+  end
+  function s.key(key,held)
+    if s.result then return end
+    if key=='left' or key=='a' then s.angle=(s.angle-.17)%(math.pi*2)
+    elseif key=='right' or key=='d' then s.angle=(s.angle+.17)%(math.pi*2)
+    elseif key=='up' or key=='w' then s.move(math.cos(s.angle)*.3,math.sin(s.angle)*.3)
+    elseif key=='down' or key=='s' then s.move(-math.cos(s.angle)*.3,-math.sin(s.angle)*.3)
+    elseif key=='z' then s.move(math.sin(s.angle)*.3,-math.cos(s.angle)*.3)
+    elseif key=='x' then s.move(-math.sin(s.angle)*.3,math.cos(s.angle)*.3)
+    elseif key=='m' and not held then s.showMap=not s.showMap end
+  end
+  function s.tick(dt) if not s.result then s.time=s.time+dt end end
+  function s.ray(dx,dy)
+    local mx,my=math.floor(s.x),math.floor(s.y)
+    local deltaX,deltaY=dx==0 and math.huge or math.abs(1/dx),dy==0 and math.huge or math.abs(1/dy)
+    local stepX,stepY=dx<0 and -1 or 1,dy<0 and -1 or 1
+    local sideX=(dx<0 and s.x-mx or mx+1-s.x)*deltaX
+    local sideY=(dy<0 and s.y-my or my+1-s.y)*deltaY
+    local side,dist
+    for _=1,64 do
+      if sideX<sideY then mx=mx+stepX; dist=sideX; sideX=sideX+deltaX; side=0
+      else my=my+stepY; dist=sideY; sideY=sideY+deltaY; side=1 end
+      if not s.map[my] or s.map[my][mx]~=0 then
+        local hit=side==0 and s.y+dist*dy or s.x+dist*dx
+        return math.max(.05,dist),side,hit%1
+      end
+    end
+    return 64,0,0
+  end
+  function s.draw(c)
+    local pw,ph=c.w*2,c.h*3; local b=c.pixels.new(pw,ph,colors.black)
+    if s.showMap then
+      local scale=math.max(1,math.floor(math.min(pw/15,(ph-3)/15))); local ox=math.floor((pw-15*scale)/2)
+      for y=1,15 do for x=1,15 do b.rect(ox+(x-1)*scale+1,(y-1)*scale+1,scale,scale,s.map[y][x]==1 and colors.gray or colors.black) end end
+      local function dot(p,color) b.rect(ox+(math.floor(p.x)-1)*scale+1,(math.floor(p.y)-1)*scale+1,scale,scale,color) end
+      for _,crystal in ipairs(s.crystals) do if not crystal.taken then dot(crystal,colors.yellow) end end
+      dot(s.exit,colors.lime); dot(s,colors.white)
+    else
+      local dirX,dirY=math.cos(s.angle),math.sin(s.angle); local planeX,planeY=-dirY*.66,dirX*.66
+      local depth={}
+      for x=1,pw do
+        local camera=(x-.5)*2/pw-1
+        local dist,side,u=s.ray(dirX+planeX*camera,dirY+planeY*camera); depth[x]=dist
+        local height=ph/dist; local top=ph/2-height/2
+        for y=1,ph do
+          local ink
+          if y<top then ink=y<ph*.28 and colors.blue or colors.black
+          elseif y>top+height then ink=(y%3==0) and colors.gray or colors.black
+          else
+            local mortar=math.floor(u*12)%6==0 or math.floor((y-top)/height*12)%4==0
+            ink=mortar and colors.black or dist>6 and colors.gray or side==1 and colors.brown or colors.orange
+          end
+          b.set(x,y,ink)
+        end
+      end
+      local sprites={s.exit}; for _,crystal in ipairs(s.crystals) do if not crystal.taken then sprites[#sprites+1]=crystal end end
+      table.sort(sprites,function(a,d) return (a.x-s.x)^2+(a.y-s.y)^2>(d.x-s.x)^2+(d.y-s.y)^2 end)
+      local inverse=1/(planeX*dirY-dirX*planeY)
+      for _,sprite in ipairs(sprites) do
+        local rx,ry=sprite.x-s.x,sprite.y-s.y
+        local tx=inverse*(dirY*rx-dirX*ry); local ty=inverse*(-planeY*rx+planeX*ry)
+        if ty>.1 then
+          local size=math.min(ph,ph/ty*.3); local sx=pw/2*(1+tx/ty); local sy=ph/2+ph/ty*.15
+          for x=math.max(1,math.floor(sx-size)),math.min(pw,math.ceil(sx+size)) do
+            if ty<depth[x] then for y=math.max(1,math.floor(sy-size)),math.min(ph,math.ceil(sy+size)) do
+              if math.abs(x-sx)+math.abs(y-sy)<=size then
+                b.set(x,y,sprite.exit and (s.collected==6 and colors.lime or colors.green) or colors.yellow)
+              end
+            end end
+          end
+        end
+      end
+    end
+    c.drawPixels(b); c.text(1,c.h,'Crystals '..s.collected..'/6  '..(s.collected==6 and 'Find green exit' or 'M map'))
+  end
+  return s
+end
+return M
+]=]},
   ["system/ganymede.lua"]={sha256="1534835d0157cf9f7ec973c92ad51028691b82594195fa4bdcf212969a415017",data=[[
 -- Ganymede: the portable UI toolkit. Draws into the current program's window.
 local G={version='1.0'}
@@ -4035,7 +4035,7 @@ function G.form(title)
 end
 return G
 ]]},
-  ["system/kernel.lua"]={sha256="24961b7e43df94dc747d67d81167afdd476cdef08de20159a87880e75c5dd837",data=[=[
+  ["system/kernel.lua"]={sha256="a1e610b09f2e8c0c9513e13fd5c31fcd88de70b082f8011c1f390ba22358e5a3",data=[=[
 local K = {}
 local unpack = table.unpack or unpack
 local input = { char=true, key=true, key_up=true, paste=true, mouse_click=true,
@@ -4047,7 +4047,7 @@ K.catalog = {
   {id="code", name="Code Editor", detail="Lua, Peanut, Pistachio and Cashew", icon="editor"},
   {id="sketch", name="Sketch", detail="Draw and explore a rendered 3D scene", icon="sketch"},
   {id="pistachio", name="Pistachio", detail="Visual, event-driven programs", icon="editor"},
-  {id="games", name="Games", detail="Arcade games, puzzles and Crumb Raider 3D", icon="sketch"},
+  {id="games", name="Games", detail="Arcade games, puzzles and Vault Runner 3D", icon="sketch"},
   {id="chatplus", name="Chat+", detail="Chat over a ComputerCraft modem", icon="terminal"},
   {id="browser", name="Callisto", detail="Browse the Europa network", icon="devices"},
   {id="server", name="Jupiter", detail="Host a Cashew website", icon="devices"},
@@ -5201,7 +5201,7 @@ function M.draw(b, target, ox, oy, maxW, maxH)
 end
 return M
 ]]},
-  ["system/programs.lua"]={sha256="97601cfa5923a0776ab9d25460054d700498e56b034894a9de29b335be8a3f55",data=[[
+  ["system/programs.lua"]={sha256="25cfc6c16652c0ddbd1666e1b7f63fea17588fec368a733b51deb5b964c8c319",data=[[
 -- Add/refresh shipped commands after an upgrade without replacing user edits.
 local M={}
 local bundled={'pistachio.lua','europa.lua','pmatrix.lua','pmatrix.pist','games.lua'}
@@ -5234,6 +5234,14 @@ function M.update(root,storage,crypto)
     end
     nextHashes[name]=hash
     if previous[name]~=hash then changed=true end
+  end
+  -- Retire the old stock launcher only after its replacement was installed.
+  -- Edited launchers keep working through the catalog's legacy ID alias.
+  local retired=fs.combine(root,'home/Games/crumb.lua')
+  local old=storage.read(retired)
+  if fs.exists(fs.combine(root,'home/Games/vaultrunner.lua')) and old
+    and crypto.hex(crypto.sha256(old))=='6a28f78a4b32bb05d1902885559c5085f565fc39ca43106315ee4496c394b7ad' then
+    fs.delete(retired)
   end
   if changed then assert(storage.save(record,nextHashes)) end
 end

@@ -77,15 +77,15 @@ Open **Games** from Apps, run **`games`** in Terminal, or open the `.lua` launch
 | Basic + advanced | Advanced computer only |
 | --- | --- |
 | Snake, Pong, Blocks, Mines | Breakout — subpixel ball and brick physics |
-| 2048, Lights Out, Sokoban, Memory | Crumb Raider — first-person 3D maze exploration |
+| 2048, Lights Out, Sokoban, Memory | Vault Runner — first-person 3D maze exploration |
 
 **P** pauses, **H** shows the game's controls, **R** restarts, **Q/Escape** quits. **F6** maximizes the window. Games pause if the window is too small and resume when there is room. Completed-game counts, wins, and best scores are stored on the personal drive and follow its encryption setting.
 
-**Crumb Raider:** explore a newly generated maze, collect six golden crumbs, and reach the green exit. W/S or Up/Down move, A/D or Left/Right turn, Z/X strafe, and M opens the map. It has perspective walls, wall collision, and collectibles hidden by walls. All mazes are connected; the exit and every crumb are reachable. It runs on the normal ComputerCraft terminal using 2×3 subpixels.
+**Vault Runner:** run `games vaultrunner` to explore a newly generated maze, collect six golden crystals, and reach the green exit. W/S or Up/Down move, A/D or Left/Right turn, Z/X strafe, and M opens the map. It has perspective walls, wall collision, and collectibles hidden by walls. All mazes are connected; the exit and every crystal are reachable. It runs on the normal ComputerCraft terminal using 2×3 subpixels.
 
-| Crumb Raider | Breakout |
+| Vault Runner | Breakout |
 | --- | --- |
-| ![First-person maze in Crumb Raider](docs/previews/crumb-raider.png) | ![Subpixel Breakout](docs/previews/breakout.png) |
+| ![First-person maze in Vault Runner](docs/previews/vault-runner.png) | ![Subpixel Breakout](docs/previews/breakout.png) |
 
 ## Code Editor
 

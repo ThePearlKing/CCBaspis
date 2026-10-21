@@ -8,5 +8,5 @@ return {
   {id='sokoban',name='Sokoban',detail='Push crates onto their marks.',help='Arrows / WASD move and push. Z undoes. Put every crate on a dot. Enter starts the next level.',w=18,h=11},
   {id='memory',name='Memory',detail='Find all eight matching pairs.',help='Arrows move. Enter or click flips a card. Enter hides an unmatched pair.',w=18,h=9},
   {id='breakout',name='Breakout',detail='Bounce through a wall of bricks.',help='Left/Right or A/D move. Space launches the ball. Clear all bricks before three balls are lost.',w=22,h=12,timed=true,advanced=true},
-  {id='crumb',name='Crumb Raider',detail='A first-person 3D vault raid.',help='W/S or Up/Down move. Left/Right or A/D turn. Z/X strafe. M map. Collect all golden crumbs, then reach the green exit.',w=22,h=12,timed=true,advanced=true},
+  {id='vaultrunner',legacyId='crumb',name='Vault Runner',detail='A first-person 3D vault raid.',help='W/S or Up/Down move. Left/Right or A/D turn. Z/X strafe. M map. Collect all golden crystals, then reach the green exit.',w=22,h=12,timed=true,advanced=true},
 }
