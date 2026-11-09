@@ -157,6 +157,7 @@ function V.new(crypto,storage,path)
       if path=="rom/modules/main/peanut.lua" then return physical.combine(systemRoot,"system/peanut.lua") end
       if path=="rom/modules/main/ganymede.lua" then return physical.combine(systemRoot,"system/ganymede.lua") end
       if path=="rom/modules/main/europa.lua" then return physical.combine(systemRoot,"system/europa.lua") end
+      if path=="rom/modules/main/titan.lua" then return physical.combine(systemRoot,"system/titan.lua") end
       if path=="host" then return "" elseif path:sub(1,5)=="host/" then return path:sub(6) end
       return path
     end
@@ -203,7 +204,7 @@ function V.new(crypto,storage,path)
       end
       local names=physical.list(hostPath(path))
       if physical.combine("",path)=="rom/modules/main" then
-        names[#names+1]="peanut.lua"; names[#names+1]="ganymede.lua"; names[#names+1]="europa.lua"; table.sort(names)
+        names[#names+1]="peanut.lua"; names[#names+1]="ganymede.lua"; names[#names+1]="europa.lua"; names[#names+1]="titan.lua"; table.sort(names)
       end
       if physical.combine("",path)==physical.getDir(mount) then
         local found=false; for _,n in ipairs(names) do if n==physical.getName(mount) then found=true end end

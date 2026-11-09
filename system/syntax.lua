@@ -16,7 +16,7 @@ local builtins={
   cashew=words('title href id name value type'),
 }
 local modules=words('fs term os math string table textutils shell colors colours keys http rednet peripheral paintutils window turtle pocket vector settings parallel bit32')
-local libraries={peanut='decode parse encode stringify read write array null',ganymede='form',europa='address relative path serve'}
+local libraries={peanut='decode parse encode stringify read write array null',ganymede='form',europa='address relative path serve',titan='new run image loadImage clamp lerp sign dist overlap ease version'}
 function S.language(path)
   local ext=tostring(path or ''):lower():match('%.([%w]+)$')
   return ({lua='lua',peanut='peanut',json='peanut',pist='pistachio',pistachio='pistachio',cashew='cashew'})[ext]

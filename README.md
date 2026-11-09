@@ -130,6 +130,7 @@ Read [security and recovery](docs/SECURITY.md) before relying on the vault. It p
 * [**Pistachio Script**](docs/PISTACHIO.md): visual app language with controls, handlers, expressions, loops, functions, timers, hardware detection, and `seal` / `unseal` encryption. Examples are installed in `Programs`.
 * [**Peanut**](docs/PEANUT.md): JSON-compatible data, with comments, unquoted keys, and trailing commas. `require("peanut")`.
 * [**Ganymede**](docs/GANYMEDE.md): native controls for ordinary Lua. `require("ganymede")`. Io handles I/O; its fellow Jupiter moon gets the UI job.
+* [**Titan**](docs/TITAN.md): 2D game engine for ordinary Lua. `require("titan")`. Scenes, sprites, animations, tile maps, platformer physics, collisions, cameras, particles, timers, tweens, input bindings, monitors, speakers, and saves. Advanced computers get 2×3 subpixel colour graphics by default; basic-computer support is opt-in with `basic = true` and a cell-by-cell design. Run `titan-demo` in Terminal for Moonhop, a platformer built with it. Titan has no CCSacabam dependencies, so it also runs on plain CraftOS.
 * [**Europa**](docs/EUROPA.md): modem networking, domain lookup, and computer-ID addresses. `require("europa")`.
 * **Callisto**: browser for Europa sites.
 * **Jupiter**: hosts the sites, naturally.

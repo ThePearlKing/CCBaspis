@@ -80,6 +80,7 @@ def fresh_oracle(computer):
     plain=Cipher(algorithms.ChaCha20(key(b'encryption'),struct.pack('<I',1)+raw[40:52]),mode=None).decryptor().update(raw[52:-32])
     assert b'Programs/sealed-note.pist' in plain and b'Sites/welcome/index.cashew' in plain
     assert b'Programs/pmatrix.lua' in plain and b'Programs/pmatrix.pist' in plain
+    assert b'Programs/titan-demo.lua' in plain, 'Titan demo missing from fresh install'
     for name in ('snake','pong','blocks','mines','merge','lights','sokoban','memory','breakout','vaultrunner'):
         assert ('Games/'+name+'.lua').encode() in plain, name+' missing from fresh install'
 

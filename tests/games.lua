@@ -241,6 +241,111 @@ test('Old game links open Vault Runner and prior completion records carry forwar
   else assert(snapshot():find('ADVANCED COMPUTER ONLY',1,true)) end
   finish(); view.reposition(1,1,w-2,h-4)
 end)
+local Titan=module('system/titan')
+local function titanGame(opts) view.reposition(1,1,30,10); opts=opts or {}; opts.target=view; return Titan.new(opts) end
+test('Titan: gravity lands bodies on solid tiles and walls stop sideways movement',function()
+  local g=titanGame({mode='pixel'}); eq(g.width,60); eq(g.height,30)
+  g.map{tile=3,rows={'#....#','#....#','#....#','######'},legend={['#']={solid=true,color=colors.gray}}}
+  local e=g.spawn{x=4,y=0,w=2,h=2,gravity=60}; g.flush()
+  for i=1,40 do g.step(.05) end
+  eq(e.y,7); assert(e.onGround,'Body did not report ground'); eq(e.vy,0)
+  e.vx=200; g.step(.05); eq(e.x,13); e.vx=-200; g.step(.05); eq(e.x,3)
+end)
+test('Titan: one-way platforms catch falls but allow jumping through from below',function()
+  local g=titanGame({mode='pixel'})
+  g.map{tile=3,rows={'....','====','....','....','####'},legend={['#']={solid=true},['=']={oneway=true}}}
+  local e=g.spawn{x=3,y=7,w=2,h=2,gravity=60}; g.flush()
+  e.vy=-100; g.step(.1); assert(e.y<3,'Jump was blocked by a one-way platform'); eq(e.y,0)
+  for i=1,30 do g.step(.05) end; eq(e.y,1); assert(e.onGround)
+  assert(g.solidAt(4,4),'solidAt misses one-way tiles'); assert(not g.solidAt(4,7))
+end)
+test('Titan: fast bodies do not tunnel and solid entities block movers',function()
+  local g=titanGame({mode='pixel'})
+  g.map{tile=3,rows={'#..........#'},legend={['#']={solid=true}},edge=false}
+  local e=g.spawn{x=4,y=0,w=2,h=3}; g.flush(); g.move(e,500,0); eq(e.x,31)
+  local wall=g.spawn{x=10,y=0,w=2,h=3,solid=true}; g.flush(); e.x=4; g.move(e,50,0); eq(e.x,8)
+end)
+test('Titan: templates, map spawns, tags, touch callbacks and destruction',function()
+  local g=titanGame({mode='cell'}); local touched=0
+  g.define('coin',{w=1,h=1,tags={'pickup'}})
+  g.define('hero',{w=1,h=1,touches='pickup',touch=function(e,o) touched=touched+1; o.destroy() end})
+  local m=g.map{tile=1,rows={'.@C.C'},legend={['@']={spawn='hero'},['C']={spawn='coin'}}}
+  eq(#m.spawned,3); eq(m.get(3,1),' '); eq(g.count('coin'),2); assert(g.first('coin').is('pickup'))
+  local hero=g.first('hero'); hero.x=2; g.step(.05); eq(touched,1); eq(g.count('coin'),1)
+  hero.x=4; g.step(.05); eq(touched,2); eq(g.count('coin'),0); eq(#g.entities,1)
+end)
+test('Titan: timers, repeating timers, tweens and scene changes from callbacks',function()
+  local g=titanGame(); local log={}; local obj={x=0}
+  g.scene('a',{enter=function(g) g.after(.2,function() log[#log+1]='after' end)
+    g.every(.1,function() log[#log+1]='every' end); g.tween(obj,.5,{x=10},'linear')
+    g.after(.6,function() g.go('b','arg') end) end})
+  g.scene('b',{enter=function(g,v) log[#log+1]='b:'..v end})
+  g.go('a'); for i=1,5 do g.step(.1) end
+  assert(math.abs(obj.x-10)<1e-6,'Tween ended at '..obj.x); local seen=false; for _,v in ipairs(log) do if v=='after' then seen=true end end; assert(seen); local count=0; for _,v in ipairs(log) do if v=='every' then count=count+1 end end; eq(count,5)
+  g.step(.15); eq(g.sceneName,'b'); eq(log[#log],'b:arg'); local n=#log; g.step(1); eq(#log,n)
+end)
+test('Titan: bindings, pressed-once input, mouse picking and camera bounds',function()
+  local g=titanGame({mode='pixel'})
+  g.event('key',keys.a,false); assert(g.down('left') and g.pressed('left')); g.step(.05)
+  assert(g.down('left') and not g.pressed('left')); g.event('key_up',keys.a); assert(not g.down('left'))
+  g.bind('fire','x'); g.event('key',keys.x,false); assert(g.pressed('fire'))
+  g.map{tile=3,rows={string.rep('.',40),string.rep('.',40)}}
+  local e=g.spawn{x=110,y=0,w=2,h=2}; g.follow(e); g.step(.05); eq(g.camera.x,60); eq(g.camera.y,0)
+  g.event('mouse_click',1,2,1); assert(g.clicked(1)); eq(g.mouse.x,62.5); eq(g.mouse.y,1); eq(g.at(111,1),e); eq(g.at(1,1),nil)
+end)
+test('Titan: pixel and cell renderers draw sprites, text and transparency',function()
+  local g=titanGame({mode='pixel',background=colors.blue})
+  g.sprite('box',{'e.','ee'}); local e=g.spawn{x=0,y=0,sprite='box'}; g.flush(); eq(e.w,2); eq(e.h,2)
+  g.render(); eq(g.pixelAt(0,0),colors.red); eq(g.pixelAt(1,0),colors.blue); eq(g.pixelAt(1,1),colors.red)
+  local text,fg,bg=view.getLine(1); eq(text:byte(1)>=128,true); eq(bg:sub(2,2),'b')
+  g.scene('hud',{keep=true,draw=function(g) g.write(5,2,'Hi',colors.yellow) end}); g.go('hud'); g.render()
+  text,fg=view.getLine(2); eq(text:sub(5,6),'Hi'); eq(fg:sub(5,5),'4')
+  local c=titanGame({mode='cell'}); c.spawn{x=3,y=2,w=1,h=1,color=colors.lime}; c.flush(); c.render()
+  text,fg,bg=view.getLine(3); eq(bg:sub(4,4),'5'); eq(c.width,30)
+end)
+test('Titan: saves and loads tables, quits cleanly on close and plays without a speaker',function()
+  local g=titanGame({basic=true}); assert(g.save('/titan-save.tbl',{best=42})); eq(g.load('/titan-save.tbl').best,42)
+  eq(g.load('/missing-titan.tbl',7),7); g.sound('bit')
+  co=coroutine.create(function() g.run() end); event(); tick(); assert(g.running); event('sacabam_close'); eq(coroutine.status(co),'dead')
+  assert(next(active)==nil,'Titan leaked a timer')
+end)
+test('Titan: advanced graphics by default; basic computers need an opted-in basic design',function()
+  local g=titanGame()
+  if native.isColor() then
+    eq(g.mode,'pixel'); assert(g.supported)
+    local before={view.getPaletteColour(colors.blue)}; assert(g.palette(colors.blue,0x102030))
+    assert(view.getPaletteColour(colors.blue)~=before[1] or select(3,view.getPaletteColour(colors.blue))~=before[3])
+    co=coroutine.create(function() g.run() end); event(); tick(); event('sacabam_close'); eq(coroutine.status(co),'dead')
+    local r,gg,b=view.getPaletteColour(colors.blue); eq(r,before[1]); eq(gg,before[2]); eq(b,before[3])
+  else
+    eq(g.mode,'cell'); assert(not g.supported); assert(not g.palette(colors.blue,0x102030))
+    co=coroutine.create(function() g.run() end); event(); assert(snapshot():find('ADVANCED COMPUTER ONLY',1,true))
+    assert(next(active)==nil,'Unsupported game started a timer'); event('key',keys.q,false); eq(coroutine.status(co),'dead')
+    local opted=titanGame({basic=true}); assert(opted.supported); eq(opted.mode,'cell')
+  end
+end)
+test('Titan demo: Moonhop runs, scrolls, collects coins, and restarts after death',function()
+  view.reposition(1,1,math.min(45,w-2),math.min(14,h-4))
+  local captured
+  local real=Titan.new
+  local fake={new=function(opts) opts.target=view; captured=real(opts); return captured end}
+  for k,v in pairs(Titan) do if k~='new' then fake[k]=v end end
+  local env=setmetatable({require=function(name) assert(name=='titan'); return fake end},{__index=_ENV})
+  local demo=assert(loadfile('/src/examples/titan-demo.lua','t',env))
+  co=coroutine.create(demo); event()
+  local vw,vh=view.getSize()
+  if vw<20 or vh<8 then
+    tick(); assert(snapshot():find('Window too small',1,true)); finish('terminate'); view.reposition(1,1,w-2,h-4); return
+  end
+  for i=1,10 do tick() end
+  local g=captured; eq(g.sceneName,'play'); local hero=g.first('player'); assert(hero.onGround,'Hero did not land')
+  local startX=hero.x; event('key',keys.right,false); for i=1,8 do tick() end; event('key_up',keys.right)
+  assert(hero.x>startX,'Hero did not walk'); snapshot('titan-demo')
+  local coin=g.first('coin'); hero.x,hero.y=coin.x,coin.y; tick(); assert(not coin.alive,'Coin was not collected')
+  local crawler=g.first('crawler'); hero.x,hero.y,hero.vy=crawler.x,crawler.y,0; tick(); eq(g.sceneName,'over')
+  assert(snapshot():find('GAME OVER',1,true)); event('key',keys.r,false); tick(); eq(g.sceneName,'play')
+  finish('terminate'); view.reposition(1,1,w-2,h-4)
+end)
 os.startTimer,os.cancelTimer=startTimer,cancelTimer
 assert(storage.write('/test-results.json',textutils.serializeJSON({complete=true,tests=results,failures=failures,color=native.isColor(),host=_HOST})))
 os.shutdown()

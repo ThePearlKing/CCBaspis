@@ -165,6 +165,8 @@ test('Standard Lua environment with io, settings and require',function()
   assert(not physical.exists('/Documents/io.txt')); assert(not physical.exists('/settings-test'))
   eq(env.require('peanut').decode('{a=42,}').a,42)
   assert(type(env.require('ganymede').form)=='function')
+  assert(type(env.require('titan').new)=='function')
+  local listed=false; for _,n in ipairs(env.fs.list('/rom/modules/main')) do if n=='titan.lua' then listed=true end end; assert(listed,'titan.lua not listed')
   local options=env.fs.complete('','/',{include_files=false,include_dirs=false,include_hidden=false})
   for _,value in ipairs(options) do assert(value:sub(-1)=='/' and (value=='../' or value:sub(1,1)~='.'),'Unexpected completion: '..value) end
   local root=env.fs.complete('/Doc','/Pictures'); assert(root[1]=='uments/' or root[2]=='uments/')
@@ -494,6 +496,24 @@ test('pmatrix command launches its Pistachio source from another directory and r
   key(keys.h); kernel.notice=nil; kernel.render(); dump('pmatrix')
   key(keys.q); assert(not kernel.get(id)); assertRunning(terminal)
   eq(kernel.focus,terminal); kernel.remove(terminal)
+end)
+test('titan-demo runs from Terminal with require("titan"), animates on real timers and returns to the shell',function()
+  local terminal=kernel.launch('terminal'); local p=assertRunning(terminal)
+  text('cd /Documents'); key(keys.enter); text('titan-demo'); key(keys.enter)
+  -- Pump real events; a heartbeat timer keeps pullEventRaw from blocking.
+  local function pump(seconds,each)
+    local stop=os.clock()+seconds
+    while os.clock()<stop do os.startTimer(.05); kernel.step({os.pullEventRaw()}); if each then each() end end
+  end
+  local seen=false
+  pump(2,function()
+    if p.win.getLine(1):find('Moonhop',1,true) then seen=true end
+  end)
+  assertRunning(terminal); assert(seen,'Moonhop never drew: '..p.win.getLine(1)); kernel.render(); dump('titan-demo')
+  key(keys.q); pump(.5); text('pwd'); key(keys.enter); pump(.3)
+  local found=false
+  for y=1,select(2,p.win.getSize()) do if p.win.getLine(y):find('Documents',1,true) then found=true end end
+  assert(found,'Shell did not return after quitting'); kernel.remove(terminal)
 end)
 test('Games upgrade installs ten private-drive launchers and preserves user changes',function()
   local storage=cached('system/storage'); local programs=cached('system/programs')
